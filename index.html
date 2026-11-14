@@ -119,6 +119,8 @@ p { margin: 0; }
 .spot-text { min-width: 0; }
 .hero .spot-text h1 { font-size: clamp(2.8rem, 6.4vw, 4.8rem); }
 .spot-sub { color: var(--on-deep-muted); margin-top: 8px; font-size: 1.05rem; }
+.spot-bio { display: grid; gap: 10px; margin-top: 18px; max-width: 60ch; color: var(--on-deep-muted); }
+.spot-bio p:first-child { color: var(--on-deep); }
 .spot-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 12px 32px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--deep-2); }
 .spot-stats b { display: block; font-size: 1.6rem; font-weight: 600; color: var(--maple); line-height: 1.1; }
 .spot-stats span { font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--on-deep-muted); }
@@ -497,6 +499,10 @@ const VIEWS = {
             <p class="spot-sub">First Tour title, won by 11 pins</p>
           </div>
         </div>
+        <div class="spot-bio">
+          <p>Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home ${money(2613)} including his Progressive Pot share.</p>
+          <p>"I was on fire," said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments.</p>
+        </div>
         <div class="spot-stats">
           <div><b class="num">811</b><span>Series</span></div>
           <div><b class="num">$2,613</b><span>Won</span></div>
@@ -544,15 +550,9 @@ const VIEWS = {
     <section class="wrap section">
       <div class="latest">
         <article class="story-body">
-          <header class="story-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">Michael Miller fires 811 for his first title</h2></div></header>
-          <p class="lede">Michael Miller joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins to win by 11, taking home ${money(2613)} including his Progressive Pot share.</p>
-          <p>"I was on fire," said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments.</p>
-          <p>Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each.</p>
-          <div class="facts">
-            <div class="fact"><b>195</b><span>Entries</span></div>
-            <div class="fact"><b>$13,034</b><span>Paid out</span></div>
-            <div class="fact"><b>683</b><span>Low to cash</span></div>
-          </div>
+          <header class="story-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
+          
+          <p class="lede">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
           <ul class="side-pots">
             <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
             <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
