@@ -60,6 +60,28 @@ p { margin: 0; }
 .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 :focus-visible { outline: 3px solid var(--maple); outline-offset: 2px; border-radius: 3px; }
 
+/* Banner above the menu: the Tour's own logo art and sponsor logos. Always light so the artwork reads. */
+.banner { background: #e6e8e7; color: #10242a; border-bottom: 1px solid #cdd3d2; }
+.banner img { display: block; height: auto; max-width: 100%; }
+.banner-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px 6px; }
+.b-center { display: grid; justify-items: center; gap: 6px; min-width: 0; }
+.b-title { width: 389px; }
+.b-address .num { white-space: nowrap; }
+.b-address { margin: 0; font-weight: 700; font-size: .95rem; color: #10242a; text-align: center; }
+.b-logo { width: 96px; flex: none; }
+.b-pin { flex: none; }
+.banner-sponsors { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 34px; padding-block: 10px 16px; border-top: 1px solid #d3d8d7; margin-top: 8px; }
+.banner-sponsors img { max-height: 40px; width: auto; }
+@media (max-width: 760px) {
+  .banner .b-pin, .banner .b-logo-right { display: none; }
+  .banner-top { justify-content: center; }
+  .b-logo { width: 64px; }
+  .b-title { width: 240px; }
+  .b-address { font-size: .8rem; }
+  .banner-sponsors { gap: 10px 22px; }
+  .banner-sponsors img { max-height: 28px; }
+}
+
 /* Header */
 .site-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--accent); }
 .head-row { display: flex; align-items: center; gap: 20px; min-height: 64px; }
@@ -125,6 +147,12 @@ p { margin: 0; }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
+.story-head { display: flex; align-items: center; gap: 18px; }
+.story-head > div { min-width: 0; }
+.champ-photo { width: 126px; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: var(--radius); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); flex: none; }
+.champ-photo.sm { width: 72px; }
+.earlier { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+@media (max-width: 480px) { .story-head { flex-direction: column; align-items: flex-start; } .champ-photo { width: 110px; } }
 .story-title { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-top: 8px; }
 .story-body .lede { color: var(--ink); font-size: 1.1rem; }
 .side-pots { margin: 4px 0 0; padding: 16px 0 0; list-style: none; display: grid; gap: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .95rem; }
@@ -285,6 +313,27 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 
 </head>
 <body>
+<div class="banner">
+  <div class="wrap banner-top">
+    <img class="b-logo" src="img/tour-logo.png" width="96" height="79" alt="9-Tap Tour logo">
+    <img class="b-pin" src="img/pin-left.png" width="31" height="69" alt="">
+    <div class="b-center">
+      <img class="b-title" src="img/title.png" width="389" height="50" alt="9-Tap Tour">
+      <p class="b-address">PO Box 931 Sumner, WA 98390 · <span class="num">(253) 987-7975</span></p>
+    </div>
+    <img class="b-pin" src="img/pin-right.png" width="34" height="67" alt="">
+    <img class="b-logo b-logo-right" src="img/tour-logo.png" width="96" height="79" alt="">
+  </div>
+  <div class="wrap banner-sponsors" aria-label="Sponsors">
+    <img src="img/carstar.png" width="112" height="39" alt="CARSTAR Cornforth-Campbell">
+    <img src="img/miller-lite.png" width="124" height="47" alt="Miller Lite">
+    <img src="img/storm.png" width="73" height="38" alt="Storm">
+    <img src="img/dexter.png" width="106" height="39" alt="Dexter">
+    <img src="img/heritage.png" width="138" height="33" alt="Heritage Bank">
+    <img src="img/command.png" width="131" height="27" alt="Command Computers">
+    <img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda">
+  </div>
+</div>
 <header class="site-head">
   <div class="wrap head-row">
     <a class="brand" href="#home" aria-label="9-Tap Tour home">
@@ -487,7 +536,7 @@ const VIEWS = {
     <section class="wrap section">
       <div class="latest">
         <article class="story-body">
-          <header><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">Michael Miller fires 811 for his first title</h2></header>
+          <header class="story-head"><img class="champ-photo" src="img/champ-michael-miller.jpg" width="126" height="112" alt="Michael Miller"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">Michael Miller fires 811 for his first title</h2></div></header>
           <p class="lede">Michael Miller joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins to win by 11, taking home ${money(2613)} including his Progressive Pot share.</p>
           <p>"I was on fire," said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments.</p>
           <p>Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each.</p>
@@ -509,7 +558,7 @@ const VIEWS = {
             <tbody>${DATA.results.slice(0, 10).map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}"><td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5] + (DATA.progressivePaid[r[1]] || 0))}</td></tr>`).join("")}</tbody>
           </table></div>
           <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">Full results →</a></p>
-          <p class="foot-note" style="margin-top:18px">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two.</p>
+          <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}.</p></div>
         </div>
       </div>
     </section>
