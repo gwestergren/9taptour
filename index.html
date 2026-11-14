@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: sticky scoreboard header, deep "lane" band hero with pin deck, then quiet content sections on a cool off-white. */
+/* Layout: sticky scoreboard header, deep "lane" band hero with next-tournament ticket, then quiet content sections on a cool off-white. */
 :root {
   --bg: #f2f5f4;
   --surface: #ffffff;
@@ -88,23 +88,47 @@ p { margin: 0; }
 /* Hero */
 .hero { background: var(--deep); color: var(--on-deep); position: relative; overflow: hidden; }
 .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 10px; background: repeating-linear-gradient(90deg, var(--maple) 0 38px, color-mix(in srgb, var(--maple) 80%, #000) 38px 40px); opacity: .85; }
-.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding-block: 56px 66px; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding-block: 56px 72px; }
 .hero h1 { font-size: clamp(3.4rem, 9vw, 6.6rem); font-weight: 900; text-transform: uppercase; line-height: .9; }
 .hero h1 em { font-style: normal; color: var(--maple); }
 .hero-lede { margin-top: 18px; max-width: 34em; color: var(--on-deep-muted); font-size: 1.08rem; }
 .hero-lede strong { color: var(--on-deep); font-weight: 600; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-.deck-wrap { display: grid; justify-items: center; gap: 10px; }
-.deck { width: min(340px, 100%); height: auto; }
-.deck-caption { font-size: .82rem; color: var(--on-deep-muted); text-align: center; max-width: 26em; }
-.pin-fall { transform-origin: center; transform-box: fill-box; animation: fall .6s ease-out forwards; }
-@keyframes fall { to { opacity: .22; transform: scale(.82); } }
-@media (prefers-reduced-motion: reduce) { .pin-fall { animation: none; opacity: .22; transform: scale(.82); } }
-@media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; padding-block: 40px 52px; } .deck { width: min(260px, 80%); } }
+@media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; padding-block: 40px 52px; } }
+
+/* Hero ticket: the next tournament, styled like an entry ticket */
+.ticket { justify-self: end; width: min(400px, 100%); background: var(--on-deep); color: #10242a; border-radius: 10px; padding: 22px 24px 20px; position: relative; box-shadow: 0 18px 40px rgba(0,0,0,.28); }
+.ticket-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ticket-label { font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #c7362b; }
+.ticket-count { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 3px; background: #c7362b; color: #fff; }
+.ticket-date { display: flex; align-items: baseline; gap: 10px; margin-top: 14px; }
+.ticket-mon { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: #c7362b; letter-spacing: .04em; }
+.ticket-day { font-family: var(--font-display); font-weight: 900; font-size: 4.2rem; line-height: .85; }
+.ticket-dow { font-size: .9rem; font-weight: 600; color: #56686d; }
+.ticket-center { font-size: 2.1rem; font-weight: 900; text-transform: uppercase; margin-top: 10px; }
+.ticket-city { color: #56686d; margin-top: 4px; }
+.ticket-city b { color: #10242a; }
+.ticket-squads { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin-top: 16px; }
+.ticket-squads span { display: grid; text-align: center; padding: 8px 4px; border: 1.5px solid #c9d3d2; border-radius: 6px; font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #56686d; }
+.ticket-squads b { font-family: var(--font-num); font-size: 1.15rem; color: #10242a; letter-spacing: 0; }
+.ticket-tear { position: relative; margin: 20px -24px 16px; border-top: 2px dashed #c9d3d2; }
+.ticket-tear::before, .ticket-tear::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--deep); }
+.ticket-tear::before { left: -11px; } .ticket-tear::after { right: -11px; }
+.ticket-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: .85rem; color: #56686d; }
+.ticket-foot .btn { flex: none; padding: 10px 14px; }
+@media (max-width: 880px) { .ticket { justify-self: stretch; width: 100%; max-width: 460px; } }
+@media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
+
+/* Latest champion + pots strip */
+.last-champ { text-decoration: none; display: flex; flex-direction: column; gap: 6px; border-top: 4px solid var(--accent); }
+.last-champ:hover { border-color: var(--accent); }
+.lc-name { font-family: var(--font-display); font-weight: 900; font-size: 2.1rem; text-transform: uppercase; line-height: 1; margin-top: 4px; }
+.lc-stats { display: flex; gap: 22px; margin-top: auto; padding-top: 8px; color: var(--muted); font-size: .9rem; }
+.lc-stats b { color: var(--ink); font-size: 1.25rem; font-weight: 600; margin-right: 4px; }
 
 /* Next event + pots strip */
 .strip { margin-top: -28px; position: relative; z-index: 2; }
-.strip-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px; }
+.strip-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; min-width: 0; }
 .next-event { border-top: 4px solid var(--accent); }
 .next-event h3 { font-size: 1.9rem; margin-top: 6px; }
@@ -118,7 +142,7 @@ p { margin: 0; }
 .pot .label { font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--on-deep-muted); }
 .pot .amount { font-family: var(--font-num); font-weight: 600; font-size: clamp(1.9rem, 3.6vw, 2.5rem); color: var(--maple); line-height: 1; letter-spacing: -.02em; }
 .pot .note { font-size: .84rem; color: var(--on-deep-muted); }
-@media (max-width: 880px) { .strip-grid { grid-template-columns: 1fr 1fr; } .next-event { grid-column: 1 / -1; } }
+@media (max-width: 880px) { .strip-grid { grid-template-columns: 1fr 1fr; } .last-champ { grid-column: 1 / -1; } }
 @media (max-width: 460px) { .strip-grid { grid-template-columns: 1fr; } }
 
 /* Sections */
@@ -406,25 +430,6 @@ function eventRow(e) {
   </div>`;
 }
 
-function deckSVG() {
-  // Pin deck from the bowler's side: back row 7-8-9-10, front headpin. Nine fall; the 10 pin stands.
-  const rows = [[7,8,9,10],[4,5,6],[2,3],[1]];
-  let out = "", gap = 62;
-  rows.forEach((row, ri) => {
-    const y = 50 + ri * 54, x0 = 170 - (row.length - 1) * gap / 2;
-    row.forEach((p, i) => {
-      const x = x0 + i * gap, stand = p === 10, delay = (0.25 + (3 - ri) * 0.08 + i * 0.05).toFixed(2);
-      out += `<g ${stand ? "" : `class="pin-fall" style="animation-delay:${delay}s"`}>
-        <circle cx="${x}" cy="${y}" r="20" fill="${stand ? "var(--on-deep)" : "var(--on-deep-muted)"}"/>
-        <circle cx="${x}" cy="${y}" r="13" fill="none" stroke="var(--accent)" stroke-width="3"/>
-        <text x="${x}" y="${y + 5}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="14" fill="var(--deep)">${p}</text>
-      </g>`;
-    });
-  });
-  return `<svg class="deck" viewBox="0 0 340 250" role="img" aria-label="Pin deck with nine pins down and the 10 pin standing, which scores as a strike">
-    <rect x="6" y="6" width="328" height="238" rx="10" fill="var(--deep-2)"/>${out}</svg>`;
-}
-
 const VIEWS = {
   home() {
     const e = nextEvent, d = parse(e.date);
@@ -440,17 +445,33 @@ const VIEWS = {
           <a class="btn btn-ghost" href="#how-it-works">How it works</a>
         </div>
       </div>
-      <div class="deck-wrap">${deckSVG()}<p class="deck-caption">Leave the 10 pin standing and it still counts as a strike.</p></div>
+      <aside class="ticket" aria-label="Next tournament">
+        <div class="ticket-top">
+          <span class="ticket-label">Next tournament</span>
+          <span class="ticket-count">${relDays(e)}</span>
+        </div>
+        <div class="ticket-date">
+          <span class="ticket-mon">${MON[d.getMonth()]}</span><span class="ticket-day">${d.getDate()}</span>
+          <span class="ticket-dow">${parse(e.date).toLocaleDateString("en-US", { weekday: "long" })}</span>
+        </div>
+        <h2 class="ticket-center">${esc(e.center)}</h2>
+        <p class="ticket-city">${esc(e.city)}, WA${e.tag ? ` · <b>${esc(e.tag)}</b>` : ""}</p>
+        <div class="ticket-squads">${e.squads.map(s => `<span><b>${s}</b>squad</span>`).join("")}</div>
+        <div class="ticket-tear" aria-hidden="true"></div>
+        <div class="ticket-foot">
+          <span>New members: arrive an hour early to sign up.</span>
+          <a class="btn btn-primary" href="#schedule">Full schedule</a>
+        </div>
+      </aside>
     </div></section>
 
     <section class="wrap strip"><div class="strip-grid">
-      <div class="panel next-event">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="eyebrow">Next tournament</span><span class="tag">${relDays(e)}</span></div>
-        <h3>${esc(e.center)}</h3>
-        <p class="meta">${longDate(e.date)} · ${esc(e.city)}, WA${e.tag ? ` · <b style="color:var(--ink)">${esc(e.tag)}</b>` : ""}</p>
-        ${squadsHTML(e.squads.map(s => s + " squad"))}
-        <p class="meta" style="margin-top:12px;font-size:.85rem">New members: arrive at least an hour early to sign up.</p>
-      </div>
+      <a class="panel last-champ" href="#results">
+        <span class="eyebrow">Latest champion</span>
+        <span class="lc-name">${esc(DATA.champions[0].name)}</span>
+        <span class="meta">${esc(DATA.champions[0].where)} · ${shortDate(DATA.champions[0].date)}</span>
+        <span class="lc-stats"><span><b class="num">811</b> total</span><span><b class="num">${money(DATA.champions[0].won)}</b> won</span></span>
+      </a>
       <div class="panel pot">
         <span class="label">9-Tap Jackpot</span>
         <span class="amount">${money(DATA.jackpot)}</span>
