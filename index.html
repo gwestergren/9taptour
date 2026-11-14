@@ -68,16 +68,17 @@ p { margin: 0; }
 .brand-name { font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1; }
 .brand-name small { display: block; font-family: var(--font-body); font-size: .62rem; font-weight: 600; letter-spacing: .16em; color: var(--on-deep-muted); margin-top: 3px; }
 .nav { display: flex; gap: 4px; }
-.nav a { text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 12px; border-radius: var(--radius); color: var(--on-deep-muted); }
+.nav a { white-space: nowrap; text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 12px; border-radius: var(--radius); color: var(--on-deep-muted); }
 .nav a:hover { color: var(--on-deep); background: var(--deep-2); }
 .nav a[aria-current="page"] { color: var(--on-deep); background: var(--deep-2); box-shadow: inset 0 -2px 0 var(--maple); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 700 .95rem/1 var(--font-body); padding: 12px 18px; border-radius: var(--radius); border: 2px solid transparent; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border-color: currentColor; background: transparent; color: inherit; }
-.head-cta { padding: 10px 14px; }
+.head-cta { padding: 10px 14px; white-space: nowrap; }
+.brand-name small { white-space: nowrap; }
 .menu-btn { display: none; background: none; border: 2px solid var(--on-deep-muted); color: var(--on-deep); border-radius: var(--radius); padding: 7px 10px; font: 700 .85rem var(--font-body); cursor: pointer; }
-@media (max-width: 880px) {
+@media (max-width: 1080px) {
   .menu-btn { display: inline-flex; }
   .head-cta { display: none; }
   .nav { display: none; position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; background: var(--deep); border-bottom: 3px solid var(--accent); padding: 8px max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); }
@@ -302,7 +303,7 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
       <a href="#home">Home</a>
       <a href="#schedule">Schedule</a>
       <a href="#results">Results</a>
-      <a href="#standings">Standings</a>
+      <a href="#bowler-of-the-year">Bowler of the Year</a>
       <a href="#how-it-works">How it works</a>
       <a href="#join">Join</a>
     </nav>
@@ -326,7 +327,7 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
         <ul>
           <li><a href="#schedule">Schedule</a></li>
           <li><a href="#results">Results</a></li>
-          <li><a href="#standings">Bowler of the Year</a></li>
+          <li><a href="#bowler-of-the-year">Bowler of the Year</a></li>
           <li><a href="#how-it-works">Rules &amp; format</a></li>
         </ul>
       </div>
@@ -581,7 +582,7 @@ const VIEWS = {
     </section>`;
   },
 
-  standings() {
+  "bowler-of-the-year"() {
     const max = DATA.boy[0][1];
     let prev = null, rank = 0;
     const rows = DATA.boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
@@ -589,8 +590,8 @@ const VIEWS = {
       <td class="bar-cell"><div class="bar"><i style="width:${(p / max * 100).toFixed(1)}%"></i></div></td><td class="r num">${p}</td></tr>`; }).join("");
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">Bowler of the Year</p><h1>Standings</h1>
-      <p>Season points race for the Tour's Bowler of the Year. Shown here: the 2025 standings as of September 1, 2025, the most recent the Tour has posted.</p>
+      <p class="eyebrow">2025 season</p><h1>Bowler of the Year</h1>
+      <p>The season-long points race across every Tour event. These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted.</p>
     </div></section>
     <section class="wrap section">
       <div class="podium-cards">${DATA.boy.slice(0, 3).map(([n, p], i) => `
