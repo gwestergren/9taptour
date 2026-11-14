@@ -124,6 +124,7 @@ p { margin: 0; }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
+.story-title { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-top: 8px; }
 .story-body .lede { color: var(--ink); font-size: 1.1rem; }
 .side-pots { margin: 4px 0 0; padding: 16px 0 0; list-style: none; display: grid; gap: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .95rem; }
 .side-pots b { color: var(--ink); }
@@ -483,9 +484,9 @@ const VIEWS = {
     </div></section>
 
     <section class="wrap section">
-      <div class="section-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 style="margin-top:6px">Michael Miller fires 811 for his first title</h2></div><a class="link-more" href="#results">Full results →</a></div>
       <div class="latest">
         <article class="story-body">
+          <header><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">Michael Miller fires 811 for his first title</h2></header>
           <p class="lede">Michael Miller joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins to win by 11, taking home ${money(2613)} including his Progressive Pot share.</p>
           <p>"I was on fire," said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments.</p>
           <p>Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each.</p>
@@ -506,7 +507,7 @@ const VIEWS = {
             <thead><tr><th>Place</th><th>Bowler</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
             <tbody>${DATA.results.slice(0, 10).map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}"><td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5] + (DATA.progressivePaid[r[1]] || 0))}</td></tr>`).join("")}</tbody>
           </table></div>
-          <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">See all cashers →</a></p>
+          <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">Full results →</a></p>
           <p class="foot-note" style="margin-top:18px">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two.</p>
         </div>
       </div>
