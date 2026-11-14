@@ -574,11 +574,6 @@ const VIEWS = {
     <section class="wrap section">
       <div class="section-head"><h2>Coming up</h2><a class="link-more" href="#schedule">Full schedule →</a></div>
       <div class="event-rows">${upcoming.map(eventRow).join("")}</div>
-    </section>
-
-    <section class="wrap section">
-      <div class="section-head"><h2>Our sponsors</h2><p>Thanks to the businesses that help put money back in bowlers' pockets.</p></div>
-      <div class="sponsors">${DATA.sponsors.map(s => `<span class="sponsor">${esc(s)}</span>`).join("")}</div>
     </section>`;
   },
 
