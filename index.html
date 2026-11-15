@@ -199,6 +199,7 @@ p { margin: 0; }
 .dlg-scores th { font: 700 .62rem var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); padding: 6px 4px; position: static; text-align: center; white-space: nowrap; }
 .dlg-scores td { padding: 8px 4px; font-size: 1rem; }
 .dlg-scores td b { color: var(--accent); }
+.dlg-scores td.drop { color: var(--muted); text-decoration: line-through; }
 .champ-dlg .facts { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
 @media (max-width: 480px) { .dlg-head { flex-direction: column; align-items: flex-start; } .champ-dlg { padding: 20px; } .dlg-scores th { font-size: .5rem; letter-spacing: 0; padding: 6px 1px; } .dlg-scores td { font-size: .82rem; padding: 7px 1px; } }
 .champ-card img { width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 6px; }
@@ -557,12 +558,12 @@ const DATA = {
     { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
-    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", games: [171, 182, 158, 176], hdcp: 28, bonus: 12, head: "First Tour title, won by 11 pins", bio: ["Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home $2,613 including his Progressive Pot share.", "\"I was on fire,\" said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments."], entries: 195, paid: 13034, when: "July 12", link: "#home", month: "July 2026" },
-    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", games: [172, 181, 190, 166], hdcp: 36, head: "Steady all day for his first win", bio: ["Dean has bowled the Tour for three seasons and finally broke through at Bowlero Lanes, never dropping below 200 with handicap in any game.", "\"I just kept it in the pocket and let the pins do the work,\" he said. He plans to put part of his winnings toward a new ball."], entries: 210, paid: 12880, when: "June 2026", month: "June 2026", mock: true },
-    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", games: [181, 169, 175, 188], hdcp: 38, head: "Strikes out in the 10th to take it", bio: ["Ashley needed a strike-out in the last frame and got it, edging the field by 6 pins at Daffodil Bowl.", "A Tour regular since 2024, she bowls in two leagues a week and says the Tour is her favorite part of the month."], entries: 176, paid: 10950, when: "June 2026", month: "June 2026", mock: true },
-    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", games: [160, 171, 149, 166], hdcp: 57, head: "Biggest check of the summer", bio: ["Marilyn turned her 156 league average into a 4-game run nobody could catch, taking home the largest first-place check of the summer at Secoma Lanes.", "She started bowling with her family as a kid and came back to the sport two years ago. Her winnings are going toward a family trip."], entries: 240, paid: 14100, when: "May 2026", month: "May 2026", mock: true },
-    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", games: [188, 175, 192, 170], hdcp: 36, head: "Wins at his home house", bio: ["Dennis bowls league at Kent Bowl twice a week, and it showed. He led after two games and held on to win by 9 pins.", "\"Knowing the lanes helps, but you still have to make the shots,\" he said. He plans to celebrate with his grandkids."], entries: 198, paid: 11760, when: "May 2026", month: "May 2026", mock: true },
-    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", games: [170, 182, 165, 177], hdcp: 40, head: "Wins by 13 pins as ladies go one-two", bio: ["Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids."], entries: 185, paid: 13606, when: "March 1", link: "#results/ruta-hert", month: "March 2026" }
+    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", games: [238, 251, 229], hdcp: 28, bonus: 3, head: "First Tour title, won by 11 pins", bio: ["Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home $2,613 including his Progressive Pot share.", "\"I was on fire,\" said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments."], entries: 195, paid: 13034, when: "July 12", link: "#home", month: "July 2026" },
+    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", games: [245, 252, 238], hdcp: 36, head: "Steady all day for his first win", bio: ["Dean has bowled the Tour for three seasons and finally broke through at Bowlero Lanes, never dropping below 200 with handicap in any game.", "\"I just kept it in the pocket and let the pins do the work,\" he said. He plans to put part of his winnings toward a new ball."], entries: 210, paid: 12880, when: "June 2026", month: "June 2026", mock: true },
+    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", games: [241, 255, 236], hdcp: 38, head: "Strikes out in the 10th to take it", bio: ["Ashley needed a strike-out in the last frame and got it, edging the field by 6 pins at Daffodil Bowl.", "A Tour regular since 2024, she bowls in two leagues a week and says the Tour is her favorite part of the month."], entries: 176, paid: 10950, when: "June 2026", month: "June 2026", mock: true },
+    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", games: [221, 238, 229], hdcp: 57, head: "Biggest check of the summer", bio: ["Marilyn turned her 156 league average into a three-game run nobody could catch, taking home the largest first-place check of the summer at Secoma Lanes.", "She started bowling with her family as a kid and came back to the sport two years ago. Her winnings are going toward a family trip."], entries: 240, paid: 14100, when: "May 2026", month: "May 2026", mock: true },
+    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", games: [258, 249, 212, 244], hdcp: 36, head: "Wins at his home house", bio: ["Dennis bowls league at Kent Bowl twice a week, and it showed. He led after two games and held on to win by 9 pins.", "\"Knowing the lanes helps, but you still have to make the shots,\" he said. He plans to celebrate with his grandkids."], entries: 198, paid: 11760, when: "May 2026", month: "May 2026", mock: true },
+    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", games: [236, 244, 231], hdcp: 40, head: "Wins by 13 pins as ladies go one-two", bio: ["Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids."], entries: 185, paid: 13606, when: "March 1", link: "#results/ruta-hert", month: "March 2026" }
   ],
   // Bowlero Paradise, July 12, 2026. [place, name, handicap, bonus, total, prize]
   results: [
@@ -792,7 +793,7 @@ const VIEWS = {
         <thead><tr><th>Place</th><th>Bowler</th><th class="r">Hdcp</th><th class="r">Bonus</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
         <tbody id="res-body"></tbody>
       </table></div>
-      <p class="foot-note">Totals are four games of pinfall plus handicap. Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.</p>
+      <p class="foot-note">Totals are three games of pinfall plus handicap (best 3 of 4 at 4-game events). Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.</p>
     </section>
     <section class="wrap section" id="ruta-hert">
       <div class="section-head"><h2>Earlier in 2026</h2></div>
@@ -857,8 +858,8 @@ const VIEWS = {
       <div class="section-head"><h2>How a tournament works</h2></div>
       <div class="steps">
         <div class="panel step"><div class="k">1</div><h3>Check in</h3><p>Pay your entry and any side pots in cash or check. New members bring proof of average and arrive an hour early.</p></div>
-        <div class="panel step"><div class="k">2</div><h3>Bowl four games</h3><p>Up to eight bowlers per pair. Everyone on the pair moves lanes together after game two.</p></div>
-        <div class="panel step"><div class="k">3</div><h3>Beat the board</h3><p>Pinfall plus handicap across all four games. A nine on your first ball counts as a strike.</p></div>
+        <div class="panel step"><div class="k">2</div><h3>Bowl three games</h3><p>Up to eight bowlers per pair. Some events are "best 3 of 4": bowl four games and your low game is dropped.</p></div>
+        <div class="panel step"><div class="k">3</div><h3>Beat the board</h3><p>Pinfall plus handicap across your three games. A nine on your first ball counts as a strike.</p></div>
         <div class="panel step"><div class="k">4</div><h3>Get paid</h3><p>About one entry in five cashes. Prize money is paid on site and results go online within the hour.</p></div>
       </div>
     </section>
@@ -872,7 +873,7 @@ const VIEWS = {
             <div class="field"><label for="bonus">Bonus pins</label><input id="bonus" type="number" inputmode="numeric" min="0" max="5" value="1"></div>
             <div class="res"><div class="meta" style="font-size:.82rem">Per game</div><output id="hdcp-out">32</output></div>
           </div>
-          <p class="foot-note" id="hdcp-note">Over four games that's 128 handicap pins.</p>
+          <p class="foot-note" id="hdcp-note">Over three games that's 96 handicap pins.</p>
         </div>
       </div>
       <div>
@@ -1116,9 +1117,11 @@ function openChamp(photo) {
     <div class="dlg-head"><img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}"><div>
       <p class="eyebrow">Champion · ${esc(c.where)} · ${esc(c.when)}</p><h2>${esc(c.name)}</h2><p class="dlg-sub">${esc(c.head)}</p></div></div>
     ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
-    ${c.games ? (() => { const scr = c.games.reduce((a, b) => a + b, 0), tot = scr + c.hdcp * c.games.length + (c.bonus || 0); return `
-    <div class="dlg-scores"><table><thead><tr>${c.games.map((_, i) => `<th>G${i + 1}</th>`).join("")}<th>Scratch</th><th>Hdcp</th>${c.bonus ? "<th>Bonus</th>" : ""}<th>Total</th></tr></thead>
-    <tbody><tr>${c.games.map(x => `<td>${x}</td>`).join("")}<td>${scr}</td><td>+${c.hdcp * c.games.length}</td>${c.bonus ? `<td>+${c.bonus}</td>` : ""}<td><b>${tot}</b></td></tr></tbody></table></div>`; })() : ""}
+    ${c.games ? (() => { const keep = c.games.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(x => x[1]);
+      const scr = keep.reduce((t, i) => t + c.games[i], 0), hd = c.hdcp * 3, bo = (c.bonus || 0) * 3, tot = scr + hd + bo; return `
+    <div class="dlg-scores"><table><thead><tr>${c.games.map((_, i) => `<th>G${i + 1}</th>`).join("")}<th>Scratch</th><th>Hdcp</th>${bo ? "<th>Bonus</th>" : ""}<th>Total</th></tr></thead>
+    <tbody><tr>${c.games.map((x, i) => keep.includes(i) ? `<td>${x}</td>` : `<td class="drop" title="Dropped: best 3 of 4">${x}</td>`).join("")}<td>${scr}</td><td>+${hd}</td>${bo ? `<td>+${bo}</td>` : ""}<td><b>${tot}</b></td></tr></tbody></table></div>
+    ${c.games.length > 3 ? `<p class="foot-note" style="margin-top:-6px">Best 3 of 4 format: the low game is dropped.</p>` : ""}`; })() : ""}
     <div class="facts">${c.avg ? `<div class="fact"><b>${c.avg}</b><span>League avg</span></div>` : ""}<div class="fact"><b>${c.entries}</b><span>Entries</span></div><div class="fact"><b>${money(c.paid)}</b><span>Paid out</span></div><div class="fact"><b>${money(c.won)}</b><span>Won</span></div></div>`;
   d.querySelector(".dlg-x").addEventListener("click", () => d.close());
   d.showModal();
@@ -1158,7 +1161,7 @@ function wire(view) {
       const a = Math.max(125, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
       const h = Math.trunc((220 - a) * 0.9) + b;
       $("#hdcp-out").textContent = h;
-      $("#hdcp-note").textContent = `Over four games that's ${h * 4} handicap pins.`;
+      $("#hdcp-note").textContent = `Over three games that's ${h * 3} handicap pins.`;
     };
     $("#avg").addEventListener("input", calc); $("#bonus").addEventListener("input", calc); calc();
   }
