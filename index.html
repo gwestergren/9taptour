@@ -179,17 +179,17 @@ p { margin: 0; }
 .latest { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
 .latest .side-pots { margin: 0; padding: 0 0 0 24px; border-top: 0; border-left: 1px solid var(--line); }
 @media (max-width: 880px) { .latest .side-pots { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
-.champ-reel { overflow: hidden; padding: 6px 0 10px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
-.champ-track { display: flex; gap: 16px; width: max-content; animation: reel 40s linear infinite; }
-.champ-reel:hover .champ-track, .champ-reel:focus-within .champ-track { animation-play-state: paused; }
-@keyframes reel { to { transform: translateX(calc(-50% - 8px)); } }
-.reel-card { display: flex; gap: 12px; align-items: center; width: 290px; flex: none; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: inherit; }
-a.reel-card:hover { border-color: var(--accent); }
-.reel-card img { width: 84px; height: 75px; object-fit: cover; border-radius: 6px; flex: none; }
-.reel-card b { display: block; font-family: var(--font-display); font-size: 1.25rem; text-transform: uppercase; line-height: 1.05; }
-.reel-card span { display: block; font-size: .82rem; color: var(--muted); }
-.reel-card .won { color: var(--ink); font-family: var(--font-num); font-weight: 600; margin-top: 2px; }
-@media (prefers-reduced-motion: reduce) { .champ-track { animation: none; } .champ-reel { overflow-x: auto; } .champ-track > [aria-hidden="true"] { display: none; } }
+.month-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-btn { font: 600 .85rem var(--font-body); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.mp-btn[aria-pressed="true"] { background: var(--deep); color: #fff; border-color: var(--deep); }
+.champ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.champ-card { display: grid; gap: 10px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: inherit; }
+a.champ-card:hover { border-color: var(--accent); }
+.champ-card img { width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 6px; }
+.champ-card b { display: block; font-family: var(--font-display); font-size: 1.35rem; text-transform: uppercase; line-height: 1.05; }
+.champ-card span { display: block; font-size: .85rem; color: var(--muted); }
+.champ-card .won { color: var(--ink); font-family: var(--font-num); font-weight: 600; margin-top: 4px; }
+@media (max-width: 560px) { .champ-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .champ-card b { font-size: 1.1rem; } }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -541,12 +541,12 @@ const DATA = {
     { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
-    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", link: "#home" },
-    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", link: "#results/ruta-hert" },
-    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo" },
-    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham" },
-    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr" },
-    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel" }
+    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", link: "#home", month: "July 2026" },
+    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", month: "Summer 2026" },
+    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", month: "Summer 2026" },
+    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", month: "Summer 2026" },
+    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", month: "Summer 2026" },
+    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", link: "#results/ruta-hert", month: "March 2026" }
   ],
   // Bowlero Paradise, July 12, 2026. [place, name, handicap, bonus, total, prize]
   results: [
@@ -716,13 +716,12 @@ const VIEWS = {
       </div>
     </section>
 
-    <section class="section champs-sec" aria-label="Recent champions">
-      <div class="wrap section-head"><h2>Recent champions</h2><a class="link-more" href="#results">All results →</a></div>
-      <div class="champ-reel"><div class="champ-track">${[0,1].map(k => DATA.champions.map(c => `
-        <${c.link ? `a href="${c.link}"` : "div"} class="reel-card"${k ? ' aria-hidden="true" tabindex="-1"' : ""}>
-          <img src="img/champ-${c.photo}.jpg" width="126" height="112" alt="">
-          <div><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} league average</span>` : ""}<span class="won">Won ${money(c.won)}</span></div>
-        </${c.link ? "a" : "div"}>`).join("")).join("")}</div></div>
+    <section class="wrap section champs-sec" aria-label="Champions by month">
+      <div class="section-head"><h2>Champions</h2>
+        <div class="month-pick" role="group" aria-label="Choose a month">${[...new Set(DATA.champions.map(c => c.month))].map((m, i) => `<button type="button" class="mp-btn" data-month="${esc(m)}" aria-pressed="${i === 0}">${esc(m)}</button>`).join("")}</div>
+      </div>
+      <div class="champ-grid" id="champ-grid"></div>
+      <p class="foot-note"><a class="link-more" href="#results">All results →</a></p>
     </section>
 
     <section class="wrap section">
@@ -1083,7 +1082,20 @@ function renderResults(q = "") {
     : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". Only the top 39 cashed at this event.</td></tr>`;
 }
 
+function renderChamps(month) {
+  const g = $("#champ-grid"); if (!g) return;
+  g.innerHTML = DATA.champions.filter(c => c.month === month).map(c => `
+    <${c.link ? `a href="${c.link}"` : "div"} class="champ-card">
+      <img src="img/champ-${c.photo}.jpg" width="252" height="224" alt="${esc(c.name)}">
+      <div><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} league average</span>` : ""}<span class="won">Won ${money(c.won)}</span></div>
+    </${c.link ? "a" : "div"}>`).join("");
+}
 function wire(view) {
+  if (view === "home") {
+    const btns = document.querySelectorAll(".mp-btn");
+    btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
+    if (btns[0]) renderChamps(btns[0].dataset.month);
+  }
   if (view === "results") { renderResults(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
   if (view === "rules") {
     $("#rule-find").addEventListener("input", e => {
