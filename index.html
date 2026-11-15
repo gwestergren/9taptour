@@ -356,6 +356,21 @@ textarea { resize: vertical; min-height: 120px; }
 /* Join */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid .full { grid-column: 1 / -1; }
+.form-grid.g3 { grid-template-columns: 1fr 64px 1fr; }
+.form-grid.g-csz { grid-template-columns: 2fr 70px 1fr; }
+.form-grid.g-avg { grid-template-columns: 100px 1fr 90px; }
+.form-grid.g-avg2 { grid-template-columns: 100px 1fr; }
+.fs { border: 0; padding: 0; margin: 0; min-width: 0; }
+.fs legend { font-size: .82rem; font-weight: 700; padding: 0; margin-bottom: 8px; }
+.yn { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-size: .95rem; }
+.yn label { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.yn-more { display: inline-flex; gap: 8px; }
+.yn-more[hidden] { display: none; }
+.yn-more input { width: 96px; }
+input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-color: var(--accent); }
+.agree { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; color: var(--muted); }
+.agree input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .form-grid.g3 { grid-template-columns: 1fr 64px; } .form-grid.g3 .field:last-child { grid-column: 1 / -1; } .form-grid.g-csz { grid-template-columns: 1fr 70px; } .form-grid.g-csz .field:first-child { grid-column: 1 / -1; } .form-grid.g-avg { grid-template-columns: 90px 1fr; } .form-grid.g-avg .field:first-child { grid-column: auto; } }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
 .checklist { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; }
@@ -897,23 +912,50 @@ const VIEWS = {
     return `
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">Membership · $25 a year</p><h1>Join the Tour</h1>
-      <p>Any bowler with a book average of 210 or less can join. Start the form here, then finish up at your first tournament.</p>
+      <p>Any bowler with a book average of 210 or less can join. Fill out the application here or print the paper form, then pay your $25 at your first tournament.</p>
     </div></section>
     <section class="wrap section"><div class="two-col">
       <form class="panel" id="join-form" novalidate>
-        <h3 style="margin-bottom:16px">Membership application</h3>
+        <h3 style="margin-bottom:6px">Membership application</h3>
+        <p class="meta" style="margin:0 0 18px">Same questions as the paper form. Prefer paper? <a class="link-more" href="docs/9-tap-member-application.pdf" target="_blank" rel="noopener">Download the application (PDF)</a> and bring it to any tournament.</p>
         <div class="form-grid">
-          <div class="field"><label for="f-first">First name</label><input id="f-first" required autocomplete="given-name"></div>
-          <div class="field"><label for="f-last">Last name</label><input id="f-last" required autocomplete="family-name"></div>
-          <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" autocomplete="email"></div>
+          <div class="field full"><label for="f-ref">Referred by</label><input id="f-ref" placeholder="Member who sent you, if any"></div>
+          <fieldset class="field full fs"><legend>About you</legend><div class="form-grid g3">
+            <div class="field"><label for="f-first">First name</label><input id="f-first" required autocomplete="given-name"></div>
+            <div class="field mi"><label for="f-mi">M.I.</label><input id="f-mi" maxlength="1" autocomplete="additional-name"></div>
+            <div class="field"><label for="f-last">Last name</label><input id="f-last" required autocomplete="family-name"></div>
+          </div></fieldset>
+          <div class="field full"><label for="f-addr">Address</label><input id="f-addr" autocomplete="street-address"></div>
+          <div class="form-grid g-csz full">
+            <div class="field"><label for="f-city">City</label><input id="f-city" autocomplete="address-level2"></div>
+            <div class="field"><label for="f-state">State</label><input id="f-state" value="WA" maxlength="2" autocomplete="address-level1"></div>
+            <div class="field"><label for="f-zip">Zip</label><input id="f-zip" inputmode="numeric" autocomplete="postal-code"></div>
+          </div>
           <div class="field"><label for="f-phone">Phone</label><input id="f-phone" type="tel" autocomplete="tel"></div>
-          <div class="field"><label for="f-avg">Highest book average, last 2 years</label><input id="f-avg" type="number" min="100" max="210" inputmode="numeric"></div>
-          <div class="field"><label for="f-games">Games in that average</label><input id="f-games" type="number" min="0" inputmode="numeric"></div>
-          <div class="field full"><label for="f-league">League and bowling center</label><input id="f-league" placeholder="e.g. Tuesday Mixed, Bowlero Lakewood"></div>
+          <div class="field"><label for="f-cell">Cell</label><input id="f-cell" type="tel"></div>
+          <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" autocomplete="email"></div>
+          <div class="field"><label for="f-dob">Date of birth</label><input id="f-dob" type="date" autocomplete="bday"></div>
+          <fieldset class="field full fs"><legend>Highest league average, current season (2026-27)</legend><div class="form-grid g-avg">
+            <div class="field"><label for="f-avg">Average</label><input id="f-avg" type="number" min="100" max="300" inputmode="numeric"></div>
+            <div class="field"><label for="f-house">House</label><input id="f-house" placeholder="Bowling center"></div>
+            <div class="field"><label for="f-games"># Games</label><input id="f-games" type="number" min="0" inputmode="numeric"></div>
+          </div></fieldset>
+          <fieldset class="field full fs"><legend>Highest league average, last season (2025-26) or last book</legend><div class="form-grid g-avg2">
+            <div class="field"><label for="f-avg2">Average</label><input id="f-avg2" type="number" min="100" max="300" inputmode="numeric"></div>
+            <div class="field"><label for="f-house2">House</label><input id="f-house2" placeholder="Bowling center"></div>
+          </div></fieldset>
+          <div class="field full"><label for="f-sport">Averages from Challenging or Sport conditions</label><input id="f-sport" placeholder="List any here; they must be noted"></div>
+          <fieldset class="field full fs"><legend>In the past 5 years, have you averaged 10 or more pins higher than your current league average?</legend>
+            <div class="yn"><label><input type="radio" name="f-10" value="N" checked> No</label><label><input type="radio" name="f-10" value="Y"> Yes</label>
+            <span class="yn-more" id="f-10-more" hidden><input id="f-10-year" placeholder="Year" aria-label="Year" size="6"><input id="f-10-avg" placeholder="Average" aria-label="Average" size="7" inputmode="numeric"></span></div>
+          </fieldset>
           <div class="field full"><label for="f-first-event">First tournament you plan to bowl</label>
             <select id="f-first-event">${DATA.events.filter(e => eventStatus(e) === "upcoming" && !e.invite).map(e => `<option>${longDate(e.date)} · ${esc(e.center)}</option>`).join("")}</select></div>
+          <label class="agree full"><input type="checkbox" id="f-agree"> I understand all 9-Tap Tour rules, and I'm responsible for the accuracy of the information on this application.</label>
+          <div class="field full"><label for="f-sign">Signature (type your full name)</label><input id="f-sign" autocomplete="name"></div>
         </div>
-        <div style="margin-top:18px"><button class="btn btn-primary" type="submit">Start my application</button></div>
+        <p class="foot-note">Office use: member #, average and handicap are filled in by a director.</p>
+        <div style="margin-top:18px"><button class="btn btn-primary" type="submit">Submit application</button></div>
         <div id="join-msg" hidden></div>
       </form>
       <div style="display:grid;gap:24px;align-content:start">
@@ -983,11 +1025,14 @@ function wire(view) {
     $("#avg").addEventListener("input", calc); $("#bonus").addEventListener("input", calc); calc();
   }
   if (view === "join") {
+    document.querySelectorAll('input[name="f-10"]').forEach(r => r.addEventListener("change", () => { $("#f-10-more").hidden = !document.querySelector('input[name="f-10"][value="Y"]').checked; }));
     $("#join-form").addEventListener("submit", e => {
       e.preventDefault();
       const f = $("#f-first").value.trim(), l = $("#f-last").value.trim(), avg = Number($("#f-avg").value), msg = $("#join-msg");
       msg.hidden = false; msg.className = "toast";
-      if (!f || !l) { msg.textContent = "Add your first and last name to continue."; msg.style.background = "color-mix(in srgb, var(--accent) 12%, transparent)"; return; }
+      const bad = t => { msg.textContent = t; msg.style.background = "color-mix(in srgb, var(--accent) 12%, transparent)"; };
+      if (!f || !l) return bad("Add your first and last name to continue.");
+      if (!$("#f-agree").checked || !$("#f-sign").value.trim()) return bad("Check the box and type your name as your signature.");
       if (avg > 210) { msg.textContent = "The maximum book average to join is 210. Call the message line if you have questions."; return; }
       msg.style.background = "";
       msg.textContent = `Thanks, ${f}. In the live site this would send your application to the directors. For this prototype nothing was sent.`;
