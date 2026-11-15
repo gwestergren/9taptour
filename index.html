@@ -507,7 +507,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .sc-short { display: none; }
 @media (max-width: 480px) { .sc-long { display: none; } .sc-short { display: inline; } #sc-games button { padding-inline: 8px; } }
 .sc-lanes { flex-wrap: nowrap; }
-.sc-lanes button { flex: 0 0 auto; min-width: 64px; }
+.sc-lanes button { flex: 0 0 auto; min-width: 104px; }
+.sc-next { margin-top: 4px; }
+.sc-next .btn { width: 100%; min-height: 52px; font-size: 1.05rem; }
 .sc-main { padding-block: 16px 40px; }
 .sc-checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .85rem; color: var(--muted); margin-bottom: 14px; }
 .sc-checkin b { color: var(--ink); }
@@ -1259,7 +1261,7 @@ function openChamp(photo) {
 }
 /* ---- Rover score entry ---- */
 const SC = {
-  squad: 0, game: null, lanes: "all",
+  squad: 0, game: null, lanes: null,
   event() { return nextEvent; },
   games(e) { return /3 of 4/.test(e.tag || "") ? 4 : 3; },
   key(e, sq) { return `9tap-scores:${e.date}:${sq}`; },
@@ -1272,7 +1274,7 @@ const SC = {
     for (let lane = 1; lane <= lanes; lane++) for (let k = 0; k < 2; k++) {
       let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
       const avg = 150 + Math.floor(rnd() * 56), bonus = rnd() < .35 ? 1 + Math.floor(rnd() * 3) : 0;
-      out.push({ id: lane + "-" + k, lane: lane + 12, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
+      out.push({ id: lane + "-" + k, lane, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
     }
     return out;
   },
@@ -1311,11 +1313,14 @@ function wireScores() {
       const g = btn.dataset.game; btn.setAttribute("aria-pressed", String(String(SC.game) === g));
       if (g === "board") return; const d = doneCount(+g); btn.querySelector("small").textContent = `${d}/${roster.length}`; btn.classList.toggle("done", d === roster.length);
     });
+    if (SC.game !== "board") document.querySelectorAll("#sc-lanes [data-lanes]").forEach(btn => { const items = pairs.find(p => String(p.p) === btn.dataset.lanes).items, d = items.filter(b => got(b, SC.game)).length; btn.querySelector("small").textContent = `${d}/${items.length}`; btn.classList.toggle("done", d === items.length); });
     document.querySelectorAll(".sc-pair").forEach(p => { if (SC.game === "board") return; const items = pairs[+p.dataset.pair].items, d = items.filter(b => got(b, SC.game)).length, t = p.querySelector(".sc-pair-head .tag"); t.textContent = `${d} of ${items.length} in`; t.classList.toggle("good", d === items.length); });
   };
   const lanesBar = () => {
     $("#sc-lane-row").hidden = SC.game === "board";
-    $("#sc-lanes").innerHTML = `<button type="button" data-lanes="all" aria-pressed="${SC.lanes === "all"}">All</button>` + pairs.map(p => `<button type="button" data-lanes="${p.p}" aria-pressed="${String(SC.lanes) === String(p.p)}">${p.lanes.join("–")}</button>`).join("");
+    if (SC.lanes === null || !pairs.some(p => String(p.p) === String(SC.lanes))) { const g = SC.game === "board" ? 0 : SC.game; SC.lanes = String((pairs.find(p => p.items.some(b => !got(b, g))) || pairs[0]).p); }
+    $("#sc-lanes").innerHTML = pairs.map(p => `<button type="button" data-lanes="${p.p}" aria-pressed="${String(SC.lanes) === String(p.p)}">Lanes ${p.lanes.join("–")}<small></small></button>`).join("");
+    const cur = $("#sc-lanes [aria-pressed=true]"); if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
   };
   const body = () => {
     lanesBar();
@@ -1325,7 +1330,7 @@ function wireScores() {
       <div class="table-wrap"><table class="sc-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scr</th><th>Total</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td class="num">${r.t.n ? i + 1 : "–"}</td><td><b>${esc(r.b.name)}</b><small>Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${Array.from({ length: ng }, (_, g) => `<td class="num g${g === r.t.drop ? " drop" : ""}">${typeof r.arr[g] === "number" ? r.arr[g] : "–"}</td>`).join("")}<td class="num">${r.t.scr || "–"}</td><td class="num"><b>${r.t.n ? r.t.hd : "–"}</b></td></tr>`).join("")}</tbody></table></div>`;
       counts(); return;
     }
-    const g = SC.game, show = pairs.filter(p => SC.lanes === "all" || String(p.p) === String(SC.lanes));
+    const g = SC.game, show = pairs.filter(p => String(p.p) === String(SC.lanes)), nxt = pairs[pairs.findIndex(p => String(p.p) === String(SC.lanes)) + 1];
     $("#sc-body").innerHTML = show.map(p => `
       <div class="sc-pair" data-pair="${pairs.indexOf(p)}" id="sc-pair-${p.p}">
         <div class="sc-pair-head"><h3>Lanes ${p.lanes[0]} &amp; ${p.lanes[1]}</h3><span class="tag"></span></div>
@@ -1337,7 +1342,8 @@ function wireScores() {
           <span class="sc-meta">${metaHTML(b, g)}</span>
           <span class="sc-flag ${cls}"${msg ? "" : " hidden"}>${esc(msg)}</span>
         </div>`; }).join("")}
-      </div>`).join("");
+      </div>`).join("") + `<div class="sc-next">${nxt ? `<button type="button" class="btn btn-primary" data-goto="${nxt.p}">Next: Lanes ${nxt.lanes.join("–")} →</button>` : `<button type="button" class="btn btn-primary" data-goto="board">Last pair · See standings →</button>`}</div>`;
+    $(".sc-next button").addEventListener("click", ev => { const v = ev.currentTarget.dataset.goto; if (v === "board") SC.game = "board"; else SC.lanes = v; body(); toTop(); const f = $("#sc-body input"); if (f && v !== "board") f.focus({ preventScroll: true }); });
     const inputs = [...document.querySelectorAll("#sc-body input")];
     inputs.forEach((inp, i) => {
       const row = inp.closest(".sc-b"), b = roster.find(x => x.id === row.dataset.b);
@@ -1358,8 +1364,8 @@ function wireScores() {
   };
   const toTop = () => { const bar = $(".sc-bar"), y = $(".sc-main").getBoundingClientRect().top + scrollY - bar.offsetHeight - $(".site-head").offsetHeight; if (scrollY > y) scrollTo(0, y); };
   if (innerWidth < 760) setTimeout(() => scrollTo(0, $(".sc-head").getBoundingClientRect().top + scrollY - $(".site-head").offsetHeight), 0);
-  $("#sc-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-squad]"); if (!b) return; SC.squad = +b.dataset.squad; SC.game = null; SC.lanes = "all"; route(); });
-  $("#sc-games").addEventListener("click", ev => { const b = ev.target.closest("[data-game]"); if (!b) return; SC.game = b.dataset.game === "board" ? "board" : +b.dataset.game; body(); toTop(); });
+  $("#sc-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-squad]"); if (!b) return; SC.squad = +b.dataset.squad; SC.game = null; SC.lanes = null; route(); });
+  $("#sc-games").addEventListener("click", ev => { const b = ev.target.closest("[data-game]"); if (!b) return; SC.game = b.dataset.game === "board" ? "board" : +b.dataset.game; SC.lanes = null; body(); toTop(); });
   $("#sc-lanes").addEventListener("click", ev => { const b = ev.target.closest("[data-lanes]"); if (!b) return; SC.lanes = b.dataset.lanes; body(); toTop(); });
   const rb = $("#sc-reset"); let armed = false;
   rb.addEventListener("click", () => {
