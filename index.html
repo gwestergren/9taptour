@@ -215,6 +215,7 @@ p { margin: 0; }
 @media (max-width: 880px) { .two-col { grid-template-columns: 1fr; } }
 
 .champ-list { display: grid; gap: 0; }
+#ruta-hert { scroll-margin-top: 90px; }
 .champ { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .champ:first-child { padding-top: 0; }
 .champ .date { font-family: var(--font-num); font-size: .82rem; color: var(--muted); width: 5.6em; }
@@ -580,7 +581,6 @@ const VIEWS = {
         </div>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#results">Full results</a>
-          <a class="btn btn-ghost" href="#schedule">See the schedule</a>
         </div>
       </div>
       <aside class="ticket" aria-label="Next tournament">
@@ -635,7 +635,7 @@ const VIEWS = {
             <tbody>${DATA.results.slice(0, 10).map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}"><td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5] + (DATA.progressivePaid[r[1]] || 0))}</td></tr>`).join("")}</tbody>
           </table></div>
           <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">Full results →</a></p>
-          <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}.</p></div>
+          <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}. <a class="link-more" href="#results/ruta-hert">Read her story →</a></p></div>
         </div>
       </div>
     </section>
@@ -693,12 +693,17 @@ const VIEWS = {
       </table></div>
       <p class="foot-note">Totals are four games of pinfall plus handicap. Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.</p>
     </section>
-    <section class="wrap section">
-      <div class="section-head"><h2>Other 2026 champions</h2></div>
-      <div class="champ-list" style="max-width:640px">${DATA.champions.slice(1).map(c => `
-        <div class="champ"><span class="date">${shortDate(c.date)}</span>
-          <div><div class="who">${esc(c.name)}</div><div class="where">${esc(c.where)} · 185 entries</div></div>
-          <span class="won num">${money(c.won)}</span></div>`).join("")}</div>
+    <section class="wrap section" id="ruta-hert">
+      <div class="section-head"><h2>Earlier in 2026</h2></div>
+      <article class="story-body">
+        <header class="story-head"><img class="champ-photo" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><div><p class="eyebrow">Bowlero South Seattle · March 1, 2026</p><h3 class="story-title">Ruta Hert wins by 13 pins as ladies go one-two</h3></div></header>
+        <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
+        <div class="facts">
+          <div class="fact"><b>185</b><span>Entries</span></div>
+          <div class="fact"><b>$13,606</b><span>Paid out</span></div>
+          <div class="fact"><b>${money(2460)}</b><span>To the winner</span></div>
+        </div>
+      </article>
     </section>
     <section class="wrap section">
       <div class="section-head"><h2>Results archive</h2><p>Every season back to 2002. These open the results on the current site.</p></div>
@@ -978,14 +983,15 @@ function wire(view) {
 }
 
 function route() {
-  const name = (location.hash || "#home").slice(1);
+  const [name, anchor] = (location.hash || "#home").slice(1).split("/");
   const alias = { "how-it-works": "rules" };
   const view = VIEWS[alias[name] || name] ? (alias[name] || name) : "home";
   $("#app").innerHTML = VIEWS[view]();
   document.querySelectorAll(".nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   wire(view);
   $("#nav").classList.remove("open"); $("#menu-btn").setAttribute("aria-expanded", "false");
-  window.scrollTo(0, 0);
+  const target = anchor && document.getElementById(anchor);
+  if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
 }
 $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.toggle("open"); $("#menu-btn").setAttribute("aria-expanded", String(o)); });
 window.addEventListener("hashchange", route);
