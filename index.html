@@ -1264,7 +1264,7 @@ const SC = {
   squad: 0, game: null, lanes: null,
   event() { return nextEvent; },
   games(e) { return /3 of 4/.test(e.tag || "") ? 4 : 3; },
-  key(e, sq) { return `9tap-scores2:${e.date}:${sq}`; },
+  key(e, sq) { return `9tap-scores3:${e.date}:${sq}`; },
   FIRST: ["Dave","Linda","Mike","Karen","Tony","Sharon","Ray","Debbie","Jim","Carla","Steve","Pam","Rick","Tina","Gary","Lori","Ron","Wendy","Don","Kim","Phil","Jenny","Mark","Rose","Al","Bev","Ed","Sue","Larry","Nancy"],
   LAST: ["Anderson","Nguyen","Kowalski","Ramirez","Olsen","Park","Thompson","Sato","Lindqvist","Morales","Becker","Haugen","Delgado","Fisher","Yamada","Jorgensen","Whitaker","Reyes","Dahl","Okafor","Brennan","Castillo","Pruitt","Moen","Larsen","Ito","Gallagher","Vu","Soto","Halvorsen"],
   roster(e, sq) {
@@ -1283,10 +1283,10 @@ const SC = {
   load(e, sq) {
     try { const v = JSON.parse(localStorage.getItem(SC.key(e, sq))); if (v && v.scores) return v; } catch (_) {}
     const v = { scores: {} };
-    if (sq === 0) { // demo: first squad already has Game 1 in, Game 2 under way
+    if (sq === 0) { // demo: first squad has Game 1 in; Games 2 and 3 are empty, ready to enter
       let s = 99;
       const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
-      SC.roster(e, sq).forEach((b, i) => { const g = [Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70)))]; if (i < 6) g[1] = Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70))); v.scores[b.id] = g; });
+      SC.roster(e, sq).forEach((b, i) => { const g = [Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70)))]; v.scores[b.id] = g; });
     }
     return v;
   },
