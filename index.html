@@ -169,7 +169,7 @@ p { margin: 0; }
 @media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
 
 /* Latest results on home */
-.latest { display: grid; gap: 0; max-width: 72ch; }
+.latest { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start; }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -177,7 +177,10 @@ p { margin: 0; }
 .story-head > div { min-width: 0; }
 .champ-photo { width: 126px; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: var(--radius); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); flex: none; }
 .champ-photo.sm { width: 72px; }
-.earlier { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+.earlier-card { display: grid; gap: 14px; }
+.earlier-card p { margin: 0; color: var(--muted); }
+.earlier-card .story-head { gap: 14px; }
+.ec-title { font-size: 1.5rem; line-height: 1.05; margin-top: 6px; }
 @media (max-width: 480px) { .story-head { flex-direction: column; align-items: flex-start; } .champ-photo { width: 110px; } }
 .story-title { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-top: 8px; }
 .story-body .lede { color: var(--ink); font-size: 1.1rem; }
@@ -629,7 +632,15 @@ const VIEWS = {
             <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
           </ul>
         </article>
-        <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}. <a class="link-more" href="#results/ruta-hert">Read her story →</a></p></div>
+        <aside class="panel earlier-card">
+          <header class="story-head"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><div><p class="eyebrow">Earlier in 2026 · March 1 · Bowlero South Seattle</p><h3 class="ec-title">Ruta Hert wins by 13 pins as ladies go one-two</h3></div></header>
+          <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
+          <div class="facts">
+            <div class="fact"><b>185</b><span>Entries</span></div>
+            <div class="fact"><b>$13,606</b><span>Paid out</span></div>
+            <div class="fact"><b>${money(2460)}</b><span>To the winner</span></div>
+          </div>
+        </aside>
       </div>
     </section>
 
