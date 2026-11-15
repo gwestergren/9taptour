@@ -89,7 +89,7 @@ p { margin: 0; }
   .b-title { width: 240px; }
   .b-address { font-size: .8rem; }
   .banner-sponsors { gap: 6px; max-width: 100%; }
-  .banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 calc((100% - 12px) / 3); height: 46px; padding: 6px 8px; }
+  .banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 calc((100% - 6px) / 2); height: 46px; padding: 6px 8px; }
   .banner-sponsors img { max-height: 26px; }
   .word-logo, .word-logo.fq { font-size: .9rem; }
   .word-logo small { font-size: .5rem; letter-spacing: .2em; }
@@ -457,6 +457,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
       <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
       <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
       <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
+      <span class="no-link" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></span>
       <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
       <a class="word-logo fq" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">Fitness<span>Quest</span></a>
     </nav>
@@ -981,7 +982,7 @@ const VIEWS = {
         <div><img src="img/champ-ruta-hert.jpg" alt=""><p><b>Ruta Hert</b>1st, Bowlero South Seattle<br>Won ${money(2460)}</p></div>
       </div>
       <footer class="fl-foot"><b>9taptour.com</b><span>Message line (253) 987-7975</span><span>PO Box 931, Sumner, WA 98390</span></footer>
-      <div class="fl-sponsors">${["miller-lite","dexter","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
+      <div class="fl-sponsors">${["miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
     </div></section>`;
   },
 
