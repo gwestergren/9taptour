@@ -642,20 +642,23 @@ const VIEWS = {
   },
 
   schedule() {
-    const nov = DATA.events.filter(e => e.date.startsWith("2026-11")), dec = DATA.events.filter(e => e.date.startsWith("2026-12"));
+    const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const upcoming = DATA.events.filter(e => eventStatus(e) !== "past");
+    const byMonth = [];
+    upcoming.forEach(e => { const k = e.date.slice(0, 7); let g = byMonth.find(x => x.k === k); if (!g) byMonth.push(g = { k, name: MONTHS[parse(e.date).getMonth()], items: [] }); g.items.push(e); });
+    const sections = byMonth.length ? byMonth.map(g => `
+    <section class="wrap section">
+      <div class="section-head"><h2>${g.name}</h2></div>
+      <div class="event-rows">${g.items.map(eventRow).join("")}</div>
+    </section>`).join("") : `
+    <section class="wrap section"><div class="panel"><h3>No tournaments scheduled yet</h3><p class="meta" style="margin-top:6px">The next schedule will be posted here. Past events are on the <a class="link-more" href="#results">Results</a> page.</p></div></section>`;
     return `
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">Fall 2026</p><h1>Schedule</h1>
       <p>Squad times are local. Bowl as many squads as you like, but you can cash only once per tournament. Dec 16 and Dec 26 are bye weeks.</p>
-    </div></section>
-    <section class="wrap section">
-      <div class="section-head"><h2>November</h2></div>
-      <div class="event-rows">${nov.map(eventRow).join("")}</div>
-    </section>
-    <section class="wrap section">
-      <div class="section-head"><h2>December</h2></div>
-      <div class="event-rows">${dec.map(eventRow).join("")}</div>
-      <p class="foot-note">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter.</p>
+    </div></section>${sections}
+    <section class="wrap" style="padding-top:12px">
+      <p class="foot-note">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter. Looking for a past event? See <a class="link-more" href="#results">Results</a>.</p>
     </section>`;
   },
 
