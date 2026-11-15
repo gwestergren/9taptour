@@ -490,6 +490,55 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
   .fl-addr, .fl-table th:last-child { display: table-cell !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+/* Rover score entry (#scores): phone-first, one game at a time, grouped by lane pair. */
+.sc-head { padding-block: 26px 22px; }
+.sc-head h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+.sc-bar { position: sticky; top: var(--sc-top, 60px); z-index: 15; background: var(--bg); border-bottom: 1px solid var(--line); padding-block: 10px; box-shadow: 0 6px 12px -10px rgba(0,0,0,.35); }
+.sc-row { display: flex; gap: 8px; align-items: center; }
+.sc-row + .sc-row { margin-top: 8px; }
+.sc-lbl { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); min-width: 46px; }
+.sc-seg { display: flex; flex: 1; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.sc-seg::-webkit-scrollbar { display: none; }
+.sc-seg button { flex: 1 0 auto; min-height: 44px; padding: 6px 12px; font: 700 .95rem/1.1 var(--font-body); border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.sc-seg button small { display: block; font: 500 .7rem/1.2 var(--font-num); color: var(--muted); margin-top: 2px; }
+.sc-seg button[aria-pressed="true"] { background: var(--deep); border-color: var(--deep); color: var(--on-deep); }
+.sc-seg button[aria-pressed="true"] small { color: var(--maple); }
+.sc-seg button.done:not([aria-pressed="true"]) small { color: var(--good); }
+.sc-short { display: none; }
+@media (max-width: 480px) { .sc-long { display: none; } .sc-short { display: inline; } #sc-games button { padding-inline: 8px; } }
+.sc-lanes { flex-wrap: nowrap; }
+.sc-lanes button { flex: 0 0 auto; min-width: 64px; }
+.sc-main { padding-block: 16px 40px; }
+.sc-pair { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; scroll-margin-top: calc(var(--sc-top, 60px) + 140px); }
+.sc-pair-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: var(--deep); color: var(--on-deep); border-bottom: 4px solid var(--maple); }
+.sc-pair-head h3 { font-size: 1.45rem; text-transform: uppercase; }
+.sc-pair-head .tag { background: rgba(255,255,255,.12); color: var(--on-deep); }
+.sc-pair-head .tag.good { background: var(--good); color: #fff; }
+.sc-b { display: grid; grid-template-columns: 34px minmax(0, 1fr) 92px; gap: 4px 10px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.sc-b:first-of-type { border-top: 0; }
+.sc-lane { grid-row: span 2; align-self: start; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--maple) 45%, transparent); font: 700 .95rem var(--font-num); }
+.sc-name { font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.sc-meta { grid-column: 2; font-size: .8rem; color: var(--muted); line-height: 1.35; }
+.sc-meta .num { color: var(--ink); }
+.sc-meta .tot { font-weight: 700; color: var(--accent); }
+.sc-in { grid-column: 3; grid-row: 1 / span 2; }
+.sc-in input { font: 700 1.6rem/1 var(--font-num); text-align: center; padding: 10px 4px; min-height: 56px; }
+.sc-in input::placeholder { color: color-mix(in srgb, var(--muted) 55%, transparent); font-weight: 500; }
+.sc-in input.bad { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.sc-in input.warn { border-color: #c98a12; background: color-mix(in srgb, #e0a526 14%, var(--surface)); }
+.sc-flag { grid-column: 2 / -1; font-size: .78rem; font-weight: 600; color: var(--accent); }
+.sc-flag.warn { color: #a86f00; }
+.sc-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.sc-tools .btn { min-height: 44px; }
+.sc-board { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: .9rem; }
+.sc-board th, .sc-board td { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+.sc-board th { position: static; }
+.sc-board th:nth-child(2), .sc-board td:nth-child(2) { text-align: left; }
+.sc-board td:nth-child(2) b { display: block; }
+.sc-board td small { color: var(--muted); }
+.sc-board .g { color: var(--muted); }
+.sc-board .drop { text-decoration: line-through; opacity: .6; }
+@media (max-width: 420px) { .sc-board .g { display: none; } }
 </style>
 
 </head>
@@ -565,6 +614,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
           <li><a href="#join">Become a member</a></li>
           <li><a href="https://www.youtube.com/@9-taptourbowling227" target="_blank" rel="noopener">Videos on YouTube</a></li>
           <li><a href="#contact">Contact us</a></li>
+          <li><a href="#scores">Rover score entry (staff)</a></li>
           <li><a href="https://www.9taptour.com/9tap.html" target="_blank" rel="noopener">Current website</a></li>
         </ul>
       </div>
@@ -841,6 +891,25 @@ const VIEWS = {
     <section class="wrap section">
       <div class="section-head"><h2>Results archive</h2><p>Every season back to 2002. These open the results on the current site.</p></div>
       <div class="archive">${DATA.archive.slice().reverse().map(([y, u]) => `<a href="${u}" target="_blank" rel="noopener">${y}</a>`).join("")}</div>
+    </section>`;
+  },
+
+  scores() {
+    const e = SC.event(), sq = SC.squad, ng = SC.games(e);
+    return `
+    <section class="page-head sc-head"><div class="wrap">
+      <p class="eyebrow">Rover score entry · Tour staff</p><h1>Enter scores</h1>
+      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}${ng > 3 ? " · Best 3 of 4" : ""}</p>
+    </div></section>
+    <div class="sc-bar"><div class="wrap">
+      <div class="sc-row"><span class="sc-lbl">Squad</span><div class="sc-seg" id="sc-squads">${e.squads.map((s, i) => `<button type="button" data-squad="${i}" aria-pressed="${i === sq}">${esc(s)}</button>`).join("")}</div></div>
+      <div class="sc-row"><span class="sc-lbl">Game</span><div class="sc-seg" id="sc-games">${Array.from({ length: ng }, (_, g) => `<button type="button" data-game="${g}"><span class="sc-long">Game </span><span class="sc-short">G</span>${g + 1}<small></small></button>`).join("")}<button type="button" data-game="board">Standings<small>&nbsp;</small></button></div></div>
+      <div class="sc-row" id="sc-lane-row"><span class="sc-lbl">Lanes</span><div class="sc-seg sc-lanes" id="sc-lanes"></div></div>
+    </div></div>
+    <section class="wrap sc-main">
+      <div id="sc-body"></div>
+      <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
+      <p class="foot-note">Prototype: sample bowlers, and scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
     </section>`;
   },
 
@@ -1184,7 +1253,119 @@ function openChamp(photo) {
   d.querySelector(".dlg-more a").addEventListener("click", () => d.close());
   d.showModal();
 }
+/* ---- Rover score entry ---- */
+const SC = {
+  squad: 0, game: null, lanes: "all",
+  event() { return nextEvent; },
+  games(e) { return /3 of 4/.test(e.tag || "") ? 4 : 3; },
+  key(e, sq) { return `9tap-scores:${e.date}:${sq}`; },
+  FIRST: ["Dave","Linda","Mike","Karen","Tony","Sharon","Ray","Debbie","Jim","Carla","Steve","Pam","Rick","Tina","Gary","Lori","Ron","Wendy","Don","Kim","Phil","Jenny","Mark","Rose","Al","Bev","Ed","Sue","Larry","Nancy"],
+  LAST: ["Anderson","Nguyen","Kowalski","Ramirez","Olsen","Park","Thompson","Sato","Lindqvist","Morales","Becker","Haugen","Delgado","Fisher","Yamada","Jorgensen","Whitaker","Reyes","Dahl","Okafor","Brennan","Castillo","Pruitt","Moen","Larsen","Ito","Gallagher","Vu","Soto","Halvorsen"],
+  roster(e, sq) {
+    let s = (parse(e.date).getDate() * 31 + sq * 7 + 3) >>> 0;
+    const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
+    const lanes = 10 + sq * 2, out = [], used = new Set();
+    for (let lane = 1; lane <= lanes; lane++) for (let k = 0; k < 2; k++) {
+      let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
+      const avg = 150 + Math.floor(rnd() * 56), bonus = rnd() < .35 ? 1 + Math.floor(rnd() * 3) : 0;
+      out.push({ id: lane + "-" + k, lane: lane + 12, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
+    }
+    return out;
+  },
+  load(e, sq) {
+    try { const v = JSON.parse(localStorage.getItem(SC.key(e, sq))); if (v && v.scores) return v; } catch (_) {}
+    const v = { scores: {} };
+    if (sq === 0) { // demo: first squad already has Game 1 in, Game 2 under way
+      let s = 99;
+      const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
+      SC.roster(e, sq).forEach((b, i) => { const g = [Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70)))]; if (i < 6) g[1] = Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70))); v.scores[b.id] = g; });
+    }
+    return v;
+  },
+  save(e, sq, v) { try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} },
+  counted(arr, ng) { const g = arr.filter(x => typeof x === "number"); if (ng > 3 && g.length === 4) { const lo = Math.min(...g); return { sum: g.reduce((a, b) => a + b, 0) - lo, drop: arr.indexOf(lo), n: 3 }; } return { sum: g.reduce((a, b) => a + b, 0), drop: -1, n: Math.min(g.length, 3) }; }
+};
+function wireScores() {
+  const e = SC.event(), ng = SC.games(e), sq = SC.squad;
+  const roster = SC.roster(e, sq), state = SC.load(e, sq);
+  const pairs = []; roster.forEach(b => { const p = Math.floor((b.lane - 1) / 2); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [p * 2 + 1, p * 2 + 2], items: [] }); g.items.push(b); });
+  const got = (b, g) => typeof (state.scores[b.id] || [])[g] === "number";
+  const doneCount = g => roster.filter(b => got(b, g)).length;
+  if (SC.game === null || (SC.game !== "board" && SC.game >= ng)) { SC.game = 0; for (let g = 0; g < ng; g++) { SC.game = g; if (doneCount(g) < roster.length) break; } }
+  const top = () => document.documentElement.style.setProperty("--sc-top", ($(".site-head").offsetHeight) + "px");
+  top(); window.addEventListener("resize", top, { passive: true });
+  const totals = b => { const c = SC.counted(state.scores[b.id] || [], ng); return { scr: c.sum, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }; };
+  const metaHTML = (b, g) => {
+    const arr = state.scores[b.id] || [], prev = [];
+    for (let i = 0; i < ng; i++) if (i !== g) prev.push(`G${i + 1} <span class="num">${typeof arr[i] === "number" ? arr[i] : "–"}</span>`);
+    const t = totals(b);
+    return `Avg <span class="num">${b.avg}</span> · Hdcp <span class="num">${b.hcp}</span><br>${prev.join(" · ")}${t.n ? ` · <span class="tot">Total <span class="num">${t.hd}</span></span>` : ""}`;
+  };
+  const check = (b, v) => { if (v === "") return ["", ""]; const n = Number(v); if (!Number.isInteger(n) || n < 0 || n > 300) return ["bad", "A game is 0 to 300."]; if (Math.abs(n - b.avg) >= 85) return ["warn", `Double-check: ${n} vs a ${b.avg} average.`]; return ["", ""]; };
+  const counts = () => {
+    document.querySelectorAll("#sc-games [data-game]").forEach(btn => {
+      const g = btn.dataset.game; btn.setAttribute("aria-pressed", String(String(SC.game) === g));
+      if (g === "board") return; const d = doneCount(+g); btn.querySelector("small").textContent = `${d}/${roster.length}`; btn.classList.toggle("done", d === roster.length);
+    });
+    document.querySelectorAll(".sc-pair").forEach(p => { if (SC.game === "board") return; const items = pairs[+p.dataset.pair].items, d = items.filter(b => got(b, SC.game)).length, t = p.querySelector(".sc-pair-head .tag"); t.textContent = `${d} of ${items.length} in`; t.classList.toggle("good", d === items.length); });
+  };
+  const lanesBar = () => {
+    $("#sc-lane-row").hidden = SC.game === "board";
+    $("#sc-lanes").innerHTML = `<button type="button" data-lanes="all" aria-pressed="${SC.lanes === "all"}">All</button>` + pairs.map(p => `<button type="button" data-lanes="${p.p}" aria-pressed="${String(SC.lanes) === String(p.p)}">${p.lanes.join("–")}</button>`).join("");
+  };
+  const body = () => {
+    lanesBar();
+    if (SC.game === "board") {
+      const rows = roster.map(b => ({ b, t: totals(b), arr: state.scores[b.id] || [] })).sort((x, y) => y.t.hd - x.t.hd || y.t.n - x.t.n);
+      $("#sc-body").innerHTML = `<div class="section-head" style="margin-bottom:12px"><h2>Squad ${esc(e.squads[sq])} standings</h2><p>With handicap${ng > 3 ? ", best 3 of 4" : ""}. Updates as rovers enter games.</p></div>
+      <div class="table-wrap"><table class="sc-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scr</th><th>Total</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td class="num">${r.t.n ? i + 1 : "–"}</td><td><b>${esc(r.b.name)}</b><small>Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${Array.from({ length: ng }, (_, g) => `<td class="num g${g === r.t.drop ? " drop" : ""}">${typeof r.arr[g] === "number" ? r.arr[g] : "–"}</td>`).join("")}<td class="num">${r.t.scr || "–"}</td><td class="num"><b>${r.t.n ? r.t.hd : "–"}</b></td></tr>`).join("")}</tbody></table></div>`;
+      counts(); return;
+    }
+    const g = SC.game, show = pairs.filter(p => SC.lanes === "all" || String(p.p) === String(SC.lanes));
+    $("#sc-body").innerHTML = show.map(p => `
+      <div class="sc-pair" data-pair="${pairs.indexOf(p)}" id="sc-pair-${p.p}">
+        <div class="sc-pair-head"><h3>Lanes ${p.lanes[0]} &amp; ${p.lanes[1]}</h3><span class="tag"></span></div>
+        ${p.items.map(b => { const v = (state.scores[b.id] || [])[g], val = typeof v === "number" ? v : "", [cls, msg] = check(b, String(val)); return `
+        <div class="sc-b" data-b="${b.id}">
+          <span class="sc-lane" title="Lane ${b.lane}">${b.lane}</span>
+          <span class="sc-name">${esc(b.name)}</span>
+          <label class="sc-in"><span class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Game ${g + 1} score for ${esc(b.name)}, lane ${b.lane}</span><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" enterkeyhint="next" placeholder="G${g + 1}" value="${val}" class="${cls}"></label>
+          <span class="sc-meta">${metaHTML(b, g)}</span>
+          <span class="sc-flag ${cls}"${msg ? "" : " hidden"}>${esc(msg)}</span>
+        </div>`; }).join("")}
+      </div>`).join("");
+    const inputs = [...document.querySelectorAll("#sc-body input")];
+    inputs.forEach((inp, i) => {
+      const row = inp.closest(".sc-b"), b = roster.find(x => x.id === row.dataset.b);
+      const next = () => { const n = inputs[i + 1]; if (n) { n.focus(); n.select(); } else inp.blur(); };
+      inp.addEventListener("input", () => {
+        inp.value = inp.value.replace(/\D/g, "").slice(0, 3);
+        const [cls, msg] = check(b, inp.value); inp.className = cls;
+        const f = row.querySelector(".sc-flag"); f.className = "sc-flag " + cls; f.textContent = msg; f.hidden = !msg;
+        const arr = state.scores[b.id] = state.scores[b.id] || [];
+        if (inp.value !== "" && cls !== "bad") arr[g] = Number(inp.value); else arr[g] = null;
+        SC.save(e, sq, state); row.querySelector(".sc-meta").innerHTML = metaHTML(b, g); counts();
+        if (inp.value.length === 3 && cls === "") next();
+      });
+      inp.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); next(); } });
+      inp.addEventListener("focus", () => inp.select());
+    });
+    counts();
+  };
+  const toTop = () => { const bar = $(".sc-bar"), y = $(".sc-main").getBoundingClientRect().top + scrollY - bar.offsetHeight - $(".site-head").offsetHeight; if (scrollY > y) scrollTo(0, y); };
+  if (innerWidth < 760) setTimeout(() => scrollTo(0, $(".sc-head").getBoundingClientRect().top + scrollY - $(".site-head").offsetHeight), 0);
+  $("#sc-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-squad]"); if (!b) return; SC.squad = +b.dataset.squad; SC.game = null; SC.lanes = "all"; route(); });
+  $("#sc-games").addEventListener("click", ev => { const b = ev.target.closest("[data-game]"); if (!b) return; SC.game = b.dataset.game === "board" ? "board" : +b.dataset.game; body(); toTop(); });
+  $("#sc-lanes").addEventListener("click", ev => { const b = ev.target.closest("[data-lanes]"); if (!b) return; SC.lanes = b.dataset.lanes; body(); toTop(); });
+  const rb = $("#sc-reset"); let armed = false;
+  rb.addEventListener("click", () => {
+    if (!armed) { armed = true; rb.textContent = "Tap again to reset this squad"; setTimeout(() => { armed = false; rb.textContent = "Reset sample squad"; }, 3000); return; }
+    try { localStorage.removeItem(SC.key(e, sq)); } catch (_) {} SC.game = null; route();
+  });
+  body();
+}
 function wire(view) {
+  if (view === "scores") wireScores();
   if (view === "home") {
     const btns = document.querySelectorAll(".mp-btn");
     btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
