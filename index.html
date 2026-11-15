@@ -392,6 +392,46 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 @media (max-width: 700px) { .foot-grid { grid-template-columns: 1fr; } }
 
 .view { display: block; }
+
+/* Printable schedule flyer */
+.flyer { max-width: 8.5in; margin: 0 auto; background: #fff; color: #10242a; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 24px rgba(16,36,42,.12); padding: .45in .5in; }
+.fl-head { display: grid; grid-template-columns: 84px 1fr 84px; align-items: center; gap: 16px; text-align: center; border-bottom: 3px solid #c7362b; padding-bottom: 12px; }
+.fl-logo, .fl-spon { width: 84px; height: auto; }
+.fl-kicker { margin: 0; font: italic 700 .8rem Georgia, serif; color: #1d3c8f; letter-spacing: .02em; }
+.fl-title h1 { margin: 2px 0; font-family: var(--font-display); font-size: 2.6rem; line-height: 1; text-transform: uppercase; color: #c7362b; }
+.fl-season { margin: 0; font-weight: 800; font-size: .95rem; letter-spacing: .14em; text-transform: uppercase; }
+.fl-facts { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: .82rem; color: #3a4d52; }
+.fl-facts b { color: #10242a; font-family: var(--font-num); }
+.fl-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.fl-table th { text-align: left; font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: #10242a; padding: 6px 8px; position: static; }
+.fl-table td { padding: 7px 8px; border-bottom: 1px solid #d9dfe0; vertical-align: top; }
+.fl-table tbody tr:nth-child(even) td { background: #f4f6f6; }
+.fl-table td span, .fl-table td em { display: block; color: #56686d; font-size: .76rem; }
+.fl-table td em { color: #c7362b; font-style: normal; font-weight: 700; }
+.fl-date b { font-family: var(--font-num); font-size: .95rem; }
+.fl-sq { font-family: var(--font-num); white-space: nowrap; }
+.fl-addr { font-size: .78rem; }
+.fl-table tr.inv td { background: #fbefee !important; }
+.fl-note { margin: 10px 0 14px; font-size: .78rem; color: #3a4d52; }
+.fl-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fl-champs > div { display: flex; gap: 10px; align-items: center; border: 1px solid #d9dfe0; border-radius: 6px; padding: 8px; }
+.fl-champs img { width: 64px; height: 57px; object-fit: cover; border-radius: 4px; }
+.fl-champs p { margin: 0; font-size: .78rem; color: #3a4d52; }
+.fl-champs b { display: block; color: #10242a; font-size: .9rem; }
+.fl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 14px; padding: 8px 12px; background: #10242a; color: #fff; border-radius: 4px; font-size: .8rem; }
+.fl-foot b { color: #f2c66d; }
+.fl-sponsors { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 8px; margin-top: 10px; }
+.fl-sponsors img { max-height: 30px; width: auto; max-width: 110px; }
+@media (max-width: 640px) { .flyer { padding: 18px 14px; } .fl-head { grid-template-columns: 52px 1fr 52px; gap: 8px; } .fl-logo, .fl-spon { width: 52px; } .fl-title h1 { font-size: 1.9rem; } .fl-addr, .fl-table th:last-child { display: none; } .fl-champs { grid-template-columns: 1fr; } }
+@media print {
+  @page { size: letter; margin: .35in; }
+  body { background: #fff !important; }
+  .banner, .site-head, .site-foot, .no-print { display: none !important; }
+  .wrap.section { padding: 0 !important; max-width: none; }
+  .flyer { border: 0; box-shadow: none; padding: 0; max-width: none; }
+  .fl-addr, .fl-table th:last-child { display: table-cell !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 
 </head>
@@ -478,13 +518,13 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 const DATA = {
   jackpot: 11502, jackpotRecord: 12626, progressive: 2681,
   events: [
-    { date: "2026-11-01", center: "Kenmore Lanes", city: "Kenmore", squads: ["10:00", "12:00", "2:00"] },
-    { date: "2026-11-07", center: "Westside Lanes", city: "Olympia", squads: ["11:00", "1:30", "4:00"], tag: "Best 3 of 4" },
-    { date: "2026-11-15", center: "Bowlero Paradise", city: "Parkland", squads: ["10:00", "12:30", "3:00"], tag: "Veteran's Day Special" },
+    { date: "2026-11-01", center: "Kenmore Lanes", city: "Kenmore", addr: "7638 Bothell Way", phone: "425-486-5555", squads: ["10:00", "12:00", "2:00"] },
+    { date: "2026-11-07", center: "Westside Lanes", city: "Olympia", addr: "2200 Garfield Ave NW", phone: "360-943-2400", squads: ["11:00", "1:30", "4:00"], tag: "Best 3 of 4" },
+    { date: "2026-11-15", center: "Bowlero Paradise", city: "Parkland", addr: "12505 Pacific Ave", phone: "253-537-6012", squads: ["10:00", "12:30", "3:00"], tag: "Veteran's Day Special" },
     { date: "2026-11-22", center: "Angel of the Winds", city: "Arlington", squads: ["11:00", "1:30", "4:00"] },
     { date: "2026-11-29", center: "Lucky Strike Lynnwood", city: "Lynnwood", squads: ["11:00", "1:00", "3:00"] },
-    { date: "2026-12-06", center: "HiJoy Bowl", city: "Port Orchard", squads: ["10:00", "12:00", "2:00"] },
-    { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", squads: ["9:00"], tag: "Year End Championship", invite: true }
+    { date: "2026-12-06", center: "HiJoy Bowl", city: "Port Orchard", addr: "1011 Bethel Ave", phone: "360-876-8111", squads: ["10:00", "12:00", "2:00"] },
+    { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
     { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613 },
@@ -691,6 +731,7 @@ const VIEWS = {
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">Fall 2026</p><h1>Schedule</h1>
       <p>Squad times are local. Bowl as many squads as you like, but you can cash only once per tournament. Dec 16 and Dec 26 are bye weeks.</p>
+      <p style="margin-top:14px"><a class="btn btn-primary" href="#print-schedule">Printable schedule</a></p>
     </div></section>${sections}
     <section class="wrap" style="padding-top:12px">
       <p class="foot-note" style="max-width:none">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter. Looking for a past event? See <a class="link-more" href="#results">Results</a>.</p>
@@ -907,6 +948,40 @@ const VIEWS = {
           </ul>
         </div>
       </div>
+    </div></section>`;
+  },
+
+  "print-schedule"() {
+    const ev = DATA.events.filter(e => eventStatus(e) !== "past");
+    const day = d => parse(d).toLocaleDateString("en-US", { weekday: "long" });
+    const md = d => parse(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `
+    <section class="wrap section no-print" style="padding-bottom:0">
+      <div class="section-head"><h2>Printable schedule</h2><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="button" onclick="window.print()">Print or save as PDF</button><a class="btn btn-ghost" href="#schedule">Back to schedule</a></div></div>
+      <p class="meta" style="margin:0">One letter-size page, built from the same schedule as the website, so it is always current.</p>
+    </section>
+    <section class="wrap section"><div class="flyer">
+      <header class="fl-head">
+        <img src="img/tour-logo.png" alt="" class="fl-logo">
+        <div class="fl-title"><p class="fl-kicker">Top tournaments for the average bowler</p><h1>9-Tap Tour</h1><p class="fl-season">Fall 2026 Schedule</p></div>
+        <img src="img/storm.png" alt="Storm" class="fl-spon">
+      </header>
+      <ul class="fl-facts"><li>Handicap singles · 125 to 210 averages</li><li>9-Tap Jackpot <b>${money(DATA.jackpot)}</b></li><li>Progressive Pot <b>${money(DATA.progressive)}</b></li><li>1 in 5 cash · USBC certified</li></ul>
+      <table class="fl-table">
+        <thead><tr><th>Date</th><th>Bowling center</th><th>Squads</th><th>Address &amp; phone</th></tr></thead>
+        <tbody>${ev.map(e => `<tr class="${e.invite ? "inv" : ""}">
+          <td class="fl-date"><b>${md(e.date)}</b><span>${day(e.date)}</span></td>
+          <td><b>${esc(e.center)}</b><span>${esc(e.city)}</span>${e.tag ? `<em>${esc(e.tag)}${e.invite ? " · invitation only" : ""}</em>` : ""}</td>
+          <td class="fl-sq">${e.squads.join(" · ")}</td>
+          <td class="fl-addr">${e.addr ? `${esc(e.addr)}<span>${esc(e.city)} · ${esc(e.phone)}</span>` : `<span>${esc(e.city)}</span>`}</td></tr>`).join("")}</tbody>
+      </table>
+      <p class="fl-note">Byes: Dec 16 and Dec 26. Arrive an hour early to sign up as a new member ($25). You can cash once per tournament. Look for the next schedule on the website.</p>
+      <div class="fl-champs">
+        <div><img src="img/champ-michael-miller.jpg" alt=""><p><b>Michael Miller</b>1st, Bowlero Paradise<br>Won ${money(2613)}</p></div>
+        <div><img src="img/champ-ruta-hert.jpg" alt=""><p><b>Ruta Hert</b>1st, Bowlero South Seattle<br>Won ${money(2460)}</p></div>
+      </div>
+      <footer class="fl-foot"><b>9taptour.com</b><span>Message line (253) 987-7975</span><span>PO Box 931, Sumner, WA 98390</span></footer>
+      <div class="fl-sponsors">${["miller-lite","dexter","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
     </div></section>`;
   },
 
