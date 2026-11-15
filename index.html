@@ -89,7 +89,7 @@ p { margin: 0; }
   .b-title { width: 240px; }
   .b-address { font-size: .8rem; }
   .banner-sponsors { gap: 6px; max-width: 100%; }
-  .banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 calc((100% - 12px) / 3); height: 46px; padding: 6px 8px; }
+  .banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 calc((100% - 6px) / 2); height: 46px; padding: 6px 8px; }
   .banner-sponsors img { max-height: 26px; }
   .word-logo, .word-logo.fq { font-size: .9rem; }
   .word-logo small { font-size: .5rem; letter-spacing: .2em; }
@@ -176,7 +176,20 @@ p { margin: 0; }
 @media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
 
 /* Latest results on home */
-.latest { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start; }
+.latest { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+.latest .side-pots { margin: 0; padding: 0 0 0 24px; border-top: 0; border-left: 1px solid var(--line); }
+@media (max-width: 880px) { .latest .side-pots { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
+.month-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-btn { font: 600 .85rem var(--font-body); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.mp-btn[aria-pressed="true"] { background: var(--deep); color: #fff; border-color: var(--deep); }
+.champ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.champ-card { display: grid; gap: 10px; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: inherit; }
+a.champ-card:hover { border-color: var(--accent); }
+.champ-card img { width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 6px; }
+.champ-card b { display: block; font-family: var(--font-display); font-size: 1.35rem; text-transform: uppercase; line-height: 1.05; }
+.champ-card span { display: block; font-size: .85rem; color: var(--muted); }
+.champ-card .won { color: var(--ink); font-family: var(--font-num); font-weight: 600; margin-top: 4px; }
+@media (max-width: 560px) { .champ-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .champ-card b { font-size: 1.1rem; } }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -392,6 +405,46 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 @media (max-width: 700px) { .foot-grid { grid-template-columns: 1fr; } }
 
 .view { display: block; }
+
+/* Printable schedule flyer */
+.flyer { max-width: 8.5in; margin: 0 auto; background: #fff; color: #10242a; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 24px rgba(16,36,42,.12); padding: .45in .5in; }
+.fl-head { display: grid; grid-template-columns: 84px 1fr 84px; align-items: center; gap: 16px; text-align: center; border-bottom: 3px solid #c7362b; padding-bottom: 12px; }
+.fl-logo, .fl-spon { width: 84px; height: auto; }
+.fl-kicker { margin: 0; font: italic 700 .8rem Georgia, serif; color: #1d3c8f; letter-spacing: .02em; }
+.fl-title h1 { margin: 2px 0; font-family: var(--font-display); font-size: 2.6rem; line-height: 1; text-transform: uppercase; color: #c7362b; }
+.fl-season { margin: 0; font-weight: 800; font-size: .95rem; letter-spacing: .14em; text-transform: uppercase; }
+.fl-facts { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; font-size: .82rem; color: #3a4d52; }
+.fl-facts b { color: #10242a; font-family: var(--font-num); }
+.fl-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.fl-table th { text-align: left; font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: #fff; background: #10242a; padding: 6px 8px; position: static; }
+.fl-table td { padding: 7px 8px; border-bottom: 1px solid #d9dfe0; vertical-align: top; }
+.fl-table tbody tr:nth-child(even) td { background: #f4f6f6; }
+.fl-table td span, .fl-table td em { display: block; color: #56686d; font-size: .76rem; }
+.fl-table td em { color: #c7362b; font-style: normal; font-weight: 700; }
+.fl-date b { font-family: var(--font-num); font-size: .95rem; }
+.fl-sq { font-family: var(--font-num); white-space: nowrap; }
+.fl-addr { font-size: .78rem; }
+.fl-table tr.inv td { background: #fbefee !important; }
+.fl-note { margin: 10px 0 14px; font-size: .78rem; color: #3a4d52; }
+.fl-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fl-champs > div { display: flex; gap: 10px; align-items: center; border: 1px solid #d9dfe0; border-radius: 6px; padding: 8px; }
+.fl-champs img { width: 64px; height: 57px; object-fit: cover; border-radius: 4px; }
+.fl-champs p { margin: 0; font-size: .78rem; color: #3a4d52; }
+.fl-champs b { display: block; color: #10242a; font-size: .9rem; }
+.fl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 14px; padding: 8px 12px; background: #10242a; color: #fff; border-radius: 4px; font-size: .8rem; }
+.fl-foot b { color: #f2c66d; }
+.fl-sponsors { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 8px; margin-top: 10px; }
+.fl-sponsors img { max-height: 30px; width: auto; max-width: 110px; }
+@media (max-width: 640px) { .flyer { padding: 18px 14px; } .fl-head { grid-template-columns: 52px 1fr 52px; gap: 8px; } .fl-logo, .fl-spon { width: 52px; } .fl-title h1 { font-size: 1.9rem; } .fl-addr, .fl-table th:last-child { display: none; } .fl-champs { grid-template-columns: 1fr; } }
+@media print {
+  @page { size: letter; margin: .35in; }
+  body { background: #fff !important; }
+  .banner, .site-head, .site-foot, .no-print { display: none !important; }
+  .wrap.section { padding: 0 !important; max-width: none; }
+  .flyer { border: 0; box-shadow: none; padding: 0; max-width: none; }
+  .fl-addr, .fl-table th:last-child { display: table-cell !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 
 </head>
@@ -417,6 +470,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
       <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
       <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
       <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
+      <a href="https://raincitybowlingsupply.com/" target="_blank" rel="noopener" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></a>
       <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
       <a class="word-logo fq" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">Fitness<span>Quest</span></a>
     </nav>
@@ -478,17 +532,21 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 const DATA = {
   jackpot: 11502, jackpotRecord: 12626, progressive: 2681,
   events: [
-    { date: "2026-11-01", center: "Kenmore Lanes", city: "Kenmore", squads: ["10:00", "12:00", "2:00"] },
-    { date: "2026-11-07", center: "Westside Lanes", city: "Olympia", squads: ["11:00", "1:30", "4:00"], tag: "Best 3 of 4" },
-    { date: "2026-11-15", center: "Bowlero Paradise", city: "Parkland", squads: ["10:00", "12:30", "3:00"], tag: "Veteran's Day Special" },
-    { date: "2026-11-22", center: "Angel of the Winds", city: "Arlington", squads: ["11:00", "1:30", "4:00"] },
-    { date: "2026-11-29", center: "Lucky Strike Lynnwood", city: "Lynnwood", squads: ["11:00", "1:00", "3:00"] },
-    { date: "2026-12-06", center: "HiJoy Bowl", city: "Port Orchard", squads: ["10:00", "12:00", "2:00"] },
-    { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", squads: ["9:00"], tag: "Year End Championship", invite: true }
+    { date: "2026-11-01", center: "Kenmore Lanes", city: "Kenmore", addr: "7638 Bothell Way", phone: "425-486-5555", squads: ["10:00", "12:00", "2:00"] },
+    { date: "2026-11-07", center: "Westside Lanes", city: "Olympia", addr: "2200 Garfield Ave NW", phone: "360-943-2400", squads: ["11:00", "1:30", "4:00"], tag: "Best 3 of 4" },
+    { date: "2026-11-15", center: "Bowlero Paradise", city: "Parkland", addr: "12505 Pacific Ave", phone: "253-537-6012", squads: ["10:00", "12:30", "3:00"], tag: "Veteran's Day Special" },
+    { date: "2026-11-22", center: "Angel of the Winds", city: "Arlington", addr: "3438 Stoluckquamish Ln (Strikerz Bowling)", phone: "360-572-3904", squads: ["11:00", "1:30", "4:00"] },
+    { date: "2026-11-29", center: "Lucky Strike Lynnwood", city: "Lynnwood", addr: "1222 164th St SW", phone: "425-743-4422", squads: ["11:00", "1:00", "3:00"] },
+    { date: "2026-12-06", center: "HiJoy Bowl", city: "Port Orchard", addr: "1011 Bethel Ave", phone: "360-876-8111", squads: ["10:00", "12:00", "2:00"] },
+    { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
-    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613 },
-    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460 }
+    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", link: "#home", month: "July 2026" },
+    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", month: "June 2026", mock: true },
+    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", month: "June 2026", mock: true },
+    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", month: "May 2026", mock: true },
+    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", month: "May 2026", mock: true },
+    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", link: "#results/ruta-hert", month: "March 2026" }
   ],
   // Bowlero Paradise, July 12, 2026. [place, name, handicap, bonus, total, prize]
   results: [
@@ -646,28 +704,24 @@ const VIEWS = {
     </div></section>
 
     <section class="wrap section">
+      <header class="story-head" style="margin-bottom:18px"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
       <div class="latest">
-        <article class="story-body">
-          <header class="story-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
-          
-          <p class="lede">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
-          <ul class="side-pots">
-            <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
-            <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
-            <li><b>Cal Fisher</b> won the jackpot consolation with four straight taps to open a game, worth ${money(150)}. The 9-Tap Jackpot is now ${money(DATA.jackpot)}, closing in on the ${money(DATA.jackpotRecord)} record.</li>
-            <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
-          </ul>
-        </article>
-        <aside class="panel earlier-card">
-          <header class="story-head"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><div><p class="eyebrow">Earlier in 2026 · March 1 · Bowlero South Seattle</p><h3 class="ec-title">Ruta Hert wins by 13 pins as ladies go one-two</h3></div></header>
-          <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
-          <div class="facts">
-            <div class="fact"><b>185</b><span>Entries</span></div>
-            <div class="fact"><b>$13,606</b><span>Paid out</span></div>
-            <div class="fact"><b>${money(2460)}</b><span>To the winner</span></div>
-          </div>
-        </aside>
+        <p class="lede" style="margin:0">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
+        <ul class="side-pots">
+          <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
+          <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
+          <li><b>Cal Fisher</b> won the jackpot consolation with four straight taps to open a game, worth ${money(150)}. The 9-Tap Jackpot is now ${money(DATA.jackpot)}, closing in on the ${money(DATA.jackpotRecord)} record.</li>
+          <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
+        </ul>
       </div>
+    </section>
+
+    <section class="wrap section champs-sec" aria-label="Champions by month">
+      <div class="section-head"><h2>Champions</h2>
+        <div class="month-pick" role="group" aria-label="Choose a month">${[...new Set(DATA.champions.map(c => c.month))].map((m, i) => `<button type="button" class="mp-btn" data-month="${esc(m)}" aria-pressed="${i === 0}">${esc(m)}</button>`).join("")}</div>
+      </div>
+      <div class="champ-grid" id="champ-grid"></div>
+      <p class="foot-note"><a class="link-more" href="#results">All results →</a></p>
     </section>
 
     <section class="wrap section">
@@ -691,6 +745,7 @@ const VIEWS = {
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">Fall 2026</p><h1>Schedule</h1>
       <p>Squad times are local. Bowl as many squads as you like, but you can cash only once per tournament. Dec 16 and Dec 26 are bye weeks.</p>
+      <p style="margin-top:14px"><a class="btn btn-primary" href="#print-schedule">Printable schedule</a></p>
     </div></section>${sections}
     <section class="wrap" style="padding-top:12px">
       <p class="foot-note" style="max-width:none">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter. Looking for a past event? See <a class="link-more" href="#results">Results</a>.</p>
@@ -910,6 +965,40 @@ const VIEWS = {
     </div></section>`;
   },
 
+  "print-schedule"() {
+    const ev = DATA.events.filter(e => eventStatus(e) !== "past");
+    const day = d => parse(d).toLocaleDateString("en-US", { weekday: "long" });
+    const md = d => parse(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `
+    <section class="wrap section no-print" style="padding-bottom:0">
+      <div class="section-head"><h2>Printable schedule</h2><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="button" onclick="window.print()">Print or save as PDF</button><a class="btn btn-ghost" href="#schedule">Back to schedule</a></div></div>
+      <p class="meta" style="margin:0">One letter-size page, built from the same schedule as the website, so it is always current.</p>
+    </section>
+    <section class="wrap section"><div class="flyer">
+      <header class="fl-head">
+        <img src="img/tour-logo.png" alt="" class="fl-logo">
+        <div class="fl-title"><p class="fl-kicker">Top tournaments for the average bowler</p><h1>9-Tap Tour</h1><p class="fl-season">Fall 2026 Schedule</p></div>
+        <img src="img/storm.png" alt="Storm" class="fl-spon">
+      </header>
+      <ul class="fl-facts"><li>Handicap singles · 125 to 210 averages</li><li>9-Tap Jackpot <b>${money(DATA.jackpot)}</b></li><li>Progressive Pot <b>${money(DATA.progressive)}</b></li><li>1 in 5 cash · USBC certified</li></ul>
+      <table class="fl-table">
+        <thead><tr><th>Date</th><th>Bowling center</th><th>Squads</th><th>Address &amp; phone</th></tr></thead>
+        <tbody>${ev.map(e => `<tr class="${e.invite ? "inv" : ""}">
+          <td class="fl-date"><b>${md(e.date)}</b><span>${day(e.date)}</span></td>
+          <td><b>${esc(e.center)}</b><span>${esc(e.city)}</span>${e.tag ? `<em>${esc(e.tag)}${e.invite ? " · invitation only" : ""}</em>` : ""}</td>
+          <td class="fl-sq">${e.squads.join(" · ")}</td>
+          <td class="fl-addr">${e.addr ? `${esc(e.addr)}<span>${esc(e.city)} · ${esc(e.phone)}</span>` : `<span>${esc(e.city)}</span>`}</td></tr>`).join("")}</tbody>
+      </table>
+      <p class="fl-note">Byes: Dec 16 and Dec 26. Arrive an hour early to sign up as a new member ($25). You can cash once per tournament. Look for the next schedule on the website.</p>
+      <div class="fl-champs">
+        <div><img src="img/champ-michael-miller.jpg" alt=""><p><b>Michael Miller</b>1st, Bowlero Paradise<br>Won ${money(2613)}</p></div>
+        <div><img src="img/champ-ruta-hert.jpg" alt=""><p><b>Ruta Hert</b>1st, Bowlero South Seattle<br>Won ${money(2460)}</p></div>
+      </div>
+      <footer class="fl-foot"><b>9taptour.com</b><span>Message line (253) 987-7975</span><span>PO Box 931, Sumner, WA 98390</span></footer>
+      <div class="fl-sponsors">${["miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
+    </div></section>`;
+  },
+
   join() {
     return `
     <section class="page-head"><div class="wrap">
@@ -993,7 +1082,20 @@ function renderResults(q = "") {
     : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". Only the top 39 cashed at this event.</td></tr>`;
 }
 
+function renderChamps(month) {
+  const g = $("#champ-grid"); if (!g) return;
+  g.innerHTML = DATA.champions.filter(c => c.month === month).map(c => `
+    <${c.link ? `a href="${c.link}"` : "div"} class="champ-card">
+      <img src="img/champ-${c.photo}.jpg" width="252" height="224" alt="${esc(c.name)}">
+      <div><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} league average</span>` : ""}<span class="won">Won ${money(c.won)}</span></div>
+    </${c.link ? "a" : "div"}>`).join("");
+}
 function wire(view) {
+  if (view === "home") {
+    const btns = document.querySelectorAll(".mp-btn");
+    btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
+    if (btns[0]) renderChamps(btns[0].dataset.month);
+  }
   if (view === "results") { renderResults(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
   if (view === "rules") {
     $("#rule-find").addEventListener("input", e => {
