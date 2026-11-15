@@ -176,7 +176,20 @@ p { margin: 0; }
 @media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
 
 /* Latest results on home */
-.latest { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start; }
+.latest { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+.latest .side-pots { margin: 0; padding: 0 0 0 24px; border-top: 0; border-left: 1px solid var(--line); }
+@media (max-width: 880px) { .latest .side-pots { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
+.champ-reel { overflow: hidden; padding: 6px 0 10px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+.champ-track { display: flex; gap: 16px; width: max-content; animation: reel 40s linear infinite; }
+.champ-reel:hover .champ-track, .champ-reel:focus-within .champ-track { animation-play-state: paused; }
+@keyframes reel { to { transform: translateX(calc(-50% - 8px)); } }
+.reel-card { display: flex; gap: 12px; align-items: center; width: 290px; flex: none; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: inherit; }
+a.reel-card:hover { border-color: var(--accent); }
+.reel-card img { width: 84px; height: 75px; object-fit: cover; border-radius: 6px; flex: none; }
+.reel-card b { display: block; font-family: var(--font-display); font-size: 1.25rem; text-transform: uppercase; line-height: 1.05; }
+.reel-card span { display: block; font-size: .82rem; color: var(--muted); }
+.reel-card .won { color: var(--ink); font-family: var(--font-num); font-weight: 600; margin-top: 2px; }
+@media (prefers-reduced-motion: reduce) { .champ-track { animation: none; } .champ-reel { overflow-x: auto; } .champ-track > [aria-hidden="true"] { display: none; } }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -457,7 +470,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
       <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
       <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
       <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
-      <span class="no-link" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></span>
+      <a href="https://raincitybowlingsupply.com/" target="_blank" rel="noopener" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></a>
       <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
       <a class="word-logo fq" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">Fitness<span>Quest</span></a>
     </nav>
@@ -528,8 +541,12 @@ const DATA = {
     { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
-    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613 },
-    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460 }
+    { date: "2026-07-12", name: "Michael Miller", where: "Bowlero Paradise", won: 2613, photo: "michael-miller", link: "#home" },
+    { date: "2026-03-01", name: "Ruta Hert", where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", link: "#results/ruta-hert" },
+    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo" },
+    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham" },
+    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr" },
+    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel" }
   ],
   // Bowlero Paradise, July 12, 2026. [place, name, handicap, bonus, total, prize]
   results: [
@@ -687,28 +704,25 @@ const VIEWS = {
     </div></section>
 
     <section class="wrap section">
+      <header class="story-head" style="margin-bottom:18px"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
       <div class="latest">
-        <article class="story-body">
-          <header class="story-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
-          
-          <p class="lede">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
-          <ul class="side-pots">
-            <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
-            <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
-            <li><b>Cal Fisher</b> won the jackpot consolation with four straight taps to open a game, worth ${money(150)}. The 9-Tap Jackpot is now ${money(DATA.jackpot)}, closing in on the ${money(DATA.jackpotRecord)} record.</li>
-            <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
-          </ul>
-        </article>
-        <aside class="panel earlier-card">
-          <header class="story-head"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><div><p class="eyebrow">Earlier in 2026 · March 1 · Bowlero South Seattle</p><h3 class="ec-title">Ruta Hert wins by 13 pins as ladies go one-two</h3></div></header>
-          <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
-          <div class="facts">
-            <div class="fact"><b>185</b><span>Entries</span></div>
-            <div class="fact"><b>$13,606</b><span>Paid out</span></div>
-            <div class="fact"><b>${money(2460)}</b><span>To the winner</span></div>
-          </div>
-        </aside>
+        <p class="lede" style="margin:0">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
+        <ul class="side-pots">
+          <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
+          <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
+          <li><b>Cal Fisher</b> won the jackpot consolation with four straight taps to open a game, worth ${money(150)}. The 9-Tap Jackpot is now ${money(DATA.jackpot)}, closing in on the ${money(DATA.jackpotRecord)} record.</li>
+          <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
+        </ul>
       </div>
+    </section>
+
+    <section class="section champs-sec" aria-label="Recent champions">
+      <div class="wrap section-head"><h2>Recent champions</h2><a class="link-more" href="#results">All results →</a></div>
+      <div class="champ-reel"><div class="champ-track">${[0,1].map(k => DATA.champions.map(c => `
+        <${c.link ? `a href="${c.link}"` : "div"} class="reel-card"${k ? ' aria-hidden="true" tabindex="-1"' : ""}>
+          <img src="img/champ-${c.photo}.jpg" width="126" height="112" alt="">
+          <div><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} league average</span>` : ""}<span class="won">Won ${money(c.won)}</span></div>
+        </${c.link ? "a" : "div"}>`).join("")).join("")}</div></div>
     </section>
 
     <section class="wrap section">
