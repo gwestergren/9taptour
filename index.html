@@ -194,13 +194,22 @@ p { margin: 0; }
 .mp-btn[aria-pressed="true"] { background: var(--maple); color: #10242a; border-color: var(--maple); }
 .champ-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
 .champ-card { position: relative; display: grid; width: 250px; padding: 0; overflow: hidden; font: inherit; text-align: center; cursor: pointer; background: linear-gradient(180deg, #16404b, #0c252c); border: 2px solid var(--maple); border-radius: 14px; color: var(--on-deep); box-shadow: 0 10px 28px rgba(0,0,0,.35); transition: transform .18s, box-shadow .18s; }
-.champ-card:hover, .champ-card:focus-visible { transform: translateY(-4px) rotate(-.5deg); box-shadow: 0 16px 36px rgba(0,0,0,.45); outline: none; }
+.champ-card:hover, .champ-card:focus-within { transform: translateY(-4px) rotate(-.5deg); box-shadow: 0 16px 36px rgba(0,0,0,.45); outline: none; }
 .cc-photo { position: relative; display: block; }
 .cc-ribbon { position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); background: #c7362b; color: #fff; font: 700 1rem var(--font-num); padding: 5px 16px; border-radius: 999px; border: 2px solid var(--maple); white-space: nowrap; }
 .cc-body { display: block; padding: 24px 14px 16px; }
-.champ-card .more { color: var(--maple); font-weight: 600; margin-top: 8px; }
-.cb-foot { text-align: center; margin: 26px 0 0; }
-.cb-foot a { color: var(--maple); font-weight: 700; text-decoration: none; }
+.cc-open { display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; cursor: pointer; }
+.cc-open:focus-visible { outline: 3px solid var(--maple); outline-offset: -3px; }
+.champ-card .cc-body { padding-bottom: 12px; }
+.cc-links { display: flex; border-top: 1px solid rgba(255,255,255,.15); }
+.cc-links > * { flex: 1; padding: 10px 6px; border: 0; background: none; color: var(--maple); font: 700 .82rem var(--font-body); text-decoration: none; cursor: pointer; }
+.cc-links > * + * { border-left: 1px solid rgba(255,255,255,.15); }
+.cc-links > *:hover { background: rgba(255,255,255,.06); }
+.t-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.t-pick a { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; }
+.t-pick a:hover { border-color: var(--accent); color: var(--accent); }
+.t-pick a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dlg-more { text-align: center; margin: 14px 0 0; }
 @media (max-width: 760px) { .cb-stats { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { .champ-card { transition: none; } .champ-card:hover { transform: none; } }
 .champ-dlg { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 0; border-radius: 12px; padding: 26px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
@@ -275,7 +284,6 @@ p { margin: 0; }
 @media (max-width: 880px) { .two-col { grid-template-columns: 1fr; } }
 
 .champ-list { display: grid; gap: 0; }
-#ruta-hert { scroll-margin-top: 90px; }
 .champ { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .champ:first-child { padding-top: 0; }
 .champ .date { font-family: var(--font-num); font-size: .82rem; color: var(--muted); width: 5.6em; }
@@ -578,12 +586,12 @@ const DATA = {
     { date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "3852 Steilacoom Blvd", phone: "253-584-0212", squads: ["9:00"], tag: "Year End Championship", invite: true }
   ],
   champions: [
-    { date: "2026-07-12", name: "Michael Miller", avg: 189, where: "Bowlero Paradise", won: 2613, photo: "michael-miller", games: [238, 251, 229], hdcp: 28, bonus: 3, head: "First Tour title, won by 11 pins", bio: ["Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home $2,613 including his Progressive Pot share.", "\"I was on fire,\" said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments."], entries: 195, paid: 13034, when: "July 12", link: "#home", month: "July 2026" },
-    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", games: [245, 252, 238], hdcp: 36, head: "Steady all day for his first win", bio: ["Dean has bowled the Tour for three seasons and finally broke through at Bowlero Lanes, never dropping below 200 with handicap in any game.", "\"I just kept it in the pocket and let the pins do the work,\" he said. He plans to put part of his winnings toward a new ball."], entries: 210, paid: 12880, when: "June 2026", month: "June 2026", mock: true },
-    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", games: [241, 255, 236], hdcp: 38, head: "Strikes out in the 10th to take it", bio: ["Ashley needed a strike-out in the last frame and got it, edging the field by 6 pins at Daffodil Bowl.", "A Tour regular since 2024, she bowls in two leagues a week and says the Tour is her favorite part of the month."], entries: 176, paid: 10950, when: "June 2026", month: "June 2026", mock: true },
-    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", games: [221, 238, 229], hdcp: 57, head: "Biggest check of the summer", bio: ["Marilyn turned her 156 league average into a three-game run nobody could catch, taking home the largest first-place check of the summer at Secoma Lanes.", "She started bowling with her family as a kid and came back to the sport two years ago. Her winnings are going toward a family trip."], entries: 240, paid: 14100, when: "May 2026", month: "May 2026", mock: true },
-    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", games: [258, 249, 212, 244], hdcp: 36, head: "Wins at his home house", bio: ["Dennis bowls league at Kent Bowl twice a week, and it showed. He led after two games and held on to win by 9 pins.", "\"Knowing the lanes helps, but you still have to make the shots,\" he said. He plans to celebrate with his grandkids."], entries: 198, paid: 11760, when: "May 2026", month: "May 2026", mock: true },
-    { date: "2026-03-01", name: "Ruta Hert", avg: 175, where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", games: [236, 244, 231], hdcp: 40, head: "Wins by 13 pins as ladies go one-two", bio: ["Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids."], entries: 185, paid: 13606, when: "March 1", link: "#results/ruta-hert", month: "March 2026" }
+    { date: "2026-07-12", name: "Michael Miller", avg: 189, where: "Bowlero Paradise", won: 2613, photo: "michael-miller", city: "Parkland", games: [238, 251, 229], hdcp: 28, bonus: 3, head: "First Tour title, won by 11 pins", bio: ["Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home $2,613 including his Progressive Pot share.", "\"I was on fire,\" said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments."], entries: 195, paid: 13034, when: "July 12", link: "#home", month: "July 2026" },
+    { name: "Dean Hale Jr", avg: 180, where: "Bowlero Lanes", won: 2510, photo: "dean-hale-jr", city: "Lakewood", games: [245, 252, 238], hdcp: 36, head: "Steady all day for his first win", bio: ["Dean has bowled the Tour for three seasons and finally broke through at Bowlero Lanes, never dropping below 200 with handicap in any game.", "\"I just kept it in the pocket and let the pins do the work,\" he said. He plans to put part of his winnings toward a new ball."], entries: 210, paid: 12880, when: "June 2026", month: "June 2026", mock: true },
+    { name: "Ashley Kochel", avg: 177, where: "Daffodil Bowl", won: 1966, photo: "ashley-kochel", city: "Puyallup", games: [241, 255, 236], hdcp: 38, head: "Strikes out in the 10th to take it", bio: ["Ashley needed a strike-out in the last frame and got it, edging the field by 6 pins at Daffodil Bowl.", "A Tour regular since 2024, she bowls in two leagues a week and says the Tour is her favorite part of the month."], entries: 176, paid: 10950, when: "June 2026", month: "June 2026", mock: true },
+    { name: "Marilyn Mateo", avg: 156, where: "Secoma Lanes", won: 2655, photo: "marilyn-mateo", city: "Federal Way", games: [221, 238, 229], hdcp: 57, head: "Biggest check of the summer", bio: ["Marilyn turned her 156 league average into a three-game run nobody could catch, taking home the largest first-place check of the summer at Secoma Lanes.", "She started bowling with her family as a kid and came back to the sport two years ago. Her winnings are going toward a family trip."], entries: 240, paid: 14100, when: "May 2026", month: "May 2026", mock: true },
+    { name: "Dennis Latham", avg: 179, where: "Kent Bowl", won: 2309, photo: "dennis-latham", city: "Kent", games: [258, 249, 212, 244], hdcp: 36, head: "Wins at his home house", bio: ["Dennis bowls league at Kent Bowl twice a week, and it showed. He led after two games and held on to win by 9 pins.", "\"Knowing the lanes helps, but you still have to make the shots,\" he said. He plans to celebrate with his grandkids."], entries: 198, paid: 11760, when: "May 2026", month: "May 2026", mock: true },
+    { date: "2026-03-01", name: "Ruta Hert", avg: 175, where: "Bowlero South Seattle", won: 2460, photo: "ruta-hert", city: "Seattle", games: [236, 244, 231], hdcp: 40, head: "Wins by 13 pins as ladies go one-two", second: "Leticia Salazar", bio: ["Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids."], entries: 185, paid: 13606, when: "March 1", link: "#results/ruta-hert", month: "March 2026" }
   ],
   // Bowlero Paradise, July 12, 2026. [place, name, handicap, bonus, total, prize]
   results: [
@@ -761,7 +769,6 @@ const VIEWS = {
         <div class="month-pick" role="group" aria-label="Choose a month">${[...new Set(DATA.champions.map(c => c.month))].map((m, i) => `<button type="button" class="mp-btn" data-month="${esc(m)}" aria-pressed="${i === 0}">${esc(m)}</button>`).join("")}</div>
       </div>
       <div class="champ-grid" id="champ-grid"></div>
-      <p class="cb-foot"><a href="#results">See all results →</a></p>
     </div></section>
 
     <section class="wrap section">
@@ -793,21 +800,34 @@ const VIEWS = {
   },
 
   results() {
-    const top = DATA.results.slice(0, 3);
-    const label = ["1st place", "2nd place", "3rd place (tie)"];
+    const id = (location.hash.split("/")[1] || "");
+    const c = DATA.champions.find(x => x.photo === id) || DATA.champions[0];
+    const rows = CUR_RESULTS = eventResults(c);
+    const real = c.photo === "michael-miller";
+    const dateTxt = c.date ? new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : c.when;
+    const chip = x => (x.date ? new Date(x.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : x.when.replace(/ \d{4}$/, "")) + " · " + x.where;
+    const won = r => r[5] + (real ? (DATA.progressivePaid[r[1]] || 0) : 0);
+    const place = (r, i) => ["1st place", "2nd place", "3rd place"][i] + (/T$/.test(r[0]) ? " (tie)" : "");
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">Latest results</p><h1>Bowlero Paradise</h1>
-      <p>July 12, 2026 · Parkland, WA · 195 entries at $35 · ${money(13034)} paid out · Low to cash: <span class="num">683</span></p>
+      <p class="eyebrow">${c === DATA.champions[0] ? "Latest results" : "Tournament results"}</p><h1>${esc(c.where)}</h1>
+      <p>${esc(dateTxt)} · ${esc(c.city)}, WA · ${c.entries} entries · ${money(c.paid)} paid out · Low to cash: <span class="num">${rows[rows.length - 1][4]}</span></p>
     </div></section>
+    <section class="wrap section" style="padding-bottom:0">
+      <nav class="t-pick" aria-label="Choose a tournament">${DATA.champions.map(x => `<a href="#results/${x.photo}"${x === c ? ' aria-current="page"' : ""}>${esc(chip(x))}</a>`).join("")}</nav>
+    </section>
     <section class="wrap section">
-      <div class="podium-cards">${[0,1,2].map(i => { const r = DATA.results[i]; const pro = DATA.progressivePaid[r[1]] || 0; return `
+      <article class="story-body" style="margin-bottom:26px">
+        <header class="story-head"><img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}"><div><p class="eyebrow">Champion · Won ${money(c.won)}</p><h3 class="story-title">${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}</h3></div></header>
+        ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
+      </article>
+      <div class="podium-cards">${[0,1,2].map(i => { const r = rows[i]; return `
         <div class="panel pc ${i === 0 ? "first" : ""}">
-          <div class="p">${label[i]}</div><div class="n">${esc(r[1])}</div>
-          <div class="s"><span>Total <b>${r[4]}</b></span><span>Won <b>${money(r[5] + pro)}</b></span></div>
+          <div class="p">${place(r, i)}</div><div class="n">${esc(r[1])}</div>
+          <div class="s"><span>Total <b>${r[4]}</b></span><span>Won <b>${money(i === 0 ? c.won : won(r))}</b></span></div>
         </div>`; }).join("")}
       </div>
-      <p class="foot-note" style="margin:-8px 0 22px">Mary Bridgman tied Kris Koepke for 3rd at 798. Winnings above include Progressive Pot shares.</p>
+      ${real ? `<p class="foot-note" style="margin:-8px 0 22px">Mary Bridgman tied Kris Koepke for 3rd at 798. Winnings above include Progressive Pot shares.</p>` : ""}
       <div class="toolbar">
         <h2 style="font-size:1.8rem">All cashers</h2>
         <div class="field search"><label for="find">Find a bowler</label><input id="find" type="search" placeholder="Type a name" autocomplete="off"></div>
@@ -816,19 +836,7 @@ const VIEWS = {
         <thead><tr><th>Place</th><th>Bowler</th><th class="r">Hdcp</th><th class="r">Bonus</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
         <tbody id="res-body"></tbody>
       </table></div>
-      <p class="foot-note">Totals are three games of pinfall plus handicap (best 3 of 4 at 4-game events). Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.</p>
-    </section>
-    <section class="wrap section" id="ruta-hert">
-      <div class="section-head"><h2>Earlier in 2026</h2></div>
-      <article class="story-body">
-        <header class="story-head"><img class="champ-photo" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><div><p class="eyebrow">Bowlero South Seattle · March 1, 2026</p><h3 class="story-title">Ruta Hert wins by 13 pins as ladies go one-two</h3></div></header>
-        <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
-        <div class="facts">
-          <div class="fact"><b>185</b><span>Entries</span></div>
-          <div class="fact"><b>$13,606</b><span>Paid out</span></div>
-          <div class="fact"><b>${money(2460)}</b><span>To the winner</span></div>
-        </div>
-      </article>
+      <p class="foot-note">Totals are three games of pinfall plus handicap (best 3 of 4 at 4-game events). ${real ? `Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.` : "<b>Sample results for this mockup.</b> The real list would be posted after the tournament."}</p>
     </section>
     <section class="wrap section">
       <div class="section-head"><h2>Results archive</h2><p>Every season back to 2002. These open the results on the current site.</p></div>
@@ -1112,24 +1120,49 @@ const VIEWS = {
   }
 };
 
+let CUR_RESULTS = DATA.results;
+function eventResults(c) {
+  if (c.photo === "michael-miller") return DATA.results;
+  let seed = [...c.photo].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const pool = [...new Set([...DATA.results.map(r => r[1]), ...DATA.boy.map(b => b[0])])].filter(n => n !== c.name && n !== c.second);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  if (c.second) pool.unshift(c.second);
+  const best = c.games.slice().sort((x, y) => y - x).slice(0, 3).reduce((x, y) => x + y, 0);
+  const top = best + c.hdcp * 3 + (c.bonus || 0) * 3;
+  const n = Math.min(pool.length + 1, Math.round(c.entries / 5));
+  const m = (c.head.match(/by (\d+) pins/) || [])[1];
+  let tot = top - (m ? +m : 4 + Math.floor(rnd() * 10));
+  const rows = [[1, c.name, c.hdcp, c.bonus || 0, top]];
+  for (let i = 1; i < n; i++) { if (i > 1) tot -= Math.floor(rnd() * 7); rows.push([0, pool[i - 1], Math.floor(rnd() * 60), Math.floor(rnd() * 5), tot]); }
+  const prize = i => i === 0 ? c.won : Math.round(65 + (c.won * 0.42 - 65) * Math.pow((n - 1 - i) / (n - 2), 2.2));
+  return rows.map((r, i) => {
+    const tied = rows.filter(x => x[4] === r[4]), first = rows.indexOf(tied[0]);
+    const share = Math.round(tied.reduce((a, x) => a + prize(rows.indexOf(x)), 0) / tied.length);
+    return [String(first + 1) + (tied.length > 1 ? "T" : ""), r[1], r[2], r[3], r[4], i === 0 ? c.won : share];
+  });
+}
 function renderResults(q = "") {
   const body = $("#res-body"); if (!body) return;
   const t = q.trim().toLowerCase();
-  const rows = DATA.results.filter(r => !t || r[1].toLowerCase().includes(t));
+  const rows = CUR_RESULTS.filter(r => !t || r[1].toLowerCase().includes(t));
   body.innerHTML = rows.length ? rows.map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}">
     <td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num">${r[2]}</td><td class="r num">${r[3]}</td>
     <td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5])}</td></tr>`).join("")
-    : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". Only the top 39 cashed at this event.</td></tr>`;
+    : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". Only the top ${CUR_RESULTS.length} cashed at this event.</td></tr>`;
 }
 
 function renderChamps(month) {
   const g = $("#champ-grid"); if (!g) return;
   g.innerHTML = DATA.champions.filter(c => c.month === month).map(c => `
-    <button type="button" class="champ-card" data-photo="${c.photo}" aria-haspopup="dialog">
-      <span class="cc-photo"><img src="img/champ-${c.photo}.jpg" width="252" height="224" alt=""><span class="cc-ribbon">${money(c.won)}</span></span>
-      <span class="cc-body"><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} average</span>` : ""}<span class="more">Read story →</span></span>
-    </button>`).join("");
-  g.querySelectorAll(".champ-card").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
+    <div class="champ-card">
+      <button type="button" class="cc-open" data-photo="${c.photo}" aria-haspopup="dialog">
+        <span class="cc-photo"><img src="img/champ-${c.photo}.jpg" width="252" height="224" alt=""><span class="cc-ribbon">${money(c.won)}</span></span>
+        <span class="cc-body"><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} average</span>` : ""}</span>
+      </button>
+      <div class="cc-links"><button type="button" data-photo="${c.photo}" aria-haspopup="dialog">Read story</button><a href="#results/${c.photo}">Results →</a></div>
+    </div>`).join("");
+  g.querySelectorAll("button[data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
 }
 function openChamp(photo) {
   const c = DATA.champions.find(x => x.photo === photo); if (!c) return;
@@ -1145,8 +1178,10 @@ function openChamp(photo) {
     <div class="dlg-scores"><table><thead><tr>${c.games.map((_, i) => `<th>G${i + 1}</th>`).join("")}<th>Scratch</th>${c.avg ? "<th>Avg</th>" : ""}<th>Hdcp</th>${bo ? "<th>Bonus</th>" : ""}<th>Total</th></tr></thead>
     <tbody><tr>${c.games.map((x, i) => keep.includes(i) ? `<td>${x}</td>` : `<td class="drop" title="Dropped: best 3 of 4">${x}</td>`).join("")}<td>${scr}</td>${c.avg ? `<td class="avg">${c.avg}</td>` : ""}<td>+${hd}</td>${bo ? `<td>+${bo}</td>` : ""}<td><b>${tot}</b></td></tr></tbody></table></div>
     ${c.games.length > 3 ? `<p class="foot-note" style="margin-top:-6px">Best 3 of 4 format: the low game is dropped.</p>` : ""}`; })() : ""}
-    <div class="facts"><div class="fact"><b>${c.entries}</b><span>Entries</span></div><div class="fact"><b>${money(c.paid)}</b><span>Paid out</span></div></div>`;
+    <div class="facts"><div class="fact"><b>${c.entries}</b><span>Entries</span></div><div class="fact"><b>${money(c.paid)}</b><span>Paid out</span></div></div>
+    <p class="dlg-more"><a class="link-more" href="#results/${c.photo}">See full results for this tournament →</a></p>`;
   d.querySelector(".dlg-x").addEventListener("click", () => d.close());
+  d.querySelector(".dlg-more a").addEventListener("click", () => d.close());
   d.showModal();
 }
 function wire(view) {
