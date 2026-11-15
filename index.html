@@ -179,13 +179,30 @@ p { margin: 0; }
 .latest { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
 .latest .side-pots { margin: 0; padding: 0 0 0 24px; border-top: 0; border-left: 1px solid var(--line); }
 @media (max-width: 880px) { .latest .side-pots { padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--line); } }
-.month-pick { display: flex; flex-wrap: wrap; gap: 6px; }
-.mp-btn { font: 600 .85rem var(--font-body); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
-.mp-btn[aria-pressed="true"] { background: var(--deep); color: #fff; border-color: var(--deep); }
-.champ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
-.champ-card { display: grid; gap: 10px; padding: 12px; font: inherit; text-align: left; cursor: pointer; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: inherit; }
-.champ-card:hover, .champ-card:focus-visible { border-color: var(--accent); }
-.champ-card .more { color: var(--accent); font-weight: 600; margin-top: 4px; }
+.champs-band { background: var(--deep); color: var(--on-deep); padding: 56px 0 48px; margin: 24px 0; border-top: 4px solid var(--maple); border-bottom: 4px solid var(--maple); }
+.cb-head { text-align: center; }
+.cb-head .eyebrow { color: var(--maple); }
+.cb-head h2 { color: #fff; font-size: clamp(2.2rem, 5vw, 3.4rem); margin-top: 4px; }
+.cb-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 900px; margin: 22px auto 0; text-align: center; }
+.cb-stats div { padding: 12px 8px; border: 1px solid rgba(227,194,134,.35); border-radius: 10px; background: rgba(255,255,255,.04); }
+.cb-stats b { display: block; font-family: var(--font-num); font-size: 1.45rem; color: var(--maple); }
+.cb-stats span { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep-muted); }
+.cb-pick { display: flex; justify-content: center; margin: 26px 0 22px; }
+.month-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.mp-btn { font: 600 .85rem var(--font-body); padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: var(--on-deep); cursor: pointer; }
+.mp-btn:hover { border-color: var(--maple); }
+.mp-btn[aria-pressed="true"] { background: var(--maple); color: #10242a; border-color: var(--maple); }
+.champ-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+.champ-card { position: relative; display: grid; width: 250px; padding: 0; overflow: hidden; font: inherit; text-align: center; cursor: pointer; background: linear-gradient(180deg, #16404b, #0c252c); border: 2px solid var(--maple); border-radius: 14px; color: var(--on-deep); box-shadow: 0 10px 28px rgba(0,0,0,.35); transition: transform .18s, box-shadow .18s; }
+.champ-card:hover, .champ-card:focus-visible { transform: translateY(-4px) rotate(-.5deg); box-shadow: 0 16px 36px rgba(0,0,0,.45); outline: none; }
+.cc-photo { position: relative; display: block; }
+.cc-ribbon { position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%); background: #c7362b; color: #fff; font: 700 1rem var(--font-num); padding: 5px 16px; border-radius: 999px; border: 2px solid var(--maple); white-space: nowrap; }
+.cc-body { display: block; padding: 24px 14px 16px; }
+.champ-card .more { color: var(--maple); font-weight: 600; margin-top: 8px; }
+.cb-foot { text-align: center; margin: 26px 0 0; }
+.cb-foot a { color: var(--maple); font-weight: 700; text-decoration: none; }
+@media (max-width: 760px) { .cb-stats { grid-template-columns: 1fr 1fr; } }
+@media (prefers-reduced-motion: reduce) { .champ-card { transition: none; } .champ-card:hover { transform: none; } }
 .champ-dlg { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border: 0; border-radius: 12px; padding: 26px; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .champ-dlg::backdrop { background: rgba(10,24,28,.6); }
 .champ-dlg p { color: var(--muted); margin: 0 0 12px; }
@@ -206,11 +223,10 @@ p { margin: 0; }
 .dlg-scores td.drop { color: var(--muted); text-decoration: line-through; }
 .champ-dlg .facts { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; text-align: center; }
 @media (max-width: 480px) { .dlg-head { flex-direction: column; align-items: flex-start; } .champ-dlg { padding: 20px; } .dlg-scores th { font-size: .5rem; letter-spacing: 0; padding: 6px 1px; } .dlg-scores td { font-size: .82rem; padding: 7px 1px; } }
-.champ-card img { width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 6px; }
-.champ-card b { display: block; font-family: var(--font-display); font-size: 1.35rem; text-transform: uppercase; line-height: 1.05; }
-.champ-card span { display: block; font-size: .85rem; color: var(--muted); }
-.champ-card .won { color: var(--ink); font-family: var(--font-num); font-weight: 600; margin-top: 4px; }
-@media (max-width: 560px) { .champ-grid { grid-template-columns: 1fr 1fr; gap: 10px; } .champ-card b { font-size: 1.1rem; } }
+.champ-card img { display: block; width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; }
+.champ-card b { display: block; font-family: var(--font-display); font-size: 1.5rem; text-transform: uppercase; line-height: 1.05; color: #fff; }
+.cc-body > span { display: block; font-size: .85rem; color: var(--on-deep-muted); }
+@media (max-width: 560px) { .champ-grid { gap: 12px; } .champ-card { width: calc(50% - 6px); } .champ-card b { font-size: 1.15rem; } .cc-ribbon { font-size: .82rem; padding: 4px 10px; } }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -737,13 +753,16 @@ const VIEWS = {
       </div>
     </section>
 
-    <section class="wrap section champs-sec" aria-label="Champions by month">
-      <div class="section-head"><h2>Champions</h2>
+    <section class="champs-band" aria-label="Champions by month"><div class="wrap">
+      <div class="cb-head"><p class="eyebrow">2026 season</p><h2>Wall of Champions</h2></div>
+      <div class="cb-stats">${(() => { const w = DATA.champions; const tot = w.reduce((a, c) => a + c.won, 0), big = w.reduce((a, c) => c.won > a.won ? c : a); return `
+        <div><b>${w.length}</b><span>Champions</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(big.won)}</b><span>Biggest check · ${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div>`; })()}</div>
+      <div class="cb-pick">
         <div class="month-pick" role="group" aria-label="Choose a month">${[...new Set(DATA.champions.map(c => c.month))].map((m, i) => `<button type="button" class="mp-btn" data-month="${esc(m)}" aria-pressed="${i === 0}">${esc(m)}</button>`).join("")}</div>
       </div>
       <div class="champ-grid" id="champ-grid"></div>
-      <p class="foot-note"><a class="link-more" href="#results">All results →</a></p>
-    </section>
+      <p class="cb-foot"><a href="#results">See all results →</a></p>
+    </div></section>
 
     <section class="wrap section">
       <div class="section-head"><h2>Coming up</h2><a class="link-more" href="#schedule">Full schedule →</a></div>
@@ -1107,8 +1126,8 @@ function renderChamps(month) {
   const g = $("#champ-grid"); if (!g) return;
   g.innerHTML = DATA.champions.filter(c => c.month === month).map(c => `
     <button type="button" class="champ-card" data-photo="${c.photo}" aria-haspopup="dialog">
-      <img src="img/champ-${c.photo}.jpg" width="252" height="224" alt="">
-      <div><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} league average</span>` : ""}<span class="won">Won ${money(c.won)}</span><span class="more">Read story →</span></div>
+      <span class="cc-photo"><img src="img/champ-${c.photo}.jpg" width="252" height="224" alt=""><span class="cc-ribbon">${money(c.won)}</span></span>
+      <span class="cc-body"><b>${esc(c.name)}</b><span>1st · ${esc(c.where)}</span>${c.avg ? `<span>${c.avg} average</span>` : ""}<span class="more">Read story →</span></span>
     </button>`).join("");
   g.querySelectorAll(".champ-card").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
 }
