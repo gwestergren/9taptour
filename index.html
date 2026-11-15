@@ -200,7 +200,8 @@ p { margin: 0; }
 .dlg-scores td { padding: 8px 4px; font-size: 1rem; text-align: center !important; }
 .dlg-scores td b { color: var(--accent); }
 .dlg-scores td.drop { color: var(--muted); text-decoration: line-through; }
-.champ-dlg .facts { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.champ-dlg .facts { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; text-align: center; }
+@media (max-width: 480px) { .champ-dlg .facts { grid-auto-flow: row; grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .dlg-head { flex-direction: column; align-items: flex-start; } .champ-dlg { padding: 20px; } .dlg-scores th { font-size: .5rem; letter-spacing: 0; padding: 6px 1px; } .dlg-scores td { font-size: .82rem; padding: 7px 1px; } }
 .champ-card img { width: 100%; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 6px; }
 .champ-card b { display: block; font-family: var(--font-display); font-size: 1.35rem; text-transform: uppercase; line-height: 1.05; }
