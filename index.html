@@ -509,6 +509,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .sc-lanes { flex-wrap: nowrap; }
 .sc-lanes button { flex: 0 0 auto; min-width: 64px; }
 .sc-main { padding-block: 16px 40px; }
+.sc-checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .85rem; color: var(--muted); margin-bottom: 14px; }
+.sc-checkin b { color: var(--ink); }
+.sc-checkin button { font: 600 .82rem var(--font-body); color: var(--accent); background: none; border: 0; padding: 6px 0; cursor: pointer; text-decoration: underline; }
 .sc-pair { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; scroll-margin-top: calc(var(--sc-top, 60px) + 140px); }
 .sc-pair-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: var(--deep); color: var(--on-deep); border-bottom: 4px solid var(--maple); }
 .sc-pair-head h3 { font-size: 1.45rem; text-transform: uppercase; }
@@ -907,9 +910,10 @@ const VIEWS = {
       <div class="sc-row" id="sc-lane-row"><span class="sc-lbl">Lanes</span><div class="sc-seg sc-lanes" id="sc-lanes"></div></div>
     </div></div>
     <section class="wrap sc-main">
+      <p class="sc-checkin" id="sc-checkin"></p>
       <div id="sc-body"></div>
       <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
-      <p class="foot-note">Prototype: sample bowlers, and scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
+      <p class="foot-note">Prototype: the bowlers here are sample check-ins, and scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
     </section>`;
   },
 
@@ -1362,6 +1366,8 @@ function wireScores() {
     if (!armed) { armed = true; rb.textContent = "Tap again to reset this squad"; setTimeout(() => { armed = false; rb.textContent = "Reset sample squad"; }, 3000); return; }
     try { localStorage.removeItem(SC.key(e, sq)); } catch (_) {} SC.game = null; route();
   });
+  const ci = () => { const ls = roster.map(b => b.lane); $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> checked in for the ${esc(e.squads[sq])} squad · lanes ${Math.min(...ls)}–${Math.max(...ls)} assigned at the desk</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", ev => { ev.target.textContent = "Up to date"; setTimeout(ci, 1500); }); };
+  ci();
   body();
 }
 function wire(view) {
