@@ -368,6 +368,8 @@ textarea { resize: vertical; min-height: 120px; }
 .yn-more[hidden] { display: none; }
 .yn-more input { width: 96px; }
 input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-color: var(--accent); }
+.tip { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); border-radius: 4px; font-size: .88rem; color: var(--muted); }
+.tip b { color: var(--ink); }
 .agree { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; color: var(--muted); }
 .agree input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
 @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .form-grid.g3 { grid-template-columns: 1fr 64px; } .form-grid.g3 .field:last-child { grid-column: 1 / -1; } .form-grid.g-csz { grid-template-columns: 1fr 70px; } .form-grid.g-csz .field:first-child { grid-column: 1 / -1; } .form-grid.g-avg { grid-template-columns: 90px 1fr; } .form-grid.g-avg .field:first-child { grid-column: auto; } }
@@ -935,6 +937,7 @@ const VIEWS = {
           <div class="field"><label for="f-cell">Cell</label><input id="f-cell" type="tel"></div>
           <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" autocomplete="email"></div>
           <div class="field"><label for="f-dob">Date of birth</label><input id="f-dob" type="date" autocomplete="bday"></div>
+          <p class="tip full">Not sure of your average? Look it up on <a class="link-more" href="https://www.bowl.com" target="_blank" rel="noopener">Bowl.com</a>: open <b>Find a…</b> in the top menu, choose <b>Find a Member</b>, and search your name or USBC member ID.</p>
           <fieldset class="field full fs"><legend>Highest league average, current season (2026-27)</legend><div class="form-grid g-avg">
             <div class="field"><label for="f-avg">Average</label><input id="f-avg" type="number" min="100" max="300" inputmode="numeric"></div>
             <div class="field"><label for="f-house">House</label><input id="f-house" placeholder="Bowling center"></div>
@@ -963,7 +966,7 @@ const VIEWS = {
           <div class="section-head" style="margin-bottom:14px"><h2>On tournament day</h2></div>
           <ol class="checklist">
             <li><span class="dot">1</span><span>Arrive at least an hour before your squad.</span></li>
-            <li><span class="dot">2</span><span>Bring proof of average, like a copy of your league sheet.</span></li>
+            <li><span class="dot">2</span><span>Bring proof of average, like a copy of your league sheet. You can also look it up on <a class="link-more" href="https://www.bowl.com" target="_blank" rel="noopener">Bowl.com</a> under Find a… → Find a Member.</span></li>
             <li><span class="dot">3</span><span>Pay your $25 membership in cash or check. A director reviews your average and approves you on the spot.</span></li>
           </ol>
         </div>
