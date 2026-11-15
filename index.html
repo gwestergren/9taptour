@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: sticky scoreboard header, deep "lane" band hero with pin deck, then quiet content sections on a cool off-white. */
+/* Layout: sticky scoreboard header, deep "lane" band hero with next-tournament ticket, then quiet content sections on a cool off-white. */
 :root {
   --bg: #f2f5f4;
   --surface: #ffffff;
@@ -60,6 +60,36 @@ p { margin: 0; }
 .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 :focus-visible { outline: 3px solid var(--maple); outline-offset: 2px; border-radius: 3px; }
 
+/* Banner above the menu: the Tour's own logo art and sponsor logos. Always light so the artwork reads. */
+.banner { background: #e6e8e7; color: #10242a; border-bottom: 1px solid #cdd3d2; }
+.banner img { display: block; height: auto; max-width: 100%; }
+.banner-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px 6px; }
+.b-center { display: grid; justify-items: center; gap: 6px; min-width: 0; }
+.b-title { width: 389px; }
+.b-address .num { white-space: nowrap; }
+.b-address { margin: 0; font-weight: 700; font-size: .95rem; color: #10242a; text-align: center; }
+.b-logo { width: 96px; flex: none; }
+.b-pin { flex: none; }
+.banner-sponsors-wrap { border-top: 1px solid #d3d8d7; margin-top: 8px; padding-block: 8px 12px; display: grid; justify-items: center; gap: 6px; }
+.sponsor-tag { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #8a2a21; }
+.banner-sponsors { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; }
+.banner-sponsors a, .banner-sponsors .no-link { display: block; padding: 6px 8px; border-radius: 6px; transition: background-color .15s, transform .15s; }
+.word-logo { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 1.05rem; color: #10242a; text-decoration: none; line-height: 1.1; text-align: center; }
+.word-logo small { display: block; font-family: var(--font-body); font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; color: #56686d; }
+.banner-sponsors a:hover { background: #ffffff; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(16,36,42,.12); }
+.banner-sponsors a:focus-visible { outline: 3px solid #c7362b; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .banner-sponsors a { transition: none; } .banner-sponsors a:hover { transform: none; } }
+.banner-sponsors img { max-height: 40px; width: auto; }
+@media (max-width: 760px) {
+  .banner .b-pin, .banner .b-logo-right { display: none; }
+  .banner-top { justify-content: center; }
+  .b-logo { width: 64px; }
+  .b-title { width: 240px; }
+  .b-address { font-size: .8rem; }
+  .banner-sponsors { gap: 4px 8px; }
+  .banner-sponsors img { max-height: 28px; }
+}
+
 /* Header */
 .site-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--accent); }
 .head-row { display: flex; align-items: center; gap: 20px; min-height: 64px; }
@@ -67,44 +97,94 @@ p { margin: 0; }
 .brand-mark { width: 34px; height: 34px; flex: none; }
 .brand-name { font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; text-transform: uppercase; letter-spacing: .02em; line-height: 1; }
 .brand-name small { display: block; font-family: var(--font-body); font-size: .62rem; font-weight: 600; letter-spacing: .16em; color: var(--on-deep-muted); margin-top: 3px; }
-.nav { display: flex; gap: 4px; }
-.nav a { text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 12px; border-radius: var(--radius); color: var(--on-deep-muted); }
+.nav { display: flex; gap: 4px; margin-right: auto; }
+.nav a { white-space: nowrap; text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 12px; border-radius: var(--radius); color: var(--on-deep-muted); }
 .nav a:hover { color: var(--on-deep); background: var(--deep-2); }
+.nav .nav-join { display: none; }
 .nav a[aria-current="page"] { color: var(--on-deep); background: var(--deep-2); box-shadow: inset 0 -2px 0 var(--maple); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 700 .95rem/1 var(--font-body); padding: 12px 18px; border-radius: var(--radius); border: 2px solid transparent; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border-color: currentColor; background: transparent; color: inherit; }
-.head-cta { padding: 10px 14px; }
+.head-cta { padding: 10px 14px; white-space: nowrap; }
+.brand-name small { white-space: nowrap; }
 .menu-btn { display: none; background: none; border: 2px solid var(--on-deep-muted); color: var(--on-deep); border-radius: var(--radius); padding: 7px 10px; font: 700 .85rem var(--font-body); cursor: pointer; }
-@media (max-width: 880px) {
-  .menu-btn { display: inline-flex; }
+@media (max-width: 1080px) {
+  .menu-btn { display: inline-flex; margin-right: auto; }
   .head-cta { display: none; }
   .nav { display: none; position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; background: var(--deep); border-bottom: 3px solid var(--accent); padding: 8px max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); }
   .nav.open { display: flex; }
   .nav a { padding: 12px; font-size: 1rem; }
+  .nav .nav-join { display: block; color: var(--maple); }
 }
 
 /* Hero */
 .hero { background: var(--deep); color: var(--on-deep); position: relative; overflow: hidden; }
 .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 10px; background: repeating-linear-gradient(90deg, var(--maple) 0 38px, color-mix(in srgb, var(--maple) 80%, #000) 38px 40px); opacity: .85; }
-.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding-block: 56px 66px; }
-.hero h1 { font-size: clamp(3.4rem, 9vw, 6.6rem); font-weight: 900; text-transform: uppercase; line-height: .9; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding-block: 56px 72px; }
+.hero h1 { font-size: clamp(3rem, 7.4vw, 5.4rem); font-weight: 900; text-transform: uppercase; line-height: .9; }
 .hero h1 em { font-style: normal; color: var(--maple); }
+.spot-row { display: flex; align-items: center; gap: 22px; margin-top: 16px; }
+.spot-photo { width: 168px; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: 8px; border: 4px solid var(--maple); flex: none; }
+.spot-text { min-width: 0; }
+.hero .spot-text h1 { font-size: clamp(2.8rem, 6.4vw, 4.8rem); }
+.spot-sub { color: var(--on-deep-muted); margin-top: 8px; font-size: 1.05rem; }
+.spot-bio { display: grid; gap: 10px; margin-top: 18px; max-width: 60ch; color: var(--on-deep-muted); }
+.spot-bio p:first-child { color: var(--on-deep); }
+.spot-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 12px 32px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--deep-2); }
+.spot-stats b { display: block; font-size: 1.6rem; font-weight: 600; color: var(--maple); line-height: 1.1; }
+.spot-stats span { font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--on-deep-muted); }
+@media (max-width: 560px) { .spot-photo { width: 112px; } .spot-stats { grid-template-columns: repeat(2, auto); } }
 .hero-lede { margin-top: 18px; max-width: 34em; color: var(--on-deep-muted); font-size: 1.08rem; }
 .hero-lede strong { color: var(--on-deep); font-weight: 600; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-.deck-wrap { display: grid; justify-items: center; gap: 10px; }
-.deck { width: min(340px, 100%); height: auto; }
-.deck-caption { font-size: .82rem; color: var(--on-deep-muted); text-align: center; max-width: 26em; }
-.pin-fall { transform-origin: center; transform-box: fill-box; animation: fall .6s ease-out forwards; }
-@keyframes fall { to { opacity: .22; transform: scale(.82); } }
-@media (prefers-reduced-motion: reduce) { .pin-fall { animation: none; opacity: .22; transform: scale(.82); } }
-@media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; padding-block: 40px 52px; } .deck { width: min(260px, 80%); } }
+@media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; padding-block: 40px 52px; } }
+
+/* Hero ticket: the next tournament, styled like an entry ticket */
+.ticket { justify-self: end; width: min(400px, 100%); background: var(--on-deep); color: #10242a; border-radius: 10px; padding: 22px 24px 20px; position: relative; box-shadow: 0 18px 40px rgba(0,0,0,.28); }
+.ticket-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ticket-label { font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #c7362b; }
+.ticket-count { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 3px; background: #c7362b; color: #fff; }
+.ticket-date { display: flex; align-items: baseline; gap: 10px; margin-top: 14px; }
+.ticket-mon { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: #c7362b; letter-spacing: .04em; }
+.ticket-day { font-family: var(--font-display); font-weight: 900; font-size: 4.2rem; line-height: .85; }
+.ticket-dow { font-size: .9rem; font-weight: 600; color: #56686d; }
+.ticket-center { font-size: 2.1rem; font-weight: 900; text-transform: uppercase; margin-top: 10px; }
+.ticket-city { color: #56686d; margin-top: 4px; }
+.ticket-city b { color: #10242a; }
+.ticket-squads { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin-top: 16px; }
+.ticket-squads span { display: grid; text-align: center; padding: 8px 4px; border: 1.5px solid #c9d3d2; border-radius: 6px; font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #56686d; }
+.ticket-squads b { font-family: var(--font-num); font-size: 1.15rem; color: #10242a; letter-spacing: 0; }
+.ticket-tear { position: relative; margin: 20px -24px 16px; border-top: 2px dashed #c9d3d2; }
+.ticket-tear::before, .ticket-tear::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--deep); }
+.ticket-tear::before { left: -11px; } .ticket-tear::after { right: -11px; }
+.ticket-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: .85rem; color: #56686d; }
+.ticket-foot .btn { flex: none; padding: 10px 14px; }
+@media (max-width: 880px) { .ticket { justify-self: stretch; width: 100%; max-width: 460px; } }
+@media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
+
+/* Latest results on home */
+.latest { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start; }
+.latest > * { min-width: 0; }
+.story-body { display: grid; gap: 14px; max-width: 64ch; }
+.story-body p { color: var(--muted); }
+.story-head { display: flex; align-items: center; gap: 18px; }
+.story-head > div { min-width: 0; }
+.champ-photo { width: 126px; height: auto; aspect-ratio: 126 / 112; object-fit: cover; border-radius: var(--radius); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); flex: none; }
+.champ-photo.sm { width: 72px; }
+.earlier { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+@media (max-width: 480px) { .story-head { flex-direction: column; align-items: flex-start; } .champ-photo { width: 110px; } }
+.story-title { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-top: 8px; }
+.story-body .lede { color: var(--ink); font-size: 1.1rem; }
+.side-pots { margin: 4px 0 0; padding: 16px 0 0; list-style: none; display: grid; gap: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: .95rem; }
+.side-pots b { color: var(--ink); }
+@media (max-width: 880px) { .latest { grid-template-columns: 1fr; } }
+
+/* Pots strip */
 
 /* Next event + pots strip */
 .strip { margin-top: -28px; position: relative; z-index: 2; }
-.strip-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px; }
+.strip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; min-width: 0; }
 .next-event { border-top: 4px solid var(--accent); }
 .next-event h3 { font-size: 1.9rem; margin-top: 6px; }
@@ -118,7 +198,6 @@ p { margin: 0; }
 .pot .label { font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--on-deep-muted); }
 .pot .amount { font-family: var(--font-num); font-weight: 600; font-size: clamp(1.9rem, 3.6vw, 2.5rem); color: var(--maple); line-height: 1; letter-spacing: -.02em; }
 .pot .note { font-size: .84rem; color: var(--on-deep-muted); }
-@media (max-width: 880px) { .strip-grid { grid-template-columns: 1fr 1fr; } .next-event { grid-column: 1 / -1; } }
 @media (max-width: 460px) { .strip-grid { grid-template-columns: 1fr; } }
 
 /* Sections */
@@ -168,7 +247,7 @@ p { margin: 0; }
 /* Page header for inner pages */
 .page-head { background: var(--deep); color: var(--on-deep); padding-block: 44px 40px; border-bottom: 10px solid var(--maple); }
 .page-head h1 { font-size: clamp(2.8rem, 7vw, 4.6rem); font-weight: 900; text-transform: uppercase; }
-.page-head p { color: var(--on-deep-muted); margin-top: 10px; max-width: 46em; }
+.page-head p { color: var(--on-deep-muted); margin-top: 10px; }
 .page-head .eyebrow { color: var(--maple); }
 
 /* Tables */
@@ -229,6 +308,35 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 .calc output { font-family: var(--font-num); font-weight: 600; font-size: 2rem; color: var(--accent); line-height: 1.1; }
 @media (max-width: 560px) { .calc { grid-template-columns: 1fr 1fr; } .calc .res { grid-column: 1 / -1; } }
 
+/* Rules */
+.rule-groups { display: grid; gap: 28px; }
+.rule-group { display: grid; gap: 8px; }
+.rule-group-title { font-size: 1.25rem; color: var(--accent); margin-bottom: 4px; }
+.rule summary { justify-content: flex-start; align-items: baseline; }
+.rule summary::after { margin-left: auto; }
+.rule-n { color: var(--muted); font-size: .85rem; min-width: 2em; }
+.quick { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; color: var(--muted); }
+.quick b { color: var(--ink); }
+.page-head .hero-actions { margin-top: 20px; }
+
+/* About */
+.about-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-content: start; }
+.fact-tile { display: grid; gap: 4px; }
+.fact-tile b { font-size: 2rem; font-weight: 600; color: var(--accent); line-height: 1.1; }
+.fact-tile span { color: var(--muted); font-size: .9rem; }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.person { display: flex; align-items: center; gap: 14px; }
+.person b { display: block; }
+.person span:not(.initials) { color: var(--muted); font-size: .9rem; }
+.initials { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--deep); color: var(--maple); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; flex: none; }
+.shirts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.shirt { display: grid; gap: 4px; align-content: start; }
+.shirt .sw { height: 56px; border-radius: var(--radius); border: 1px solid var(--line); display: grid; place-items: center; }
+.shirt .sw i { font-style: normal; color: #d4a537; letter-spacing: .1em; font-size: .9rem; }
+.shirt span:not(.sw) { color: var(--muted); font-size: .88rem; }
+@media (max-width: 700px) { .shirts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .about-facts { grid-template-columns: 1fr 1fr; } }
+textarea { resize: vertical; min-height: 120px; }
+
 /* Join */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid .full { grid-column: 1 / -1; }
@@ -255,27 +363,43 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 
 </head>
 <body>
+<div class="banner">
+  <div class="wrap banner-top">
+    <img class="b-logo" src="img/tour-logo.png" width="96" height="79" alt="9-Tap Tour logo">
+    <img class="b-pin" src="img/pin-left.png" width="31" height="69" alt="">
+    <div class="b-center">
+      <img class="b-title" src="img/title.png" width="389" height="50" alt="9-Tap Tour">
+      <p class="b-address">PO Box 931 Sumner, WA 98390 · <span class="num">(253) 987-7975</span></p>
+    </div>
+    <img class="b-pin" src="img/pin-right.png" width="34" height="67" alt="">
+    <img class="b-logo b-logo-right" src="img/tour-logo.png" width="96" height="79" alt="">
+  </div>
+  <div class="wrap banner-sponsors-wrap">
+    <p class="sponsor-tag">Support our sponsors</p>
+    <nav class="banner-sponsors" aria-label="Sponsors">
+      <a href="https://www.carstar.com/locations/wa/puyallup-15166/" target="_blank" rel="noopener"><img src="img/carstar.png" width="112" height="39" alt="CARSTAR Cornforth-Campbell"></a>
+      <a href="https://www.millerlite.com/av" target="_blank" rel="noopener"><img src="img/miller-lite.png" width="124" height="47" alt="Miller Lite"></a>
+      <a href="https://www.stormbowling.com/" target="_blank" rel="noopener"><img src="img/storm.png" width="73" height="38" alt="Storm"></a>
+      <a href="https://www.dexterbowling.com/" target="_blank" rel="noopener"><img src="img/dexter.png" width="106" height="39" alt="Dexter"></a>
+      <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
+      <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
+      <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
+      <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
+      <a class="word-logo" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">FitnessQuest</a>
+    </nav>
+  </div>
+</div>
 <header class="site-head">
   <div class="wrap head-row">
-    <a class="brand" href="#home" aria-label="9-Tap Tour home">
-      <svg class="brand-mark" viewBox="0 0 34 34" aria-hidden="true">
-        <rect width="34" height="34" rx="6" fill="var(--accent)"/>
-        <g fill="var(--accent-ink)">
-          <circle cx="8" cy="9" r="2.6"/><circle cx="14" cy="9" r="2.6"/><circle cx="20" cy="9" r="2.6"/>
-          <circle cx="11" cy="15" r="2.6"/><circle cx="17" cy="15" r="2.6"/><circle cx="23" cy="15" r="2.6"/>
-          <circle cx="14" cy="21" r="2.6"/><circle cx="20" cy="21" r="2.6"/><circle cx="17" cy="27" r="2.6"/>
-        </g>
-        <circle cx="26" cy="9" r="2.6" fill="none" stroke="var(--accent-ink)" stroke-width="1.4"/>
-      </svg>
-      <span class="brand-name">9-Tap Tour<small>Puget Sound · Since 2002</small></span>
-    </a>
     <nav class="nav" id="nav" aria-label="Main">
       <a href="#home">Home</a>
       <a href="#schedule">Schedule</a>
       <a href="#results">Results</a>
-      <a href="#standings">Standings</a>
-      <a href="#how-it-works">How it works</a>
-      <a href="#join">Join</a>
+      <a href="#bowler-of-the-year">Bowler of the Year</a>
+      <a href="#rules">Rules</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <a class="nav-join" href="#join">Join the Tour</a>
     </nav>
     <a class="btn btn-primary head-cta" href="#join">Become a member</a>
     <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
@@ -297,15 +421,16 @@ details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
         <ul>
           <li><a href="#schedule">Schedule</a></li>
           <li><a href="#results">Results</a></li>
-          <li><a href="#standings">Bowler of the Year</a></li>
-          <li><a href="#how-it-works">Rules &amp; format</a></li>
+          <li><a href="#bowler-of-the-year">Bowler of the Year</a></li>
+          <li><a href="#rules">Official rules</a></li>
+          <li><a href="#about">About the Tour</a></li>
         </ul>
       </div>
       <div>
         <h4>Get involved</h4>
         <ul>
           <li><a href="#join">Become a member</a></li>
-          <li><a href="#join">Contact the directors</a></li>
+          <li><a href="#contact">Contact us</a></li>
           <li><a href="https://www.9taptour.com/9tap.html" target="_blank" rel="noopener">Current website</a></li>
         </ul>
       </div>
@@ -367,6 +492,23 @@ const DATA = {
   sponsors: ["Storm","Dexter","USBC","Emerald Queen","Miller Lite","CARSTAR Puyallup","Heritage Bank","Command Computers","JD & Co. Jewelry","Navy City Metals","FitnessQuest"]
 };
 
+const RULES = [{"n": 1, "title": "Membership", "paras": ["Membership applications are available online or can be filled out at the Tournament site. Annual Membership dues are $25, except for 'Life Members' (see #2). You must be a current paid Member to compete in any Tour event. Apps must be completely filled out, accurate, and legible. Incorrect or inaccurate information could result in the forfeiture of prize money. (Bowlers must also be current USBC members)"], "bul": false}, {"n": 2, "title": "Lifetime membership", "paras": ["Once a 'Life Member' you no longer owe any Membership dues. You may become a Lifetime member by referring five \"New Members\" to the Tour. (To count as a \"New Member\", that person must participate in at least 3 tournaments.)"], "bul": false}, {"n": 3, "title": "Six months of non-participation", "paras": ["If a Member has not participated in any 9-TAP TOUR tournament for six months or more, that Members' average must be reviewed prior to bowling. Average must qualify meeting all new Member standards."], "bul": false}, {"n": 4, "title": "Rejoining members", "paras": ["Bowlers rejoining after allowing their membership to expire can become eligible by paying their membership for the current year. No penalties will be incurred."], "bul": false}, {"n": 5, "title": "Squad rules", "paras": ["Our regular format calls for four games, changing lanes one time, after the second game. All bowlers on a pair will move together, a Floor Director will advise where to move. There will be no more than eight bowlers allowed to bowl on a pair of lanes. A Director may need to move a bowler to a different lane than was assigned at check-in, prior to the beginning of a squad."], "bul": false}, {"n": 6, "title": "Normal squad times", "paras": ["Squad times may vary from one tournament to the next. Generally, there are three or four squads available to choose from in our One-Day Tournaments. Squad times may vary depending on the tournament Region, or host Bowling Center's activities. Please see your schedule or our website for exact squad times."], "bul": false}, {"n": 7, "title": "Bowling with friends", "paras": ["If you wish to bowl with a friend(s), the Tour will be happy to accommodate you, subject to lane availability. Checking in early is the best way to insure the possibility of bowling together."], "bul": false}, {"n": 8, "title": "Entry fees and lineage", "paras": ["The standard entry fees for each Tournament may vary from region to region. Entry fees cover expenses such as championship shirts, special prizes, and operational costs. The lineage expenses may also vary from region to region or Tournament to Tournament."], "bul": false}, {"n": 9, "title": "Re-entries and cashing", "paras": ["Participants may bowl in as many squads as they like during a tournament, but they may cash only once in a singles tournament. Doubles tournaments offer unlimited cashes, but only with different partners.", "Rule A. If you re-enter in consecutive squads, you may not start on the same pair you finished on, or bowl on the same two pair, as were bowled on in the previous squad.", "Rule B. Bowlers re-entering, please fill-out your recap before checking in. Save the Bowlers copy of your original re-cap to copy information and for verification."], "bul": false}, {"n": 10, "title": "Prize fund and payouts", "paras": ["All 9-Tap Tour Tournaments return 100% of the prize fund at each Tournament. All Singles Tournaments return a minimum of $32 per individual, which is added to the prize fund. Approx.1 in every 5 participants will share in the prize fund. In the case of special Tournaments, the cost of participating in the prize fund will be announced in advance. If a bowler chooses to participate in a Tournament without paying into the prize fund, they will not be eligible to receive any Tournament prize money."], "bul": false}, {"n": 11, "title": "Method of payment", "paras": ["Fees can be paid by Cash or Check at all locations. Credit or Debit cards may not be accepted in some Regions (please check first). All Fees are collected at check-in at the Tournament site. A $25 service charge will be levied on each check returned. Collection proceedings and a letter to USBC will result from NSF checks not paid promptly."], "bul": false}, {"n": 12, "title": "Handicap", "paras": ["Handicaps are 90% of the difference between your 9-Tap Tour average and 220. All 9-Tap averages above 220 will receive a negative handicap of 90% of that difference. The lowest \"book\" average for handicapping purposes is 125. The maximum allowable \"book\" average for joining the 9-TAP TOUR is 210.", "Rule 12a – Sandbagging will not be tolerated. Any game 40 pins below a Members' 9-Tap average must be brought to the attention of a Floor Director, BEFORE the start of a new game. If not checked by a director, or if a lack of a \"Best Effort\" is suspected, that game may be dropped for average purposes. ALL Members are expected to make their \"Best Effort\" at ALL times. Any action reflecting a 'lack of effort' will result in that game being dropped for average purposes.", "Rule 12b – Once a Member has reached 120 games, each new entry added to their record, will result in the oldest entry being dropped from their active record."], "bul": false}, {"n": 13, "title": "Entering averages (new members)", "paras": ["A new Member's 9-Tap Tour average will be determined by taking the high book average of the prior two years or prior year and current year (min.15 games), plus 20 pins. The 20 pins represent an approximation of the difference between league bowling and 9-Pin bowling. Your Tour average will adjust after every Tournament. Initially, averages are adjusted in small increments until enough games are reached to eliminate the large swings from week to week. If you have no USBC sanctioned league average (\"Book Average\") of 21 games or more during the past 3 years, you will start with a scratch average.", "Rule A - Averages reported on your application must reveal any sport or challenging lane conditions that may have impacted that average. Failure to do so is considered false information and may result in a possible disqualification. \"Challenging Lane Conditions' are any Oil Patterns that are more difficult than a Standard House shot, including 'Rotating' oil patterns.", "Rule B – Bowlers are responsible for accurately disclosing their current league average, regardless of how many games bowled. If a submitted average is lower than actual average, resulting in more handicap, the bowler may be disqualified with no refunds, and all prize winnings are forfeited. If the submitted average is higher than actual average there is no penalty.", "Rule C - Any average in the last five years that is 15 pins or more above any current book average must be Reported. Failure to report these averages may result in the forfeiting of prize winnings, and the bowler is subject to suspension of membership.", "Rule D – Hand Switches – Temporary or Short Term, left or right handed switches will not be allowed on the Tour. Long-Term disabilities requiring a permanent hand switch will be accepted, with prior 'skill level' being taken into consideration, for New Hand average."], "bul": false}, {"n": 14, "title": "Bonus pins", "paras": ["One Bonus Pin will be added to a Members' handicap for every 3 regular tournament entries that the Member does not cash. A maximum of 5 bonus pins will be added to any Member. In turn, Bonus Pins will be deducted when a Member cashes. One Bonus Pin is deducted when cashing in 11th place or more, 2 pins when cashing 6th to 10th, 3 pins when cashing 2nd to 5th, all Bonus Pins are removed after a win. In larger Tournaments, 2 Pins will be deducted if Prize Money is $150 or above."], "bul": false}, {"n": 15, "title": "Average adjustments", "paras": ["Although the directors would like to avoid any \"Adjustments\" of any Member's average, there may be the rare situation, that to be fair to the rest of the Tour Members, a correction becomes necessary. The directors therefore retain that right. Any Member, whose average has been adjusted, is entitled to a full refund, if an entry fee has already been paid."], "bul": false}, {"n": 16, "title": "Scores and recap sheets", "paras": ["Scores must be written on your recap after each game bowled. A Floor Director must then confirm and initial scores in red ink, before the next game is started. Please sign your recap immediately after your fourth game and hand to a director/staff. You are responsible to make sure your recap is given to a staff Member. Final totals will be added by director/staff."], "bul": false}, {"n": 17, "title": "Standard rules", "paras": ["Any dispute regarding the rules or the sanctions resulting from the enforcement of those rules, may be brought before the \"Liaison Committee\". That committee will have an equal representation of both Tour Administrators and Tour Members.", "Rule 17a - No persons, Members, or fans, may disturb or disrupt bowlers. Banging, yelling or screaming, whistling or loud clapping, intentional or unintentional, will result in warnings, fines and/or Membership Suspension for a repeat violator. Flash cameras will not be allowed. If children are disturbing or disrupting Members bowling, the parent/guardian will be asked to remedy the situation.", "Rule 17b - Only Members bowling in the squad are allowed in the bowler's settee or in the bowler's area.", "Rule 17c - If a Member has the need, or wish to debate a ruling, and it cannot wait until after the squad, please inform a Director or Staff member, that you have a problem. Discussions will be handled quietly away from the bowling area, so as not to disturb other Members.", "Rule 17d - No profanity or obscene gestures will be tolerated. If words are profane, and can be heard by others, this is considered disruptive and you will be warned, fined, or suspended.", "Rule 17e - Any substance or equipment that may result in interference with other bowlers shall be removed from bowling settee area. Food, easy-slide, alcohol, beverages, etc. should be put outside of the immediate bowling area. Warning: Use of powder or other foreign substances on shoes is illegal.", "Rule 17f - Do not move yourself or your equipment to your next pair of lanes until all bowlers on that pair have finished their games. Please move your bowling balls to the concourse area while waiting.", "Rule 17g - Being Ready to Bowl: If you have to leave your bowling area, please inform the floor director, or other Members on your pair as to your whereabouts. If it is your turn and we do not know where you are, you may receive a zero score for that frame and every frame until you return. Prolonged or repeated absence may result in the bowler's removal from that squad. When you are on the approach, please do not exceed a reasonable amount of time to deliver your ball."], "bul": false}, {"n": 18, "title": "Fines", "paras": ["All fines must be paid before bowling in your next tournament. Fines will NOT be retained by the Tour, they will be included in Tour incentives, such as a Top Qualifier Bonuses, 2-Day Added Money or Special High Game Side Pots such as Vets Day, Mom's Day or Dad's Day. Fines, although rare, will be given for the following reasons, but not limited to:", "Misconduct: A $10 fine, or suspension will result, depending on the seriousness of the offense.", "Shirts: A new Member is allowed up to five tournaments to have a regulation 9-TAP TOUR bowling shirt. On the sixth tournament, if you do not have one, a $5.00 fine may be levied.", "Kicking or Slamming ball returns, tables or chairs, throwing bowling supplies, etc. will result in a warning. Further violations will result in a $10 fine or a suspension for extreme cases.", "Profanity and obscene gestures will not be tolerated! Fines begin, after one warning at $10. If the violation is serious enough it may result in an immediate suspension for that Tournament with a forfeit of any prize money and no refunds. Further violations, will result in a longer suspension or a permanent ban."], "bul": true}, {"n": 19, "title": "Completion of squad", "paras": ["Bowlers are expected to complete all games in their squad. Medical issues or emergencies are obvious exceptions. Anyone leaving during a squad without authorization from a Director, will result in a suspension for the following Tournament. A repeat of this violation will result in a longer suspension or a repeal of Membership."], "bul": false}, {"n": 20, "title": "Lane courtesy", "paras": ["Lane courtesy will be a one-lane courtesy on each side of the bowler. Please let the bowler next to you, throw his/her ball before stepping onto the approach or getting a ball off ball returns."], "bul": false}, {"n": 21, "title": "Dress code", "paras": ["All Members should take pride in the image the Tour presents. All Members must look presentable when bowling. Hemmed mid-thigh shorts are acceptable. Cut-offs or jeans with holes or sweat pants are NOT allowed. All shirts must have collars or mock collars. No headwear is allowed. The only exception regarding dress code would be for medical or religious reasons. Advertising (other than Tour Sponsors) on clothing is not allowed. Small logos such as USBC, or small shirt makers logo are acceptable. First and last names must be on the back of your 9-TAP TOUR shirt with letters minimum 1-1/2 inches tall and they must be readable. Our logo must be embroidered, or permanently affixed to your shirt on the sleeve or pocket height on chest. If your apparel is not acceptable, you will be asked to either change or not bowl. No shirts from other clubs allowed."], "bul": false}, {"n": 22, "title": "Bowling balls", "paras": ["All balls are subject to spot inspection. An official scale may be used to determine that bowling balls meet all USBC specifications. Use of an illegal ball, may result in the forfeiture of winnings, with no refunds due the Member. It is the bowler's responsibility to use legal equipment. If you have any bowling balls in your possession that you are not sure of, please leave them in your car. Any Member may be asked by a Director, to have ALL your bowling balls inspected before you leave the Tournament site. Random checking of equipment after squads may be required.", "Rule A. You cannot sand, polish, or alter your bowling balls surface during competition. Chemicals and liquid cleaners are prohibited during competition. Wiping the oil or dirt off your ball with a dry towel is acceptable."], "bul": false}, {"n": 23, "title": "Cashing and winning", "paras": ["The Tournament winner will be the highest total pins (pin fall + handicap). Regular Tournaments are a \"Beat-the-Board\" format. Checks may be picked up at the conclusion of the Tournament. If not picked-up, larger than $200 can be mailed on request, less than $200 will be attached to recap and available at following event.", "TIES - In the event of a tie for 1st place, the Members involved have the option (if all parties are present) for either a one game roll-off or pooling all places involved and splitting the pool. For a roll-off, all parties must agree, otherwise the winnings will be divided. Special 9-TAP TOUR Tournaments may have different formats and may have different rules. Ties in head-to-head matches will result in a \"9th-10th Roll-Off\", with 20% of base handicaps added to both scores. Handicap fractions will be rounded to the nearest whole number. Ties for the last qualifying spot in the finals will be settled with a one game roll-off."], "bul": false}, {"n": 24, "title": "Tournament winners", "paras": ["All Tournament winners will earn a Championship Shirt. For the First win, a Blue champion shirt, second is Red, third is White, fourth is Gold and the fifth earns a Special shirt with Gold lettering and stars representing each Tour Title and each subsequent Title. Winners will be asked to fill out a Bio and have pictures taken. Pictures are taken of top finishers, when available, at the conclusion of the Tournament and become the property of the 9-Tap Tour."], "bul": false}, {"n": 25, "title": "Protests or appeals", "paras": ["They must be given in writing, to an Owner/Director prior to paying Tournament Prizes, for an issue involving a single Tournament. Any Member protesting or appealing a Tournament ruling or decision, must provide a current phone number and address and be available for discussion before the next 9-TAP TOUR Tournament.", "Rule A. If a Member intends on protesting or appealing a Tournament decision to USBC, they have 15 days to do so. However, they must verbally inform 9-Tap Tour of their intent to appeal or protest before winning checks are issued. When 9-Tap Tour is advised verbally (or in writing) of intent to appeal, we may hold checks until advised by the USBC.", "Rule B. Bowlers with Revoked Memberships or a Suspended Member, may appeal in writing, to the Liaison Committee. If the initial appeal is denied, a reconsideration may be requested six months after the date of infraction."], "bul": false}, {"n": 26, "title": "Special tournaments", "paras": ["Periodically, we will have \"Special\" 2-Day Tournaments. These Tournaments may have many different additional features such as: Sponsors \"Added-Money\" to beef-up the Prize Fund, may pay a higher payout ratio, may have a higher entry fee, may have Eligibility requirements. Each feature will be announced well in advance of that event. Sunday Finals will be run using a Single Elimination Bracket. Brackets will be \"Seeded\" based on qualifying scores. The Bracket size and the number of \"Byes\" (if any), will be determined based on the total number of Finalists. Larger numbers of Finalists may require preliminary rounds prior to the Bracket Finals. \"Monster Finals\" will be used to reduce the field to 16 before Brackets begin. All Finalists (except Byes) bowl one game, with the Top \"X\" scores moving on to the next round. A Monster Final chart will be displayed prior to the finals, showing the number of Byes and the number of Finalists moving on in each round. All Saturday qualifiers will be determined at the conclusion of the last Saturday squad. Saturday's Qualifiers spots in the Finals are guaranteed, and not affected by Sunday's \"Last Chance\" qualifiers. Sunday qualifiers are ADDED to the Saturday Qualifiers. \"Seeding\" will be based on combined qualifying scores from both days."], "bul": false}, {"n": 27, "title": "9-Tap Jackpot", "paras": ["An optional $4 entry. An entrant starting any game with SEVEN consecutive 9-Tap Strikes (9-counts), wins 80% of the Jackpot. A \"Consolation Bonus\" is paid each Tournament when there is no Jackpot winner. The entrant with the longest string of 9-Tap Strikes, to start a game, wins the Consolation. The Jackpot total and Consolation Bonus payouts, are always posted on the Check-In table during the Tournament. Consolation Bonus payouts are 'sweetened' as the Pot gets larger (at $2,000.00, $4,000.00, $6,000.00 & $8,000.00 levels). All Ties are split unless otherwise announced."], "bul": false}, {"n": 28, "title": "Progressive pot", "paras": ["Each Tournament offering the Progressive Pot, will pay out to the TOP THREE Finishers. Each entrant has the option of putting $20 or $10 or $0 into the Pot. The TOP THREE can win the following percentages from the pot total: 1st place $20=50%, $10=25%, 2nd place $20=20%, $10=10%, 3rd place $20=10%, $10=5%. All money not won from the Pot will carry over to the next tournament. Progressive Pot totals and payouts will always be posted in writing on the Check-In table. New members (1st Tournament) and Members who haven't participated for 6 months or more, may only put a maximum of $10 in the Pot."], "bul": false}, {"n": 29, "title": "Brackets, high game and scratch pots", "paras": ["These are all subject to your local branch. Usually there are several side pots available."], "bul": false}, {"n": 30, "title": "Mechanical breakdowns", "paras": ["Mechanical breakdowns do happen on occasion. In case of lane or equipment failure, Members resume from point of interruption on newly issued lanes. If the breakdown impedes bowling to the extent that it may delay the next squad or a house league, the bowlers may be moved or it may require continuing after the delay. Since the possibilities are numerous, a Director will be responsible for making a decision based on the circumstances that exist. No refunds due to mechanical failure. This is a USBC rule. If moved during a game in progress, additional practice time will generally not be available. Only if there is a significant time delay before resumption, may a Director elect to issue practice time. bowlers may be allowed one practice ball on each lane, depending on time restrictions"], "bul": false}, {"n": 31, "title": "Out-of-turn bowling", "paras": ["If someone bowls out of turn, their score will not count and they will re-bowl the frame on the correct lane. Their score counts only if the entire side bowls out of sequence, at which time the game will continue in that sequence."], "bul": false}, {"n": 32, "title": "Refunds", "paras": ["Once a bowler checks in at tournament site, there are no refunds. If a tournament is cancelled, refunds will be issued or you may use them the following week. A tournament would only be cancelled due to extreme circumstances. However, it would be a Board of Directors' decision. Refunds, minus the cost of linage for those who already bowled, will be issued if a tournament in progress is cancelled."], "bul": false}, {"n": 33, "title": "Media consent", "paras": ["All Members upon signing their 9-TAP TOUR Membership Application grant exclusive rights to 9-TAP TOUR INC to use their name, photographs or other information in any ethical way desired or warranted for any promotional purposes."], "bul": false}, {"n": 34, "title": "Minimum age", "paras": ["Must be 18 years of age to join, or conform to USBC Rules on, \"Parental Consent\". Your last year's average is acceptable for eligibility purposes if you bowled at least 21 games in one league."], "bul": false}, {"n": 35, "title": "Bowling center employees", "paras": ["Bowling center employees are not eligible to bowl in the Center where they work. The exception would be: Restaurant employees or Security workers with no direct involvement in the bowling aspect of the Center."], "bul": false}, {"n": 36, "title": "No PBA Tour bowlers", "paras": ["No National PBA Tour member may join until 5 years after leaving that organization. Average maximums will still apply. If a medical condition exists, that warrants re-consideration of this rule, the Branch Owner(s) or Liaison Committee may waive this rule."], "bul": false}, {"n": 37, "title": "Official rules", "paras": ["Official rules are available online or at the Tournament site. It is the bowler's responsibility to understand the rules before bowling. Bowlers may preview 9-TAP TOUR rules without obligation to join. Revised rules book are available at the tournament site or online at www.9taptour.com."], "bul": false}, {"n": 38, "title": "Rule changes", "paras": ["All rule changes will be approved by the Board of Directors and/or Liaison Committees. Amendments or New Rules will be posted at the Tournament site. In addition, the Tour web site will post all Rules."], "bul": false}, {"n": 39, "title": "Right to refuse or revoke membership", "paras": ["9-TAP TOUR has the right to refuse and revoke any membership. The 9-TAP TOUR may revoke membership from a Member, if a Director feels it is in the best interest of the Tour. 9-TAP TOUR will give written notification to any Member whose membership is revoked. There are no membership refunds once an application has been processed."], "bul": false}];
+const RULE_GROUPS = [
+  ["Membership and eligibility", [1, 2, 3, 4, 34, 35, 36, 39]],
+  ["Tournament day", [5, 6, 7, 9, 16, 19, 20, 30, 31]],
+  ["Averages and handicap", [12, 13, 14, 15]],
+  ["Fees, payouts and side pots", [8, 10, 11, 23, 24, 27, 28, 29, 32]],
+  ["Conduct, dress and equipment", [17, 18, 21, 22]],
+  ["Special events, protests and rule changes", [25, 26, 33, 37, 38]]
+];
+const DIRECTORS = [
+  { name: "Rob Victor", role: "CEO" },
+  { name: "Margie Victor", role: "Director" },
+  { name: "Shellie Soares", role: "Director" },
+  { name: "Karen Stumpf", role: "Director" },
+  { name: "Mark Galdo", role: "Director" }
+];
+
 const $ = (s, el = document) => el.querySelector(s);
 const money = n => "$" + n.toLocaleString("en-US");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -406,51 +548,57 @@ function eventRow(e) {
   </div>`;
 }
 
-function deckSVG() {
-  // Pin deck from the bowler's side: back row 7-8-9-10, front headpin. Nine fall; the 10 pin stands.
-  const rows = [[7,8,9,10],[4,5,6],[2,3],[1]];
-  let out = "", gap = 62;
-  rows.forEach((row, ri) => {
-    const y = 50 + ri * 54, x0 = 170 - (row.length - 1) * gap / 2;
-    row.forEach((p, i) => {
-      const x = x0 + i * gap, stand = p === 10, delay = (0.25 + (3 - ri) * 0.08 + i * 0.05).toFixed(2);
-      out += `<g ${stand ? "" : `class="pin-fall" style="animation-delay:${delay}s"`}>
-        <circle cx="${x}" cy="${y}" r="20" fill="${stand ? "var(--on-deep)" : "var(--on-deep-muted)"}"/>
-        <circle cx="${x}" cy="${y}" r="13" fill="none" stroke="var(--accent)" stroke-width="3"/>
-        <text x="${x}" y="${y + 5}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="14" fill="var(--deep)">${p}</text>
-      </g>`;
-    });
-  });
-  return `<svg class="deck" viewBox="0 0 340 250" role="img" aria-label="Pin deck with nine pins down and the 10 pin standing, which scores as a strike">
-    <rect x="6" y="6" width="328" height="238" rx="10" fill="var(--deep-2)"/>${out}</svg>`;
-}
-
 const VIEWS = {
   home() {
     const e = nextEvent, d = parse(e.date);
     const upcoming = DATA.events.filter(x => eventStatus(x) === "upcoming").slice(0, 4);
     return `
     <section class="hero"><div class="wrap hero-grid">
-      <div>
-        <p class="eyebrow" style="color:var(--maple)">Handicap singles tournaments · Puget Sound</p>
-        <h1 style="margin-top:12px">Nine pins<br>is a <em>strike.</em></h1>
-        <p class="hero-lede">On the 9-Tap Tour, a nine count on the first ball scores as a strike. <strong>Four games, beat the board,</strong> and about one bowler in every five entries cashes. Prize money is paid out the same day.</p>
+      <div class="spotlight">
+        <p class="eyebrow" style="color:var(--maple)">Latest champion · Bowlero Paradise · July 12, 2026</p>
+        <div class="spot-row">
+          <img class="spot-photo" src="img/champ-michael-miller.jpg" width="126" height="112" alt="Michael Miller">
+          <div class="spot-text">
+            <h1>Michael<br>Miller</h1>
+            <p class="spot-sub">First Tour title, won by 11 pins</p>
+          </div>
+        </div>
+        <div class="spot-bio">
+          <p>Michael joined the Tour about a year ago, and his best finish before this event was 14th, also at Bowlero Paradise. This time he shot 811 with 28 pins of handicap and 3 bonus pins, taking home ${money(2613)} including his Progressive Pot share.</p>
+          <p>"I was on fire," said Miller, who didn't expect to win. He's back bowling after a long break and plans to share the winnings with his wife and put some toward future tournaments.</p>
+        </div>
+        <div class="spot-stats">
+          <div><b class="num">811</b><span>Series</span></div>
+          <div><b class="num">$2,613</b><span>Won</span></div>
+          <div><b class="num">195</b><span>Entries</span></div>
+          <div><b class="num">$13,034</b><span>Paid out</span></div>
+        </div>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#schedule">See the schedule</a>
-          <a class="btn btn-ghost" href="#how-it-works">How it works</a>
+          <a class="btn btn-primary" href="#results">Full results</a>
+          <a class="btn btn-ghost" href="#schedule">See the schedule</a>
         </div>
       </div>
-      <div class="deck-wrap">${deckSVG()}<p class="deck-caption">Leave the 10 pin standing and it still counts as a strike.</p></div>
+      <aside class="ticket" aria-label="Next tournament">
+        <div class="ticket-top">
+          <span class="ticket-label">Next tournament</span>
+          <span class="ticket-count">${relDays(e)}</span>
+        </div>
+        <div class="ticket-date">
+          <span class="ticket-mon">${MON[d.getMonth()]}</span><span class="ticket-day">${d.getDate()}</span>
+          <span class="ticket-dow">${parse(e.date).toLocaleDateString("en-US", { weekday: "long" })}</span>
+        </div>
+        <h2 class="ticket-center">${esc(e.center)}</h2>
+        <p class="ticket-city">${esc(e.city)}, WA${e.tag ? ` · <b>${esc(e.tag)}</b>` : ""}</p>
+        <div class="ticket-squads">${e.squads.map(s => `<span><b>${s}</b>squad</span>`).join("")}</div>
+        <div class="ticket-tear" aria-hidden="true"></div>
+        <div class="ticket-foot">
+          <span>New members: arrive an hour early to sign up.</span>
+          <a class="btn btn-primary" href="#schedule">Full schedule</a>
+        </div>
+      </aside>
     </div></section>
 
     <section class="wrap strip"><div class="strip-grid">
-      <div class="panel next-event">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="eyebrow">Next tournament</span><span class="tag">${relDays(e)}</span></div>
-        <h3>${esc(e.center)}</h3>
-        <p class="meta">${longDate(e.date)} · ${esc(e.city)}, WA${e.tag ? ` · <b style="color:var(--ink)">${esc(e.tag)}</b>` : ""}</p>
-        ${squadsHTML(e.squads.map(s => s + " squad"))}
-        <p class="meta" style="margin-top:12px;font-size:.85rem">New members: arrive at least an hour early to sign up.</p>
-      </div>
       <div class="panel pot">
         <span class="label">9-Tap Jackpot</span>
         <span class="amount">${money(DATA.jackpot)}</span>
@@ -463,53 +611,54 @@ const VIEWS = {
       </div>
     </div></section>
 
-    <section class="wrap section"><div class="two-col">
-      <div>
-        <div class="section-head"><h2>Recent champions</h2><a class="link-more" href="#results">All results →</a></div>
-        <div class="champ-list">${DATA.champions.map(c => `
-          <div class="champ"><span class="date">${shortDate(c.date)}</span>
-            <div style="min-width:0"><div class="who">${esc(c.name)}</div><div class="where">${esc(c.where)}</div></div>
-            <span class="won num">${money(c.won)}</span></div>`).join("")}
+    <section class="wrap section">
+      <div class="latest">
+        <article class="story-body">
+          <header class="story-head"><div><p class="eyebrow">Latest results · Bowlero Paradise · July 12, 2026</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
+          
+          <p class="lede">Brian Lascala finished second with 800, the best series of his Tour career, worth ${money(1150)}. Kris Koepke and Mary Bridgman tied for third at 798 and took home ${money(444)} each. It took 683 to cash.</p>
+          <ul class="side-pots">
+            <li><b>Samson Ibale</b> rolled a <span class="num">300</span> for high scratch game.</li>
+            <li><b>Kalym Henry</b> took high scratch series with <span class="num">749</span>.</li>
+            <li><b>Cal Fisher</b> won the jackpot consolation with four straight taps to open a game, worth ${money(150)}. The 9-Tap Jackpot is now ${money(DATA.jackpot)}, closing in on the ${money(DATA.jackpotRecord)} record.</li>
+            <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
+          </ul>
+        </article>
+        <div class="latest-table">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Place</th><th>Bowler</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
+            <tbody>${DATA.results.slice(0, 10).map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}"><td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5] + (DATA.progressivePaid[r[1]] || 0))}</td></tr>`).join("")}</tbody>
+          </table></div>
+          <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">Full results →</a></p>
+          <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}.</p></div>
         </div>
       </div>
-      <article class="panel story">
-        <span class="eyebrow">Tour report · Bowlero South Seattle · March 1, 2026</span>
-        <h3>Ruta Hert wins by 13 pins as ladies go one-two</h3>
-        <p>Ruta joined the Tour in 2023, usually bowling alongside her husband Matt, a two-time champion. She became the seventh first-time champion of 2026, throwing a Storm Summit in Dexter SST 6 shoes. Her winnings are going to her nine kids.</p>
-        <div class="facts">
-          <div class="fact"><b>185</b><span>Entries</span></div>
-          <div class="fact"><b>$13,606</b><span>Paid out</span></div>
-          <div class="fact"><b>$2,460</b><span>To the winner</span></div>
-        </div>
-      </article>
-    </div></section>
+    </section>
 
     <section class="wrap section">
       <div class="section-head"><h2>Coming up</h2><a class="link-more" href="#schedule">Full schedule →</a></div>
       <div class="event-rows">${upcoming.map(eventRow).join("")}</div>
-    </section>
-
-    <section class="wrap section">
-      <div class="section-head"><h2>Our sponsors</h2><p>Thanks to the businesses that help put money back in bowlers' pockets.</p></div>
-      <div class="sponsors">${DATA.sponsors.map(s => `<span class="sponsor">${esc(s)}</span>`).join("")}</div>
     </section>`;
   },
 
   schedule() {
-    const nov = DATA.events.filter(e => e.date.startsWith("2026-11")), dec = DATA.events.filter(e => e.date.startsWith("2026-12"));
+    const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const upcoming = DATA.events.filter(e => eventStatus(e) !== "past");
+    const byMonth = [];
+    upcoming.forEach(e => { const k = e.date.slice(0, 7); let g = byMonth.find(x => x.k === k); if (!g) byMonth.push(g = { k, name: MONTHS[parse(e.date).getMonth()], items: [] }); g.items.push(e); });
+    const sections = byMonth.length ? byMonth.map(g => `
+    <section class="wrap section">
+      <div class="section-head"><h2>${g.name}</h2></div>
+      <div class="event-rows">${g.items.map(eventRow).join("")}</div>
+    </section>`).join("") : `
+    <section class="wrap section"><div class="panel"><h3>No tournaments scheduled yet</h3><p class="meta" style="margin-top:6px">The next schedule will be posted here. Past events are on the <a class="link-more" href="#results">Results</a> page.</p></div></section>`;
     return `
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">Fall 2026</p><h1>Schedule</h1>
       <p>Squad times are local. Bowl as many squads as you like, but you can cash only once per tournament. Dec 16 and Dec 26 are bye weeks.</p>
-    </div></section>
-    <section class="wrap section">
-      <div class="section-head"><h2>November</h2></div>
-      <div class="event-rows">${nov.map(eventRow).join("")}</div>
-    </section>
-    <section class="wrap section">
-      <div class="section-head"><h2>December</h2></div>
-      <div class="event-rows">${dec.map(eventRow).join("")}</div>
-      <p class="foot-note">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter.</p>
+    </div></section>${sections}
+    <section class="wrap" style="padding-top:12px">
+      <p class="foot-note">The Year End Championship at Bowlero Lanes in Lakewood is invitation only. Quarterly championships may have eligibility rules for members who bowled that quarter. Looking for a past event? See <a class="link-more" href="#results">Results</a>.</p>
     </section>`;
   },
 
@@ -552,7 +701,7 @@ const VIEWS = {
     </section>`;
   },
 
-  standings() {
+  "bowler-of-the-year"() {
     const max = DATA.boy[0][1];
     let prev = null, rank = 0;
     const rows = DATA.boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
@@ -560,8 +709,8 @@ const VIEWS = {
       <td class="bar-cell"><div class="bar"><i style="width:${(p / max * 100).toFixed(1)}%"></i></div></td><td class="r num">${p}</td></tr>`; }).join("");
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">Bowler of the Year</p><h1>Standings</h1>
-      <p>Season points race for the Tour's Bowler of the Year. Shown here: the 2025 standings as of September 1, 2025, the most recent the Tour has posted.</p>
+      <p class="eyebrow">2025 season</p><h1>Bowler of the Year</h1>
+      <p>The season-long points race across every Tour event. These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted.</p>
     </div></section>
     <section class="wrap section">
       <div class="podium-cards">${DATA.boy.slice(0, 3).map(([n, p], i) => `
@@ -576,18 +725,30 @@ const VIEWS = {
     </section>`;
   },
 
-  "how-it-works"() {
+  rules() {
+    const byN = Object.fromEntries(RULES.map(r => [r.n, r]));
+    const groups = RULE_GROUPS.map(([name, ns]) => `
+      <div class="rule-group" data-group>
+        <h3 class="rule-group-title">${esc(name)}</h3>
+        ${ns.map(n => byN[n]).filter(Boolean).map(r => `
+          <details class="rule" data-text="${esc((r.title + " " + r.paras.join(" ")).toLowerCase())}">
+            <summary><span class="rule-n num">${r.n}</span><span class="rule-t">${esc(r.title)}</span></summary>
+            <div>${r.bul ? `<p>${esc(r.paras[0])}</p><ul>${r.paras.slice(1).map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : r.paras.map(x => `<p>${esc(x)}</p>`).join("")}</div>
+          </details>`).join("")}
+      </div>`).join("");
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">Format &amp; rules</p><h1>How it works</h1>
-      <p>A 9-Tap tournament is a four-game handicap singles event. A nine count on your first ball counts as a strike, so scores run high and everyone has a shot.</p>
+      <p class="eyebrow">Official rules · Revised November 27, 2025</p><h1>Rules</h1>
+      <p>How a 9-Tap tournament runs, how your handicap works, and the Tour's full official rules. USBC rules apply where these are silent.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="docs/9-tap-tour-rules.pdf" target="_blank" rel="noopener">Download the rulebook (PDF)</a></div>
     </div></section>
     <section class="wrap section">
+      <div class="section-head"><h2>How a tournament works</h2></div>
       <div class="steps">
-        <div class="panel step"><div class="k">1</div><h3>Check in</h3><p>Pay your entry and optional side pots in cash or check at the center. New members bring proof of average.</p></div>
-        <div class="panel step"><div class="k">2</div><h3>Bowl four games</h3><p>Up to eight bowlers per pair. You change lanes after game two.</p></div>
-        <div class="panel step"><div class="k">3</div><h3>Beat the board</h3><p>Pinfall plus handicap across all four games. Highest total wins.</p></div>
-        <div class="panel step"><div class="k">4</div><h3>Get paid</h3><p>About one in five entries cashes. Money is paid on site and results go online within the hour.</p></div>
+        <div class="panel step"><div class="k">1</div><h3>Check in</h3><p>Pay your entry and any side pots in cash or check. New members bring proof of average and arrive an hour early.</p></div>
+        <div class="panel step"><div class="k">2</div><h3>Bowl four games</h3><p>Up to eight bowlers per pair. Everyone on the pair moves lanes together after game two.</p></div>
+        <div class="panel step"><div class="k">3</div><h3>Beat the board</h3><p>Pinfall plus handicap across all four games. A nine on your first ball counts as a strike.</p></div>
+        <div class="panel step"><div class="k">4</div><h3>Get paid</h3><p>About one entry in five cashes. Prize money is paid on site and results go online within the hour.</p></div>
       </div>
     </section>
     <section class="wrap section"><div class="two-col">
@@ -602,36 +763,109 @@ const VIEWS = {
           </div>
           <p class="foot-note" id="hdcp-note">Over four games that's 128 handicap pins.</p>
         </div>
-        <p class="foot-note">New members: your 9-Tap average is your higher recent USBC book average plus 20 pins. Bonus pins build up by one for every three entries without cashing, up to five.</p>
       </div>
       <div>
-        <div class="section-head"><h2>Rules at a glance</h2></div>
-        <div class="rules">
-          <details open><summary>Side pots</summary><div>
-            <p><b>9-Tap Jackpot ($4, optional).</b> Start any game with seven straight 9-Tap strikes to win 80% of the pot. If nobody does, the longest starting string wins a consolation bonus.</p>
-            <p><b>Progressive Pot ($20, $10 or $0).</b> At $20 the top three get 50%, 20% and 10%. At $10 they get 25%, 10% and 5%. Unclaimed money carries over. New and returning members can pay in up to $10.</p>
-            <p>Some centers also run high-game pots, brackets and scratch pots.</p>
-          </div></details>
-          <details><summary>Averages and eligibility</summary><div><ul>
-            <li>Maximum book average to join is 210.</li>
-            <li>Report your average honestly, including sport or tough oil leagues.</li>
-            <li>Averages adjust after every tournament.</li>
-            <li>Six months away means an average review before you bowl again.</li>
-          </ul></div></details>
-          <details><summary>Ties</summary><div><ul>
-            <li>First place: a one-game roll-off if everyone agrees and is present, otherwise the prize is split.</li>
-            <li>Last finals spot: a one-game roll-off.</li>
-          </ul></div></details>
-          <details><summary>Dress code</summary><div>
-            <p>Collared or mock-collared shirts, with your first and last name on the back in letters at least 1½ inches tall, plus the Tour logo. No cut-offs, torn jeans, sweatpants or hats. New members have five tournaments to get a Tour shirt.</p>
-          </div></details>
-          <details><summary>Conduct and equipment</summary><div><ul>
-            <li>No profanity, flash photography or powder on shoes. Keep food and drinks out of the bowling area.</li>
-            <li>Wait for bowlers on either side before you step up.</li>
-            <li>Balls must meet USBC specs. No sanding, polishing or chemicals during the event.</li>
-          </ul></div></details>
+        <div class="section-head"><h2>New to the Tour?</h2></div>
+        <ul class="quick">
+          <li><b>Your starting average</b> is your higher USBC book average from the last two years, plus 20 pins.</li>
+          <li><b>Bonus pins</b> add one pin for every three entries you don't cash, up to five.</li>
+          <li><b>Dress code:</b> a collared or mock-collared shirt. You have five tournaments to get a Tour shirt with your name on the back.</li>
+          <li><b>Maximum book average</b> to join is 210.</li>
+        </ul>
+      </div>
+    </div></section>
+    <section class="wrap section">
+      <div class="toolbar">
+        <h2>Official rules</h2>
+        <div class="field search"><label for="rule-find">Search the rules</label><input id="rule-find" type="search" placeholder="e.g. ties, jackpot, shirt" autocomplete="off"></div>
+      </div>
+      <div class="rule-groups" id="rule-groups">${groups}</div>
+      <p class="foot-note" id="rule-empty" hidden>No rules match that search.</p>
+    </section>`;
+  },
+
+  about() {
+    return `
+    <section class="page-head"><div class="wrap">
+      <p class="eyebrow">About 9-Tap Tour Inc.</p><h1>About the Tour</h1>
+      <p>A professionally run handicap tournament tour for Puget Sound bowlers, with a fair shot for low, medium and higher averages.</p>
+    </div></section>
+    <section class="wrap section"><div class="two-col">
+      <div class="story-body">
+        <p class="lede">The 9-Tap Tour is a fun, professionally run tournament. Members bowl our standard "Beat the Board" format, with several squads to choose from at each event. Big payouts, special pots and 9-Tap scoring, where a nine on the first ball counts as a strike, bring a different kind of excitement to tournament bowling.</p>
+        <p>About one bowler in every five entries cashes. There are other ways to win too: the 9-Tap Jackpot, the Progressive Pot, high game pots, brackets, and scratch game and series pots. Several times a year the Tour runs special two-day tournaments with added money and bracket finals, plus doubles events and "Best 3 of 4" formats.</p>
+        <p>Prize money is paid on site when each tournament ends, and results are posted online within an hour. Our rules are designed to protect members and keep play fair, and we're proud to be USBC certified.</p>
+        <p>We hope you enjoy our tournaments, and if you do, we hope you'll tell other bowlers about us. Hope to see you at our next one!</p>
+      </div>
+      <div class="about-facts">
+        <div class="panel fact-tile"><b class="num">2002</b><span>Results posted every season since</span></div>
+        <div class="panel fact-tile"><b class="num">1 in 5</b><span>Entries cash</span></div>
+        <div class="panel fact-tile"><b class="num">100%</b><span>Of the prize fund paid back every event</span></div>
+        <div class="panel fact-tile"><b class="num">$1,000</b><span>Minimum for first place at 100+ entries</span></div>
+      </div>
+    </div></section>
+    <section class="wrap section">
+      <div class="section-head"><h2>Who runs the Tour</h2><p>Puget Sound region · PO Box 931, Sumner, WA 98390</p></div>
+      <div class="people">${DIRECTORS.map(d => `
+        <div class="panel person"><span class="initials" aria-hidden="true">${d.name.split(" ").map(w => w[0]).join("")}</span><div><b>${esc(d.name)}</b><span>${esc(d.role)}</span></div></div>`).join("")}
+      </div>
+      <p class="foot-note">Questions for the directors? <a class="link-more" href="#contact">Contact us →</a></p>
+    </section>
+    <section class="wrap section">
+      <div class="section-head"><h2>Champion shirts</h2><p>Every tournament winner earns a championship shirt. Each title changes the color.</p></div>
+      <div class="shirts">
+        <div class="shirt"><span class="sw" style="background:#2557a7"></span><b>1st title</b><span>Blue</span></div>
+        <div class="shirt"><span class="sw" style="background:#c7362b"></span><b>2nd title</b><span>Red</span></div>
+        <div class="shirt"><span class="sw" style="background:#ffffff"></span><b>3rd title</b><span>White</span></div>
+        <div class="shirt"><span class="sw" style="background:#d4a537"></span><b>4th title</b><span>Gold</span></div>
+        <div class="shirt"><span class="sw sw-special" style="background:#10242a"><i>★★★★★</i></span><b>5th title on</b><span>Special shirt with gold lettering and a star for every title</span></div>
+      </div>
+    </section>`;
+  },
+
+  contact() {
+    return `
+    <section class="page-head"><div class="wrap">
+      <p class="eyebrow">Contact us</p><h1>Get in touch</h1>
+      <p>Questions about membership, your average, a result or sponsoring the Tour? Send a message and a director will get back to you.</p>
+    </div></section>
+    <section class="wrap section"><div class="two-col">
+      <form class="panel" id="contact-form" novalidate>
+        <h3 style="margin-bottom:16px">Send a message</h3>
+        <div class="form-grid">
+          <div class="field"><label for="c-name">Your name</label><input id="c-name" autocomplete="name" required></div>
+          <div class="field"><label for="c-email">Email</label><input id="c-email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="c-phone">Phone (optional)</label><input id="c-phone" type="tel" autocomplete="tel"></div>
+          <div class="field"><label for="c-to">Send to</label>
+            <select id="c-to"><option>Any director</option>${DIRECTORS.map(d => `<option>${esc(d.name)}</option>`).join("")}</select></div>
+          <div class="field full"><label for="c-topic">Topic</label>
+            <select id="c-topic"><option>Membership</option><option>My average or handicap</option><option>Tournament results</option><option>Schedule or squads</option><option>Sponsoring the Tour</option><option>Something else</option></select></div>
+          <div class="field full"><label for="c-msg">Message</label><textarea id="c-msg" rows="6" required></textarea></div>
         </div>
-        <p class="foot-note">This is a summary. The full rulebook governs, and USBC rules apply where the Tour's rules are silent.</p>
+        <div style="margin-top:18px"><button class="btn btn-primary" type="submit">Send message</button></div>
+        <div id="contact-msg" hidden></div>
+      </form>
+      <div style="display:grid;gap:20px;align-content:start">
+        <div class="panel">
+          <h3 style="margin-bottom:12px">Call or write</h3>
+          <div style="display:grid;gap:12px">
+            <div class="copy-row"><span>Message line <b class="num">(253) 987-7975</b></span><button class="copy-btn" type="button" data-copy="(253) 987-7975">Copy</button></div>
+            <div class="copy-row"><span>9-Tap Tour Inc., PO Box 931, Sumner, WA 98390</span><button class="copy-btn" type="button" data-copy="9-Tap Tour Inc., PO Box 931, Sumner, WA 98390">Copy</button></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3 style="margin-bottom:12px">At a tournament</h3>
+          <p class="meta">Find a director at the check-in table. Rulings, average questions and protests are handled there, quietly and away from the lanes.</p>
+        </div>
+        <div>
+          <div class="section-head" style="margin-bottom:10px"><h3>Quick answers</h3></div>
+          <ul class="quick">
+            <li><b>When are results posted?</b> Within an hour after each tournament.</li>
+            <li><b>How do I join?</b> Membership is $25 a year. <a class="link-more" href="#join">Start here →</a></li>
+            <li><b>Can I bowl with friends?</b> Yes, if lanes allow. Check in early to get on the same pair.</li>
+            <li><b>Missed picking up your check?</b> Over $200 can be mailed on request. Smaller checks wait at the next event.</li>
+          </ul>
+        </div>
       </div>
     </div></section>`;
   },
@@ -669,8 +903,8 @@ const VIEWS = {
           </ol>
         </div>
         <div class="panel">
-          <h3 style="margin-bottom:12px">Contact the directors</h3>
-          <p class="meta">Rob Victor and Harold Soares</p>
+          <h3 style="margin-bottom:12px">Questions before you join?</h3>
+          <p class="meta">Call the message line or <a class="link-more" href="#contact">send the directors a message →</a></p>
           <div style="display:grid;gap:10px;margin-top:12px">
             <div class="copy-row"><span>Message line <b class="num">(253) 987-7975</b></span><button class="copy-btn" type="button" data-copy="(253) 987-7975">Copy</button></div>
             <div class="copy-row"><span>9-Tap Tour, PO Box 931, Sumner, WA 98390</span><button class="copy-btn" type="button" data-copy="9-Tap Tour, PO Box 931, Sumner, WA 98390">Copy</button></div>
@@ -693,7 +927,30 @@ function renderResults(q = "") {
 
 function wire(view) {
   if (view === "results") { renderResults(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
-  if (view === "how-it-works") {
+  if (view === "rules") {
+    $("#rule-find").addEventListener("input", e => {
+      const q = e.target.value.trim().toLowerCase(); let any = false;
+      document.querySelectorAll("#rule-groups .rule").forEach(d => { const hit = !q || d.dataset.text.includes(q); d.hidden = !hit; if (q && hit) d.open = true; if (!q) d.open = false; any = any || hit; });
+      document.querySelectorAll("#rule-groups [data-group]").forEach(g => { g.hidden = !g.querySelector(".rule:not([hidden])"); });
+      $("#rule-empty").hidden = any;
+    });
+  }
+  if (view === "contact") {
+    $("#contact-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const n = $("#c-name").value.trim(), em = $("#c-email").value.trim(), m = $("#c-msg").value.trim(), out = $("#contact-msg");
+      out.hidden = false; out.className = "toast";
+      if (!n || !em || !m) { out.textContent = "Add your name, email and a message so a director can reply."; return; }
+      out.textContent = `Thanks, ${n.split(" ")[0]}. In the live site this would go to ${$("#c-to").value.toLowerCase() === "any director" ? "the directors" : $("#c-to").value}. For this prototype nothing was sent.`;
+    });
+  }
+  if (view === "contact" || view === "join") {
+    document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+      const done = () => { b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1500); };
+      try { navigator.clipboard.writeText(b.dataset.copy).then(done, () => {}); } catch (_) {}
+    }));
+  }
+  if (view === "rules") {
     const calc = () => {
       const a = Math.max(125, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
       const h = Math.trunc((220 - a) * 0.9) + b;
@@ -712,16 +969,13 @@ function wire(view) {
       msg.style.background = "";
       msg.textContent = `Thanks, ${f}. In the live site this would send your application to the directors. For this prototype nothing was sent.`;
     });
-    document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
-      const done = () => { b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1500); };
-      try { navigator.clipboard.writeText(b.dataset.copy).then(done, () => {}); } catch (_) {}
-    }));
   }
 }
 
 function route() {
   const name = (location.hash || "#home").slice(1);
-  const view = VIEWS[name] ? name : "home";
+  const alias = { "how-it-works": "rules" };
+  const view = VIEWS[alias[name] || name] ? (alias[name] || name) : "home";
   $("#app").innerHTML = VIEWS[view]();
   document.querySelectorAll(".nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   wire(view);
