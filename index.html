@@ -169,7 +169,7 @@ p { margin: 0; }
 @media (max-width: 400px) { .ticket-foot { flex-direction: column; align-items: stretch; } }
 
 /* Latest results on home */
-.latest { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start; }
+.latest { display: grid; gap: 0; max-width: 72ch; }
 .latest > * { min-width: 0; }
 .story-body { display: grid; gap: 14px; max-width: 64ch; }
 .story-body p { color: var(--muted); }
@@ -629,14 +629,7 @@ const VIEWS = {
             <li>Rain City Pro Shop gave shammies to the top scorer in each squad: Steven Nolan (passed on by Leticia Salazar), Michael Miller and Josh Brown.</li>
           </ul>
         </article>
-        <div class="latest-table">
-          <div class="table-wrap"><table>
-            <thead><tr><th>Place</th><th>Bowler</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
-            <tbody>${DATA.results.slice(0, 10).map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}"><td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5] + (DATA.progressivePaid[r[1]] || 0))}</td></tr>`).join("")}</tbody>
-          </table></div>
-          <p class="foot-note">Top 10 of 39 cashers. Prizes include Progressive Pot shares. <a class="link-more" href="#results">Full results →</a></p>
-          <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}. <a class="link-more" href="#results/ruta-hert">Read her story →</a></p></div>
-        </div>
+        <div class="earlier"><img class="champ-photo sm" src="img/champ-ruta-hert.jpg" width="125" height="112" alt="Ruta Hert"><p class="foot-note" style="margin:0">Earlier in 2026: <b style="color:var(--ink)">Ruta Hert</b> won at Bowlero South Seattle on March 1 by 13 pins as the ladies went one-two, taking home ${money(2460)}. <a class="link-more" href="#results/ruta-hert">Read her story →</a></p></div>
       </div>
     </section>
 
