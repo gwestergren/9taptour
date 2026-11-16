@@ -1,3 +1,10 @@
 {
-  "navigationFallback": { "rewrite": "/index.html" }
+  "routes": [
+    { "route": "/staff", "rewrite": "/index.html", "allowedRoles": ["staff"] },
+    { "route": "/api/staff/*", "allowedRoles": ["staff"] }
+  ],
+  "responseOverrides": {
+    "401": { "redirect": "/.auth/login/aad?post_login_redirect_uri=/staff", "statusCode": 302 }
+  },
+  "navigationFallback": { "rewrite": "/index.html", "exclude": ["/staff", "/img/*", "/docs/*"] }
 }

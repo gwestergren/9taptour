@@ -585,7 +585,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-poster .btn { margin-top: 12px; }
 @media (max-width: 520px) { .dk-row { grid-template-columns: 1fr; } .dk-lane { grid-row: auto; } }
 @media print {
-  body.print-poster > *:not(main), body.print-poster #app > *:not(.sc-main), body.print-poster .sc-main > *:not(.dk-poster) { display: none !important; }
+  body.print-poster > *:not(main), body.print-poster .staff-head, body.print-poster #app > *:not(.sc-main), body.print-poster .sc-main > *:not(.dk-poster) { display: none !important; }
   body.print-poster .dk-poster { display: block; text-align: center; border: 0; margin: 0; padding-top: 40px; }
   body.print-poster .dk-poster img { width: 360px; height: 360px; }
   body.print-poster .dk-poster h3 { font-size: 2.6rem; }
@@ -605,6 +605,23 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-squads { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .su-squads input { text-align: center; font: 700 1.05rem var(--font-num); }
 .su-sum { margin: 18px 0 14px; line-height: 1.55; }
+/* Staff area: own menu, no sponsor banner or public footer */
+body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
+.staff-head { position: sticky; top: 0; z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--maple); }
+.staff-row { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; padding-block: 6px; }
+.staff-brand { display: flex; align-items: center; gap: 8px; color: var(--maple); text-decoration: none; font: 700 .8rem var(--font-body); letter-spacing: .14em; text-transform: uppercase; }
+.staff-brand img { background: #fff; border-radius: 4px; padding: 2px; }
+.staff-nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.staff-nav a { color: var(--on-deep); text-decoration: none; font-weight: 700; padding: 10px 12px; border-radius: var(--radius); white-space: nowrap; }
+.staff-nav a[aria-current="page"] { background: var(--maple); color: var(--deep); }
+.staff-end { display: flex; gap: 10px; align-items: center; font-size: .85rem; }
+.staff-end a { color: var(--on-deep-muted, #9fb3b5); }
+.staff-end button { font: 600 .85rem var(--font-body); background: none; border: 1px solid currentColor; color: var(--on-deep); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; }
+@media (max-width: 560px) { .staff-nav { order: 3; flex-basis: 100%; } .staff-end { margin-left: auto; } }
+.pin-alt { margin-top: 14px; }
+.pin-alt summary { cursor: pointer; font-weight: 700; }
+.pin-alt form { margin-top: 12px; }
+.pin-in { font: 700 1.6rem var(--font-num); letter-spacing: .3em; text-align: center; min-height: 58px; }
 .dk-add { margin-bottom: 14px; }
 .dk-add input { min-height: 50px; font-size: 1.05rem; margin-top: 8px; }
 .ck-hit:disabled { opacity: .5; cursor: not-allowed; }
@@ -674,6 +691,19 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
   </div>
 </header>
 
+<header class="staff-head" id="staff-head" hidden>
+  <div class="wrap staff-row">
+    <a class="staff-brand" href="#setup"><img src="img/tour-logo.png" width="34" height="28" alt="">Staff</a>
+    <nav class="staff-nav" aria-label="Staff">
+      <a href="#setup">Setup</a>
+      <a href="#desk">Desk</a>
+      <a href="#scores">Scores</a>
+      <a href="#standings">Standings</a>
+    </nav>
+    <div class="staff-end"><a href="#home">Public site</a><button type="button" id="staff-lock">Lock</button></div>
+  </div>
+</header>
+
 <main id="app"></main>
 
 <footer class="site-foot">
@@ -700,10 +730,8 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
           <li><a href="#join">Become a member</a></li>
           <li><a href="https://www.youtube.com/@9-taptourbowling227" target="_blank" rel="noopener">Videos on YouTube</a></li>
           <li><a href="#contact">Contact us</a></li>
-          <li><a href="#setup">Tournament setup (staff)</a></li>
           <li><a href="#checkin">Bowler check-in</a></li>
-          <li><a href="#desk">Check-in desk (staff)</a></li>
-          <li><a href="#scores">Rover score entry (staff)</a></li>
+          <li><a href="#setup">Staff login</a></li>
           <li><a href="https://www.9taptour.com/9tap.html" target="_blank" rel="noopener">Current website</a></li>
         </ul>
       </div>
@@ -787,6 +815,7 @@ const DIRECTORS = [
 ];
 
 const $ = (s, el = document) => el.querySelector(s);
+const headH = () => (document.body.classList.contains("staff") ? $("#staff-head") : $(".site-head")).offsetHeight;
 const money = n => "$" + n.toLocaleString("en-US");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const parse = d => { const [y, m, dd] = d.split("-").map(Number); return new Date(y, m - 1, dd); };
@@ -1000,6 +1029,30 @@ const VIEWS = {
       <div id="sc-body"></div>
       <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
       <p class="foot-note">Prototype: most bowlers here are sample check-ins, plus anyone checked in on this device through <a class="link-more" href="#checkin">Bowler check-in</a> or the <a class="link-more" href="#desk">desk</a>. Scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
+    </section>`;
+  },
+
+  standings() { SC.game = "board"; return VIEWS.scores(); },
+
+  pin() {
+    return `
+    <section class="page-head sc-head"><div class="wrap"><p class="eyebrow">Tour staff</p><h1>Staff login</h1><p>Sign in to open setup, the check-in desk, score entry and standings.</p></div></section>
+    <section class="wrap ck-main">
+      <div class="panel">
+        ${STAFF.me ? `<p class="toast ck-note">You're signed in as <b>${esc(STAFF.me.userDetails || "")}</b>, but this account doesn't have the staff role yet. Ask a director to invite you, then sign out and back in.</p>` : ""}
+        <a class="btn btn-primary ck-go" href="/.auth/login/aad?post_login_redirect_uri=/staff">Sign in with Microsoft</a>
+        <a class="btn btn-ghost ck-go" style="margin-top:10px" href="/.auth/login/github?post_login_redirect_uri=/staff">Sign in with GitHub</a>
+        ${STAFF.me ? `<p class="meta" style="margin-top:12px"><a class="link-more" href="/.auth/logout?post_logout_redirect_uri=/staff">Sign out and use a different account</a></p>` : ""}
+        <p class="meta" style="margin-top:12px">Only directors invited to the staff role can open these pages. Use the same account your invite was sent to.</p>
+      </div>
+      <details class="panel pin-alt"><summary>Use the demo PIN instead</summary>
+        <form id="pin-form" novalidate>
+          <div class="field"><label for="pin-in">Staff PIN</label><input id="pin-in" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" class="pin-in"></div>
+          <button class="btn btn-primary ck-go" type="submit" style="margin-top:14px">Unlock staff pages</button>
+          <div id="pin-msg" class="toast" hidden></div>
+        </form>
+      </details>
+      <p class="foot-note">The demo PIN is temporary, for showing the mockup until staff invites are set up.</p>
     </section>`;
   },
 
@@ -1479,7 +1532,7 @@ function wireScores() {
   const got = (b, g) => typeof (state.scores[b.id] || [])[g] === "number";
   const doneCount = g => roster.filter(b => got(b, g)).length;
   if (SC.game === null || (SC.game !== "board" && SC.game >= ng)) { SC.game = 0; for (let g = 0; g < ng; g++) { SC.game = g; if (doneCount(g) < roster.length) break; } }
-  const top = () => document.documentElement.style.setProperty("--sc-top", ($(".site-head").offsetHeight) + "px");
+  const top = () => document.documentElement.style.setProperty("--sc-top", (headH()) + "px");
   top(); window.addEventListener("resize", top, { passive: true });
   const totals = b => { const c = SC.counted(state.scores[b.id] || [], ng); return { scr: c.sum, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }; };
   const metaHTML = (b, g) => {
@@ -1543,8 +1596,8 @@ function wireScores() {
     });
     counts();
   };
-  const toTop = () => { const bar = $(".sc-bar"), y = $(".sc-main").getBoundingClientRect().top + scrollY - bar.offsetHeight - $(".site-head").offsetHeight; if (scrollY > y) scrollTo(0, y); };
-  if (innerWidth < 760) setTimeout(() => scrollTo(0, $(".sc-head").getBoundingClientRect().top + scrollY - $(".site-head").offsetHeight), 0);
+  const toTop = () => { const bar = $(".sc-bar"), y = $(".sc-main").getBoundingClientRect().top + scrollY - bar.offsetHeight - headH(); if (scrollY > y) scrollTo(0, y); };
+  if (innerWidth < 760) setTimeout(() => scrollTo(0, $(".sc-head").getBoundingClientRect().top + scrollY - headH()), 0);
   $("#sc-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-squad]"); if (!b) return; SC.squad = +b.dataset.squad; SC.game = null; SC.lanes = null; route(); });
   $("#sc-games").addEventListener("click", ev => { const b = ev.target.closest("[data-game]"); if (!b) return; SC.game = b.dataset.game === "board" ? "board" : +b.dataset.game; SC.lanes = null; body(); toTop(); });
   $("#sc-lanes").addEventListener("click", ev => { const b = ev.target.closest("[data-lanes]"); if (!b) return; SC.lanes = b.dataset.lanes; body(); toTop(); });
@@ -1608,11 +1661,9 @@ const CK = {
     const at = cap => { const ok = order.filter(n => c[n] < cap); if (!ok.length) return null; return cf.fill === "spread" ? ok.reduce((b, n) => c[n] < c[b] ? n : b) : ok[0]; };
     return at(cf.max) ?? (cf.overflow ? at(cf.overflowMax) : null);
   },
-  letters(e, l) {
-    const base = {}; e.squads.forEach((_, sq) => { base[sq] = Array(100).fill(0); SC.roster(e, sq, true).forEach(b => base[sq][b.lane]++); });
-    const seen = {};
-    l.slice().sort((a, b) => a.at - b.at).forEach(r => { if (!r.lane) { r.pos = ""; return; } const k = r.squad + ":" + r.lane; seen[k] = (seen[k] || 0) + 1; r.pos = String.fromCharCode(64 + base[r.squad][r.lane] + seen[k]); });
-  },
+  // Lanes only: bowlers decide their order at the lane.
+  letters(e, l) { l.forEach(r => { r.pos = ""; }); },
+
   friendOf(l, sq, name, self) {
     const q = (name || "").trim().toLowerCase(); if (!q) return null;
     return l.find(r => r.squad === sq && r !== self && (r.first + " " + r.last).toLowerCase().includes(q)) || l.find(r => r.squad === sq && r !== self && q.split(/\s+/).some(w => w.length > 2 && r.last.toLowerCase() === w)) || null;
@@ -1655,8 +1706,8 @@ function wireSetup() {
     $("#su-lo").textContent = c.first; $("#su-hi").textContent = c.last; $("#su-max").textContent = c.max;
     [["su-dir", c.dir], ["su-fill", c.fill], ["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
     const n = c.last - c.first + 1, o = CFG.order(c), L = i => String.fromCharCode(65 + i);
-    const firstFew = c.fill === "spread" ? [`${o[0]}A`, `${o[1] || o[0]}A`, `${o[2] || o[0]}A`, "…", `${o[0]}B`] : [`${o[0]}A`, `${o[0]}B`, "…", `${o[0]}${L(c.max - 1)}`, `${o[1] || o[0]}A`];
-    $("#su-sum").innerHTML = `<b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.<br>Check-in places bowlers ${firstFew.join(", ")}.<br>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}`;
+    const firstFew = c.fill === "spread" ? `one bowler on each lane (${o.slice(0, 3).join(", ")}…), then wraps around` : `${c.max} on lane ${o[0]}, then ${c.max} on lane ${o[1] || o[0]}, and so on`;
+    $("#su-sum").innerHTML = `<b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.<br>Check-in places ${firstFew}. Bowlers pick their order at the lane.<br>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}`;
   };
   pick("su-dir", "dir"); pick("su-fill", "fill"); pick("su-games", "games", true); pick("su-count", "count", true);
   $("#su-form").querySelectorAll(".su-step button").forEach(b => b.addEventListener("click", () => { c.max = Math.min(10, Math.max(1, c.max + +b.dataset.d)); if (c.overflowMax < c.max) $("#su-overmax").value = c.max; sum(); }));
@@ -1744,7 +1795,7 @@ function wireCheckin() {
           <li><span class="dot">2</span><span>Head to lane ${r.lane || "—"}. If the desk moves you, your lane updates on this screen.</span></li>
           <li><span class="dot">3</span><span>Bowl. A rover enters your scores after each game, so there's no card to carry.</span></li>
         </ol>
-        <div class="ck-end"><button type="button" class="btn btn-ghost" id="ck-again">Check in another bowler</button><a class="link-more" href="#desk">Open the check-in desk (staff) →</a></div>`;
+        <div class="ck-end"><button type="button" class="btn btn-ghost" id="ck-again">Check in another bowler</button></div>`;
       $("#ck-again").addEventListener("click", () => go("find", { who: null, friendHit: null }));
       return;
     }
@@ -1811,7 +1862,7 @@ function wireDesk() {
   if (CK.deskSq === null) CK.deskSq = 0;
   const msg = t => { const m = $("#dk-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
   const draw = () => {
-    const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.pos.localeCompare(b.pos));
+    const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
     $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(s)}<small>${l.filter(r => r.squad === i).length} self check-in${l.filter(r => r.squad === i).length === 1 ? "" : "s"}</small></button>`).join("");
     const c = CK.counts(e, sq, l), sample = SC.roster(e, sq, true).length;
     const cf = CFG.get(e), laneOpts = r => CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n} · ${c[n]}/${cf.max}</option>`).join("");
@@ -1867,7 +1918,8 @@ function wireDesk() {
   window.addEventListener("storage", onStore);
 }
 function wire(view) {
-  if (view === "scores") wireScores();
+  if (view === "scores" || view === "standings") wireScores();
+  if (view === "pin") wirePin();
   if (view === "checkin") wireCheckin();
   if (view === "desk") wireDesk();
   if (view === "setup") wireSetup();
@@ -1925,11 +1977,41 @@ function wire(view) {
   }
 }
 
+/* ---- Staff area ----
+   Sign-in uses Azure Static Web Apps built-in auth. Directors are invited to the "staff" role in the Azure portal
+   (Static Web App > Role management > Invite). /staff is server-protected in staticwebapp.config.json and sends
+   people without the role to the Microsoft sign-in. /.auth/me tells this page who is signed in and their roles.
+   When a data API is added (Google Sheet), its /api/staff/* routes get the same allowedRoles so data is protected
+   on the server too. The demo PIN is a temporary fallback until staff invites are set up. */
+const STAFF = {
+  views: ["setup", "desk", "scores", "standings"],
+  PIN: "987654321",
+  me: null,
+  load() { if (!/^https?:/.test(location.protocol)) return Promise.resolve(); return fetch("/.auth/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { STAFF.me = j && j.clientPrincipal; }).catch(() => {}); },
+  role() { return !!(STAFF.me && (STAFF.me.userRoles || []).includes("staff")); },
+  pin() { try { return localStorage.getItem("9tap-staff") === "1"; } catch (_) { return false; } },
+  ok() { return STAFF.role() || STAFF.pin(); },
+  set(v) { try { v ? localStorage.setItem("9tap-staff", "1") : localStorage.removeItem("9tap-staff"); } catch (_) {} }
+};
+function wirePin() {
+  $("#pin-form").addEventListener("submit", ev => {
+    ev.preventDefault();
+    if ($("#pin-in").value.trim() === STAFF.PIN) { STAFF.set(true); route(); return; }
+    const m = $("#pin-msg"); m.hidden = false; m.textContent = "That PIN isn't right. Ask a director."; $("#pin-in").select();
+  });
+}
+$("#staff-lock").addEventListener("click", () => { STAFF.set(false); if (STAFF.role()) location.href = "/.auth/logout?post_logout_redirect_uri=/"; else location.hash = "#home"; });
 function route() {
   const [name, anchor] = (location.hash || "#home").slice(1).split("/");
   const alias = { "how-it-works": "rules" };
-  const view = VIEWS[alias[name] || name] ? (alias[name] || name) : "home";
+  let view = VIEWS[alias[name] || name] && name !== "pin" ? (alias[name] || name) : "home";
+  const staff = STAFF.views.includes(view);
+  if (staff && !STAFF.ok()) view = "pin";
+  document.body.classList.toggle("staff", staff);
+  $("#staff-head").hidden = !staff;
+  if (view === "scores" && SC.game === "board") SC.game = null;
   $("#app").innerHTML = VIEWS[view]();
+  document.querySelectorAll(".staff-nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   document.querySelectorAll(".nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   wire(view);
   $("#nav").classList.remove("open"); $("#menu-btn").setAttribute("aria-expanded", "false");
@@ -1938,7 +2020,9 @@ function route() {
 }
 $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.toggle("open"); $("#menu-btn").setAttribute("aria-expanded", String(o)); });
 window.addEventListener("hashchange", route);
-route();
+// /staff is the protected entry point (see staticwebapp.config.json); show the app at the site root.
+if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" + (location.hash || "#setup"));
+STAFF.load().finally(route);
 </script>
 
 </body>
