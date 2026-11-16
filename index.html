@@ -592,6 +592,19 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
   body.print-poster .dk-poster .meta { font-size: 1.2rem; max-width: 40ch; margin-inline: auto; }
   body.print-poster .dk-poster .btn { display: none; }
 }
+.su-form h3 { margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
+.su-form h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.su-two { grid-template-columns: 1fr 1fr; }
+.su-q { margin: 14px 0; }
+.su-q > .sc-lbl { display: block; margin-bottom: 8px; }
+.su-q .sc-seg { flex-wrap: wrap; }
+.su-step { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.su-step button { width: 52px; min-height: 48px; font: 700 1.4rem var(--font-body); background: var(--surface); color: var(--ink); border: 0; cursor: pointer; }
+.su-step output { min-width: 56px; text-align: center; font: 700 1.5rem var(--font-num); }
+.su-mini { width: 64px !important; min-height: 40px; display: inline-block; padding: 4px 6px; text-align: center; }
+.su-squads { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.su-squads input { text-align: center; font: 700 1.05rem var(--font-num); }
+.su-sum { margin: 18px 0 14px; line-height: 1.55; }
 .dk-add { margin-bottom: 14px; }
 .dk-add input { min-height: 50px; font-size: 1.05rem; margin-top: 8px; }
 .ck-hit:disabled { opacity: .5; cursor: not-allowed; }
@@ -687,6 +700,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
           <li><a href="#join">Become a member</a></li>
           <li><a href="https://www.youtube.com/@9-taptourbowling227" target="_blank" rel="noopener">Videos on YouTube</a></li>
           <li><a href="#contact">Contact us</a></li>
+          <li><a href="#setup">Tournament setup (staff)</a></li>
           <li><a href="#checkin">Bowler check-in</a></li>
           <li><a href="#desk">Check-in desk (staff)</a></li>
           <li><a href="#scores">Rover score entry (staff)</a></li>
@@ -974,7 +988,7 @@ const VIEWS = {
     return `
     <section class="page-head sc-head"><div class="wrap">
       <p class="eyebrow">Rover score entry · Tour staff</p><h1>Enter scores</h1>
-      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}${ng > 3 ? " · Best 3 of 4" : ""}</p>
+      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}${CFG.get(e).count < ng ? ` · Best ${CFG.get(e).count} of ${ng}` : ""}</p>
     </div></section>
     <div class="sc-bar"><div class="wrap">
       <div class="sc-row"><span class="sc-lbl">Squad</span><div class="sc-seg" id="sc-squads">${e.squads.map((s, i) => `<button type="button" data-squad="${i}" aria-pressed="${i === sq}">${esc(s)}</button>`).join("")}</div></div>
@@ -986,6 +1000,43 @@ const VIEWS = {
       <div id="sc-body"></div>
       <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
       <p class="foot-note">Prototype: most bowlers here are sample check-ins, plus anyone checked in on this device through <a class="link-more" href="#checkin">Bowler check-in</a> or the <a class="link-more" href="#desk">desk</a>. Scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
+    </section>`;
+  },
+
+  setup() {
+    const e = nextEvent, c = CFG.get(e);
+    const seg = (id, opts, cur) => `<div class="sc-seg" id="${id}">${opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
+    return `
+    <section class="page-head sc-head"><div class="wrap">
+      <p class="eyebrow">Tournament setup · Tour staff</p><h1>Tournament setup</h1>
+      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}. Set this before check-in opens.</p>
+    </div></section>
+    <section class="wrap ck-main">
+      <form class="panel su-form" id="su-form" novalidate>
+        <h3>Lanes</h3>
+        <div class="form-grid su-two">
+          <div class="field"><label for="su-first">First lane in use</label><input id="su-first" type="number" inputmode="numeric" min="1" max="99" value="${c.first}"></div>
+          <div class="field"><label for="su-last">Last lane in use</label><input id="su-last" type="number" inputmode="numeric" min="1" max="99" value="${c.last}"></div>
+        </div>
+        <div class="su-q"><span class="sc-lbl">Start placing bowlers at</span>${seg("su-dir", [["up", `Lane <span id="su-lo">${c.first}</span>, counting up`], ["down", `Lane <span id="su-hi">${c.last}</span>, counting down`]], c.dir)}</div>
+        <div class="su-q"><span class="sc-lbl">Bowlers per lane</span>
+          <div class="su-step"><button type="button" data-d="-1" aria-label="Fewer">−</button><output id="su-max">${c.max}</output><button type="button" data-d="1" aria-label="More">+</button></div></div>
+        <div class="su-q"><span class="sc-lbl">How to fill</span>${seg("su-fill", [["lane", "Fill each lane, then the next"], ["spread", "One per lane, then wrap"]], c.fill)}</div>
+        <label class="ck-tog"><input type="checkbox" id="su-over" ${c.overflow ? "checked" : ""}> <span>When every lane is full, allow up to <input id="su-overmax" type="number" inputmode="numeric" min="2" max="10" value="${c.overflowMax}" class="su-mini"> per lane</span></label>
+
+        <h3>Games</h3>
+        <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
+        <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[2, "Best 2"], [3, "Best 3"], [4, "All 4"]], c.count)}</div>
+
+        <h3>Squads</h3>
+        <div class="su-squads" id="su-squads">${c.squads.map(s => `<input value="${esc(s)}" aria-label="Squad time">`).join("")}</div>
+        <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
+
+        <div class="ck-calc su-sum" id="su-sum"></div>
+        <button class="btn btn-primary ck-go" type="submit">Save and open check-in</button>
+        <div id="su-msg" class="toast" hidden></div>
+      </form>
+      <p class="foot-note">Prototype: the setup is saved on this device only. In the live version it would be saved with the tournament so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1031,7 +1082,7 @@ const VIEWS = {
           <p class="meta">Open your camera and scan. Find your name, pick your squad, and you get your lane right away. New to the Tour? You can sign up on the same page.</p>
           <button type="button" class="btn btn-primary" id="dk-print">Print poster</button></div>
       </div>
-      <p class="foot-note">Lanes are assigned automatically when a bowler checks in (up to 4 per lane, filling open lanes first, next to a friend when they name one). Change a lane here, or use <b>Bowl with</b> to put friends on the same pair. Every change shows up on the rovers' score entry. The Google Sheet columns are: Date, Tournament, Squad, Member #, Last, First, City, Average, Handicap, Bonus pins, Lane, Jackpot, Progressive, New member, Paid, Checked in.</p>
+      <p class="foot-note">Lanes are assigned automatically when a bowler checks in, following the <a class="link-more" href="#setup">tournament setup</a> (start lane, direction and bowlers per lane), next to a friend when they name one. Change a lane here, or use <b>Bowl with</b> to put friends on the same pair. Every change shows up on the rovers' score entry. The Google Sheet columns are: Date, Tournament, Squad, Member #, Last, First, City, Average, Handicap, Bonus pins, Lane, Jackpot, Progressive, New member, Paid, Checked in.</p>
     </section>`;
   },
 
@@ -1375,11 +1426,20 @@ function openChamp(photo) {
   d.querySelector(".dlg-more a").addEventListener("click", () => d.close());
   d.showModal();
 }
+/* ---- Tournament setup (#setup): lanes, bowlers per lane, fill direction, games ---- */
+const CFG = {
+  key(e) { return `9tap-setup:${e.date}`; },
+  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 6, fill: "lane", overflow: true, overflowMax: 8, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), saved: false }; },
+  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} return Object.assign(CFG.defaults(e), v || {}); },
+  put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
+  order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
+  cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; }
+};
 /* ---- Rover score entry ---- */
 const SC = {
   squad: 0, game: null, lanes: null,
-  event() { return nextEvent; },
-  games(e) { return /3 of 4/.test(e.tag || "") ? 4 : 3; },
+  event() { return CK.event(); },
+  games(e) { return CFG.get(e).games; },
   key(e, sq) { return `9tap-scores3:${e.date}:${sq}`; },
   FIRST: ["Dave","Linda","Mike","Karen","Tony","Sharon","Ray","Debbie","Jim","Carla","Steve","Pam","Rick","Tina","Gary","Lori","Ron","Wendy","Don","Kim","Phil","Jenny","Mark","Rose","Al","Bev","Ed","Sue","Larry","Nancy"],
   LAST: ["Anderson","Nguyen","Kowalski","Ramirez","Olsen","Park","Thompson","Sato","Lindqvist","Morales","Becker","Haugen","Delgado","Fisher","Yamada","Jorgensen","Whitaker","Reyes","Dahl","Okafor","Brennan","Castillo","Pruitt","Moen","Larsen","Ito","Gallagher","Vu","Soto","Halvorsen"],
@@ -1389,7 +1449,7 @@ const SC = {
     const out = [], used = new Set();
     // Check-in may use any of the center's 32 lanes; some pairs sit empty. Bowlers per lane vary (1 to 3).
     const empty = [[3, 7, 9, 12, 15], [2, 6, 10, 11, 14], [4, 5, 8, 13, 16]][sq % 3];
-    for (let lane = 1; lane <= 32; lane++) { if (empty.includes(Math.ceil(lane / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
+    const cf = CFG.get(e); for (let lane = cf.first; lane <= cf.last; lane++) { if (empty.includes(Math.ceil((lane - cf.first + 1) / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
       let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
       const avg = 150 + Math.floor(rnd() * 56), bonus = rnd() < .35 ? 1 + Math.floor(rnd() * 3) : 0;
       out.push({ id: lane + "-" + k, lane, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
@@ -1409,7 +1469,8 @@ const SC = {
     return v;
   },
   save(e, sq, v) { try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} },
-  counted(arr, ng) { const g = arr.filter(x => typeof x === "number"); if (ng > 3 && g.length === 4) { const lo = Math.min(...g); return { sum: g.reduce((a, b) => a + b, 0) - lo, drop: arr.indexOf(lo), n: 3 }; } return { sum: g.reduce((a, b) => a + b, 0), drop: -1, n: Math.min(g.length, 3) }; }
+  // Only the best N games count (setup "games that count"); lower games beyond N are dropped.
+  counted(arr, ng) { const keep = Math.min(CFG.get(SC.event()).count, ng), idx = arr.map((x, i) => i).filter(i => typeof arr[i] === "number").sort((a, b) => arr[b] - arr[a] || a - b), use = idx.slice(0, keep); return { sum: use.reduce((s, i) => s + arr[i], 0), drop: idx.length > keep ? idx.slice(keep) : [], n: use.length }; }
 };
 function wireScores() {
   const e = SC.event(), ng = SC.games(e), sq = SC.squad;
@@ -1446,8 +1507,8 @@ function wireScores() {
     lanesBar();
     if (SC.game === "board") {
       const rows = roster.map(b => ({ b, t: totals(b), arr: state.scores[b.id] || [] })).sort((x, y) => y.t.hd - x.t.hd || y.t.n - x.t.n);
-      $("#sc-body").innerHTML = `<div class="section-head" style="margin-bottom:12px"><h2>Squad ${esc(e.squads[sq])} standings</h2><p>With handicap${ng > 3 ? ", best 3 of 4" : ""}. Updates as rovers enter games.</p></div>
-      <div class="table-wrap"><table class="sc-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scr</th><th>Total</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td class="num">${r.t.n ? i + 1 : "–"}</td><td><b>${esc(r.b.name)}</b><small>Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${Array.from({ length: ng }, (_, g) => `<td class="num g${g === r.t.drop ? " drop" : ""}">${typeof r.arr[g] === "number" ? r.arr[g] : "–"}</td>`).join("")}<td class="num">${r.t.scr || "–"}</td><td class="num"><b>${r.t.n ? r.t.hd : "–"}</b></td></tr>`).join("")}</tbody></table></div>`;
+      $("#sc-body").innerHTML = `<div class="section-head" style="margin-bottom:12px"><h2>Squad ${esc(e.squads[sq])} standings</h2><p>With handicap${CFG.get(e).count < ng ? `, best ${CFG.get(e).count} of ${ng}` : ""}. Updates as rovers enter games.</p></div>
+      <div class="table-wrap"><table class="sc-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scr</th><th>Total</th></tr></thead><tbody>${rows.map((r, i) => `<tr><td class="num">${r.t.n ? i + 1 : "–"}</td><td><b>${esc(r.b.name)}</b><small>Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${Array.from({ length: ng }, (_, g) => `<td class="num g${r.t.drop.includes(g) ? " drop" : ""}">${typeof r.arr[g] === "number" ? r.arr[g] : "–"}</td>`).join("")}<td class="num">${r.t.scr || "–"}</td><td class="num"><b>${r.t.n ? r.t.hd : "–"}</b></td></tr>`).join("")}</tbody></table></div>`;
       counts(); return;
     }
     const g = SC.game, show = pairs.filter(p => String(p.p) === String(SC.lanes)), nxt = pairs[pairs.findIndex(p => String(p.p) === String(SC.lanes)) + 1];
@@ -1492,7 +1553,7 @@ function wireScores() {
     if (!armed) { armed = true; rb.textContent = "Tap again to reset this squad"; setTimeout(() => { armed = false; rb.textContent = "Reset sample squad"; }, 3000); return; }
     try { localStorage.removeItem(SC.key(e, sq)); } catch (_) {} SC.game = null; route();
   });
-  const ci = () => { const live = roster.filter(b => b.checkedIn).length; $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> checked in for the ${esc(e.squads[sq])} squad${live ? ` (${live} from today's check-in)` : ""} · ${pairs.length} lane pairs in use (of 16)</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", () => route()); };
+  const ci = () => { const live = roster.filter(b => b.checkedIn).length; $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> checked in for the ${esc(e.squads[sq])} squad${live ? ` (${live} from today's check-in)` : ""} · ${pairs.length} lane pairs in use (lanes ${CFG.get(e).first}–${CFG.get(e).last})</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", () => route()); };
   ci();
   body();
 }
@@ -1501,7 +1562,7 @@ const CK = {
   ui: { step: "find", who: null, sq: null },
   deskSq: null,
   CITIES: ["Tacoma","Puyallup","Lakewood","Olympia","Port Orchard","Federal Way","Kent","Auburn","Gig Harbor","Bremerton","Everett","Lynnwood","Spanaway","Renton","Sumner","Bonney Lake","Lacey","Kenmore","Arlington","Shelton"],
-  event() { return nextEvent; },
+  event() { return Object.assign({}, nextEvent, { squads: CFG.get(nextEvent).squads }); },
   members() {
     if (!CK._m) {
       let s = 29547; const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
@@ -1533,20 +1594,22 @@ const CK = {
   },
   // Bowlers on each lane: the sample squad already on the rover page plus self check-ins.
   counts(e, sq, l, skip) {
-    const c = Array(33).fill(0);
+    const c = Array(100).fill(0);
     SC.roster(e, sq, true).forEach(b => c[b.lane]++);
     l.forEach(r => { if (r.squad === sq && r.lane && r !== skip) c[r.lane]++; });
     return c;
   },
-  // Open lanes first (fewest bowlers, max 4); with a friend, their lane or the other lane of their pair.
+  // Follows the tournament setup: lanes in the set order (lowest or highest first), up to the per-lane limit,
+  // either filling each lane before the next or spreading one at a time. Overflow raises the limit only when every lane is full.
+  // With a friend: their lane, or the other lane of their pair.
   pick(e, sq, l, r, friend) {
-    const c = CK.counts(e, sq, l, r);
-    if (friend && friend.lane) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => c[x] < 4).sort((x, y) => c[x] - c[y]); if (t.length) return t[0]; }
-    let best = 1; for (let n = 2; n <= 32; n++) if (c[n] < c[best]) best = n;
-    return c[best] < 4 ? best : null;
+    const cf = CFG.get(e), c = CK.counts(e, sq, l, r), order = CFG.order(cf);
+    if (friend && friend.lane) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => x >= cf.first && x <= cf.last && c[x] < CFG.cap(cf)).sort((x, y) => c[x] - c[y]); if (t.length) return t[0]; }
+    const at = cap => { const ok = order.filter(n => c[n] < cap); if (!ok.length) return null; return cf.fill === "spread" ? ok.reduce((b, n) => c[n] < c[b] ? n : b) : ok[0]; };
+    return at(cf.max) ?? (cf.overflow ? at(cf.overflowMax) : null);
   },
   letters(e, l) {
-    const base = {}; e.squads.forEach((_, sq) => { base[sq] = Array(33).fill(0); SC.roster(e, sq, true).forEach(b => base[sq][b.lane]++); });
+    const base = {}; e.squads.forEach((_, sq) => { base[sq] = Array(100).fill(0); SC.roster(e, sq, true).forEach(b => base[sq][b.lane]++); });
     const seen = {};
     l.slice().sort((a, b) => a.at - b.at).forEach(r => { if (!r.lane) { r.pos = ""; return; } const k = r.squad + ":" + r.lane; seen[k] = (seen[k] || 0) + 1; r.pos = String.fromCharCode(64 + base[r.squad][r.lane] + seen[k]); });
   },
@@ -1581,6 +1644,35 @@ const CK = {
   }
 };
 
+function wireSetup() {
+  const e = nextEvent, c = CFG.get(e);
+  const pick = (id, key, num) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = num ? +b.dataset.v : b.dataset.v; sum(); });
+  const sum = () => {
+    c.first = Math.max(1, +$("#su-first").value || 1); c.last = Math.max(c.first, +$("#su-last").value || c.first);
+    if (c.count > c.games) c.count = c.games;
+    c.overflow = $("#su-over").checked; c.overflowMax = Math.max(c.max, +$("#su-overmax").value || c.max);
+    $("#su-overmax").disabled = !c.overflow;
+    $("#su-lo").textContent = c.first; $("#su-hi").textContent = c.last; $("#su-max").textContent = c.max;
+    [["su-dir", c.dir], ["su-fill", c.fill], ["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
+    const n = c.last - c.first + 1, o = CFG.order(c), L = i => String.fromCharCode(65 + i);
+    const firstFew = c.fill === "spread" ? [`${o[0]}A`, `${o[1] || o[0]}A`, `${o[2] || o[0]}A`, "…", `${o[0]}B`] : [`${o[0]}A`, `${o[0]}B`, "…", `${o[0]}${L(c.max - 1)}`, `${o[1] || o[0]}A`];
+    $("#su-sum").innerHTML = `<b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.<br>Check-in places bowlers ${firstFew.join(", ")}.<br>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}`;
+  };
+  pick("su-dir", "dir"); pick("su-fill", "fill"); pick("su-games", "games", true); pick("su-count", "count", true);
+  $("#su-form").querySelectorAll(".su-step button").forEach(b => b.addEventListener("click", () => { c.max = Math.min(10, Math.max(1, c.max + +b.dataset.d)); if (c.overflowMax < c.max) $("#su-overmax").value = c.max; sum(); }));
+  ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", sum));
+  $("#su-games").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (b) { c.count = Math.min(3, c.games); sum(); } });
+  $("#su-add").addEventListener("click", () => { const i = document.createElement("input"); i.setAttribute("aria-label", "Squad time"); i.placeholder = "e.g. 5:00"; $("#su-squads").append(i); i.focus(); });
+  $("#su-form").addEventListener("submit", ev => {
+    ev.preventDefault(); sum();
+    c.squads = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
+    const m = $("#su-msg"); m.hidden = false;
+    if (!c.squads.length) { m.textContent = "Add at least one squad time."; return; }
+    c.saved = true; CFG.put(e, c);
+    m.innerHTML = `Saved. Check-in is open: new check-ins will follow this setup. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>`;
+  });
+  sum();
+}
 function wireCheckin() {
   const e = CK.event(), app = $("#ck-app"), U = CK.ui;
   const go = (step, extra = {}) => { Object.assign(U, { step }, extra); draw(); window.scrollTo(0, $(".ck-head").offsetTop); };
@@ -1722,8 +1814,8 @@ function wireDesk() {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.pos.localeCompare(b.pos));
     $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(s)}<small>${l.filter(r => r.squad === i).length} self check-in${l.filter(r => r.squad === i).length === 1 ? "" : "s"}</small></button>`).join("");
     const c = CK.counts(e, sq, l), sample = SC.roster(e, sq, true).length;
-    const laneOpts = r => Array.from({ length: 32 }, (_, i) => i + 1).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= 4 && r.lane !== n ? "disabled" : ""}>Lane ${n} · ${c[n]}/4</option>`).join("");
-    $("#dk-body").innerHTML = `<p class="sc-checkin"><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + (rs.length ? rs.map(r => `
+    const cf = CFG.get(e), laneOpts = r => CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n} · ${c[n]}/${cf.max}</option>`).join("");
+    $("#dk-body").innerHTML = `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + (rs.length ? rs.map(r => `
       <div class="dk-row" data-k="${esc(r.member)}">
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.isNew ? `<span class="tag">New member</span>` : ""}
@@ -1743,7 +1835,7 @@ function wireDesk() {
       row.querySelectorAll("[data-act]").forEach(el => el.addEventListener("change", () => {
         const [L, me] = r(), act = el.dataset.act;
         if (act === "lane") { me.lane = +el.value; msg(`${me.first} ${me.last} moved to lane ${me.lane}.`); }
-        if (act === "with") { const f = L.find(x => x.member === el.value && x.squad === sq), n = CK.pick(e, sq, L, me, f); if (n && Math.ceil(n / 2) === Math.ceil(f.lane / 2)) { me.lane = n; msg(`${me.first} ${me.last} is now on lane ${n}, on the same pair as ${f.first} ${f.last}.`); } else msg(`That pair is full (8 bowlers). Move someone else off it first.`); }
+        if (act === "with") { const f = L.find(x => x.member === el.value && x.squad === sq), n = CK.pick(e, sq, L, me, f); if (n && Math.ceil(n / 2) === Math.ceil(f.lane / 2)) { me.lane = n; msg(`${me.first} ${me.last} is now on lane ${n}, on the same pair as ${f.first} ${f.last}.`); } else msg(`That pair is full. Move someone else off it first, or raise the limit in Tournament setup.`); }
         if (act === "avg") { me.avg = Number(el.value) || null; const nm = CK.newMembers(), x = nm.find(m => m.member === me.member); if (x) { x.avg = me.avg; CK.put("9tap-newmembers", nm); } }
         if (act === "paid") me.paid = el.checked;
         if (act === "prog") me.prog = +el.value;
@@ -1778,6 +1870,7 @@ function wire(view) {
   if (view === "scores") wireScores();
   if (view === "checkin") wireCheckin();
   if (view === "desk") wireDesk();
+  if (view === "setup") wireSetup();
   if (view === "home") {
     const btns = document.querySelectorAll(".mp-btn");
     btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
