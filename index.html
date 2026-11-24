@@ -1266,7 +1266,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #13. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #14. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -2430,7 +2430,7 @@ function wireBowlers() {
       </div>
       <div class="su-vbtns"><button class="btn btn-primary" type="submit">${open === "new" ? "Add member" : "Save changes"}</button><button type="button" class="ck-back" id="bw-cancel">Cancel</button></div>
     </form>`;
-    const auto = () => { const a = +$("#bw-avg").value || 0; $("#bw-hcp").placeholder = String(CK.hcp(a)); $("#bw-auto").textContent = $("#bw-hcp").value === "" ? `Empty = ${CK.hcp(a)} from the average` : `Set by hand (average gives ${CK.hcp(a)})`; };
+    const auto = () => { const a = +$("#bw-avg").value || 0; $("#bw-hcp").placeholder = String(CK.hcp(a)); $("#bw-auto").textContent = $("#bw-hcp").value === "" ? `Calculated from average: ${CK.hcp(a)}. Type a number to override.` : `Set by hand (average gives ${CK.hcp(a)})`; };
     ["bw-avg", "bw-hcp"].forEach(id => $("#" + id).addEventListener("input", auto)); auto();
     $("#bw-cancel").addEventListener("click", () => { open = null; form(); list(); });
     $("#bw-form").addEventListener("submit", ev => {
