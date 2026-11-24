@@ -685,6 +685,8 @@ body.tv-mode { background: #0b1f26; }
 .lv-top .sc-seg { flex: 1 1 320px; }
 .lv-tv { flex: none; }
 .lv-board td small { display: block; font-size: .8rem; }
+.lv-board td.g small, .tv-board td.g small { display: block; font-size: .72em; color: var(--muted); font-weight: 400; }
+.tv-board td.g small { display: none; }
 .lv-board .lv-rank { font-weight: 700; color: var(--muted); width: 36px; }
 .lv-board .lv-tot b { font-size: 1.1rem; }
 .lv-board tbody tr:nth-child(-n+3) .lv-rank { color: var(--accent); }
@@ -1168,7 +1170,7 @@ const VIEWS = {
     <section class="wrap sc-main lv-main" data-live>
       <div class="lv-top"><div class="sc-seg" id="lv-sq"></div><a class="btn btn-ghost lv-tv" href="#tv" target="${staff ? "_blank" : "_self"}">Show on a TV</a></div>
       <div id="lv-body"></div>
-      <p class="foot-note">Standings update on their own as rovers enter scores, with handicap${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
+      <p class="foot-note">Each game counts its score plus handicap plus bonus pins (small number = scratch). Standings update on their own as rovers enter scores${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
     </section>`;
   },
 
@@ -1266,7 +1268,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #14. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #15. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1719,7 +1721,7 @@ const SC = {
   // Standings rows: one per entry. All squads together (sq null) skips entries with no games yet.
   board(e, sq) {
     const ng = SC.games(e), rows = [];
-    (sq == null ? e.squads.map((_, i) => i) : [sq]).forEach(i => { const st = SC.load(e, i); SC.roster(e, i).forEach(b => { const arr = st.scores[b.id] || [], c = SC.counted(arr, ng); if (sq == null && !c.n) return; rows.push({ b, sq: i, arr, scr: c.sum, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }); }); });
+    (sq == null ? e.squads.map((_, i) => i) : [sq]).forEach(i => { const st = SC.load(e, i); SC.roster(e, i).forEach(b => { const arr = st.scores[b.id] || [], c = SC.counted(arr, ng); if (sq == null && !c.n) return; rows.push({ b, sq: i, arr, scr: c.sum, hc: b.hc * c.n, bo: b.bo * c.n, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }); }); });
     return rows.sort((x, y) => y.hd - x.hd || y.n - x.n || x.b.name.localeCompare(y.b.name));
   },
   games(e) { return CFG.get(e).games; },
@@ -1729,18 +1731,22 @@ const SC = {
   roster(e, sq, sampleOnly) {
     let s = (parse(e.date).getDate() * 31 + sq * 7 + 3) >>> 0;
     const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
-    const out = [], used = new Set();
-    // Check-in may use any of the center's 32 lanes; some pairs sit empty. Bowlers per lane vary (1 to 3).
+    const out = [], used = new Set(), mem = CK.members(), ckd = new Set(CK.list(e).filter(r => r.squad === sq).map(r => r.member));
+    const pool = mem.filter(m => !ckd.has(m.member));
+    // Sample bowlers are drawn from the member list, so handicap and bonus pins edited on the Bowlers page apply here too. may use any of the center's 32 lanes; some pairs sit empty. Bowlers per lane vary (1 to 3).
     const empty = [[3, 7, 9, 12, 15], [2, 6, 10, 11, 14], [4, 5, 8, 13, 16]][sq % 3];
     const cf = CFG.get(e); for (let lane = cf.first; lane <= cf.last; lane++) { if (empty.includes(Math.ceil((lane - cf.first + 1) / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
+      const left = pool.filter(m => !used.has(m.member)), pickR = rnd();
+      if (left.length) { const m = left[Math.floor(pickR * left.length)]; used.add(m.member); out.push(SC.entry("s" + lane + "-" + k, lane, m)); continue; }
       let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
-      const avg = 150 + Math.floor(rnd() * 56), bonus = rnd() < .35 ? 1 + Math.floor(rnd() * 3) : 0;
-      out.push({ id: lane + "-" + k, lane, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
+      out.push(SC.entry(lane + "-" + k, lane, { first: n, last: "", avg: 150 + Math.floor(rnd() * 56), bonus: 0 }));
     } }
     if (sampleOnly) return out;
-    CK.list(e).filter(r => r.squad === sq && r.lane).forEach(r => out.push({ id: "ck-" + r.member, lane: r.lane, name: r.first + " " + r.last, avg: r.avg || "–", hcp: CK.rh(r) + (r.bonus || 0), checkedIn: true }));
+    CK.list(e).filter(r => r.squad === sq && r.lane).forEach(r => { const m = mem.find(x => x.member === r.member) || r; out.push(Object.assign(SC.entry("ck-" + r.member, r.lane, m), { checkedIn: true })); });
     return out.sort((a, b) => a.lane - b.lane);
   },
+  // One bowler in a squad. hc = handicap per game, bo = bonus pins per game (Rule 14 adds them to the handicap); hcp = both.
+  entry(id, lane, m) { const hc = CK.rh(m), bo = +m.bonus || 0; return { id, lane, member: m.member, name: (m.first + " " + (m.last || "")).trim(), avg: m.avg || "–", hc, bo, hcp: hc + bo }; },
   load(e, sq) {
     try { const v = JSON.parse(localStorage.getItem(SC.key(e, sq))); if (v && v.scores) return v; } catch (_) {}
     const v = { scores: {} };
@@ -2354,8 +2360,10 @@ function wireDesk() {
 const LIVE = { sq: null, tvTimer: 0, tvScroll: 0 };
 function liveRows(e, sq) {
   const ng = SC.games(e), rows = SC.board(e, sq);
-  const games = r => Array.from({ length: ng }, (_, i) => { const v = r.arr[i]; return `<td class="g num${r.drop.includes(i) ? " drop" : ""}">${typeof v === "number" ? v : "–"}</td>`; }).join("");
-  return { ng, rows, html: rows.map((r, i) => `<tr><td class="num lv-rank">${i + 1}</td><td><b>${esc(r.b.name)}</b><small>${sq == null ? esc(CFG.normT(e.squads[r.sq])) + " squad · " : ""}Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${games(r)}<td class="num lv-scr">${r.scr}</td><td class="num lv-tot"><b>${r.hd}</b></td></tr>`).join("") };
+  // Each game is shown with handicap and bonus pins added (score + handicap + bonus), so the counted games add up to Total.
+  const games = r => Array.from({ length: ng }, (_, i) => { const v = r.arr[i]; return `<td class="g num${r.drop.includes(i) ? " drop" : ""}">${typeof v === "number" ? `${v + r.b.hcp}<small>${v}</small>` : "–"}</td>`; }).join("");
+  return { ng, rows, head: `<tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th class="lv-scr">Scratch</th><th class="lv-scr">Hdcp</th><th class="lv-scr">Bonus</th><th>Total</th></tr>`,
+    html: rows.map((r, i) => `<tr><td class="num lv-rank">${i + 1}</td><td><b>${esc(r.b.name)}</b><small>${sq == null ? esc(CFG.normT(e.squads[r.sq])) + " squad · " : ""}Lane ${r.b.lane} · Hdcp ${r.b.hc}${r.b.bo ? ` + ${r.b.bo} bonus` : ""} a game</small></td>${games(r)}<td class="num lv-scr">${r.scr}</td><td class="num lv-scr">${r.hc}</td><td class="num lv-scr">${r.bo}</td><td class="num lv-tot"><b>${r.hd}</b></td></tr>`).join("") };
 }
 function wireLive() {
   const e = SC.event();
@@ -2363,8 +2371,8 @@ function wireLive() {
   const draw = () => {
     if (!$("[data-live]")) return false;
     $("#lv-sq").innerHTML = [[null, "All squads"]].concat(e.squads.map((t, i) => [i, CFG.normT(t)])).map(([v, t]) => `<button type="button" data-sq="${v === null ? "" : v}" aria-pressed="${v === LIVE.sq}">${esc(t)}</button>`).join("");
-    const { ng, rows, html } = liveRows(e, LIVE.sq);
-    $("#lv-body").innerHTML = rows.length ? `<div class="table-wrap"><table class="sc-board lv-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th class="lv-scr">Scratch</th><th>Total</th></tr></thead><tbody>${html}</tbody></table></div><p class="meta lv-upd">Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>`
+    const { rows, html, head } = liveRows(e, LIVE.sq);
+    $("#lv-body").innerHTML = rows.length ? `<div class="table-wrap"><table class="sc-board lv-board"><thead>${head}</thead><tbody>${html}</tbody></table></div><p class="meta lv-upd">Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>`
       : `<div class="panel"><h3>No scores yet</h3><p class="meta">Standings show up here as soon as the first games are entered.</p></div>`;
     return true;
   };
@@ -2377,8 +2385,8 @@ function wireTV() {
   $("#tv-where").textContent = `${e.center} · ${e.city} · ${longDate(e.date)}`;
   const draw = () => {
     if (!$("#tv")) return false;
-    const { ng, rows, html } = liveRows(e, null);
-    $("#tv-body").innerHTML = rows.length ? `<table class="tv-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scratch</th><th>Total</th></tr></thead><tbody>${html}</tbody></table>` : `<p class="tv-empty">Standings appear here as soon as the first games are in.</p>`;
+    const { rows, html, head } = liveRows(e, null);
+    $("#tv-body").innerHTML = rows.length ? `<table class="tv-board"><thead>${head}</thead><tbody>${html}</tbody></table>` : `<p class="tv-empty">Standings appear here as soon as the first games are in.</p>`;
     $("#tv-clock").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     return true;
   };
