@@ -573,6 +573,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .dk-tools .btn { padding: 10px 14px; font-size: .88rem; }
 #dk-msg { margin: 0 0 12px; }
+.dk-row { position: relative; padding-right: 48px !important; }
+.dk-del { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 8px; background: none; color: #c7362b; cursor: pointer; }
+.dk-del:hover, .dk-del:focus-visible { background: color-mix(in srgb, #c7362b 12%, transparent); border-color: color-mix(in srgb, #c7362b 40%, transparent); }
 .dk-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 6px 12px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; }
 .dk-lane { width: 48px; height: 48px; font-size: .95rem; grid-row: span 2; }
 .dk-who b { font-size: 1.05rem; }
@@ -1182,7 +1185,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #8. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #9. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -2183,11 +2186,12 @@ function wireDesk() {
   CKCTL.wire(e, msg);
   const draw = () => {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
-    $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(s)}<small>${l.filter(r => r.squad === i).length} self check-in${l.filter(r => r.squad === i).length === 1 ? "" : "s"}</small></button>`).join("");
+    $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(CFG.normT(s))}<small>${l.filter(r => r.squad === i).length} self check-in${l.filter(r => r.squad === i).length === 1 ? "" : "s"}</small></button>`).join("");
     const c = CK.counts(e, sq, l), sample = SC.roster(e, sq, true).length;
     const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n} · ${c[n]}/${cf.max}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
     $("#dk-body").innerHTML = `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + (rs.length ? rs.map(r => `
       <div class="dk-row" data-k="${esc(r.member)}">
+        <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.isNew ? `<span class="tag">New member</span>` : ""}
           <small>#${esc(r.member)} · ${esc(r.city)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.hcp(r.avg)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
@@ -2204,6 +2208,12 @@ function wireDesk() {
       </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the poster below with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add a few sample check-ins to try the desk.</p></div>`);
     $("#dk-body").querySelectorAll(".dk-row").forEach(row => {
       const r = () => { const L = CK.list(e); return [L, L.find(x => x.member === row.dataset.k && x.squad === sq)]; };
+      row.querySelector("[data-del]").addEventListener("click", () => {
+        const [L, me] = r(); if (!me || !confirm(`Remove ${me.first} ${me.last} from the ${e.squads[sq]} squad?${me.lane ? ` Lane ${me.lane} gets their spot back.` : ""}`)) return;
+        CK.save(e, L.filter(x => x !== me));
+        CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => k !== `${me.member}:${sq}`));
+        draw(); msg(`Removed ${me.first} ${me.last} from the ${e.squads[sq]} squad.`);
+      });
       row.querySelectorAll("[data-act]").forEach(el => el.addEventListener("change", () => {
         const [L, me] = r(), act = el.dataset.act;
         if (act === "lane") { me.lane = +el.value; const rp = CK.repeatOf(e, L, me, me.lane); msg(rp ? `Heads up: ${me.first} ${me.last} already bowled lanes ${CK.pairName(CK.pair(me.lane))} in the ${rp} squad today. Moved to lane ${me.lane} anyway.` : `${me.first} ${me.last} moved to lane ${me.lane}.`); }
