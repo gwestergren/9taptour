@@ -606,17 +606,51 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-squads { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .su-squads input { text-align: center; font: 700 1.05rem var(--font-num); }
 .su-sum { margin: 18px 0 14px; line-height: 1.55; }
-.su-ven select { min-height: 50px; font: 700 1.05rem var(--font-body); }
-.su-vrow { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; margin-top: 6px; }
+.su-main { padding-block: 18px 44px; max-width: 1040px; }
+.su-head p { max-width: 60ch; }
+#su-form { display: grid; gap: 16px; align-items: start; }
+@media (min-width: 860px) { #su-form { grid-template-columns: 1fr 1fr; } .su-wide { grid-column: 1 / -1; } }
+.su-col { display: grid; gap: 16px; }
+.su-card h3 { margin: 0 0 12px; }
+.su-combo { position: relative; }
+.su-combo input { min-height: 52px; font: 700 1.05rem var(--font-body); padding-left: 40px; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px 50%; }
+.su-vlist { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); max-height: 300px; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 30px -14px rgba(0,0,0,.45); padding: 4px; }
+.su-vopt { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; width: 100%; min-height: 46px; padding: 10px 12px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.su-vopt span { color: var(--muted); font-size: .88rem; }
+.su-vopt[aria-selected="true"], .su-vopt:hover { background: color-mix(in srgb, var(--maple) 30%, transparent); }
+.su-vopt.cur b::after { content: " ✓"; color: var(--good); }
+.su-vopt[data-id="__new"] b { color: var(--accent); }
+.su-vrow { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; margin-top: 4px; }
 .su-vrow .ck-back { padding: 8px 0; }
-.su-vnote { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
+.su-vrow .ck-back:disabled { opacity: .45; cursor: default; }
+.su-vnote { margin: 10px 0 0; font-size: .9rem; color: var(--muted); }
 .su-vnote b { color: var(--ink); }
 .su-vnote.dirty { color: var(--ink); }
+.su-vnote .ck-back { padding: 0; }
 .su-vbox { margin-top: 12px; padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius); }
 .su-vbox .form-grid { margin-bottom: 12px; }
 .su-vbox .btn { min-height: 44px; }
 .su-vbtns { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .su-del { color: #c7362b !important; }
+.su-inl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.su-sqlist { display: grid; gap: 8px; margin-top: 6px; }
+.su-sq { display: grid; grid-template-columns: 72px 96px 1fr auto; gap: 10px; align-items: center; }
+.su-sqn { font-weight: 700; font-size: .9rem; }
+.su-sq input { text-align: center; font: 700 1.05rem var(--font-num); min-height: 44px; }
+.su-sqo { font-size: .85rem; color: var(--muted); line-height: 1.3; }
+.su-x { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; background: none; color: var(--muted); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.su-x:hover { color: #c7362b; border-color: #c7362b; }
+@media (max-width: 420px) { .su-sq { grid-template-columns: 64px 84px 1fr auto; gap: 8px; } }
+.su-sumcard { background: color-mix(in srgb, var(--maple) 22%, var(--surface)); }
+.su-sumlist { margin: 0; padding-left: 18px; display: grid; gap: 4px; line-height: 1.5; }
+.su-bar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 -10px 24px -18px rgba(0,0,0,.5); }
+.su-state { display: flex; align-items: center; gap: 10px; font-size: .92rem; }
+.su-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+.su-dot.on { background: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 25%, transparent); }
+.su-btns { display: flex; gap: 10px; flex: 1 1 260px; justify-content: flex-end; }
+.su-btns .btn { min-height: 48px; flex: 1 1 0; max-width: 220px; }
+.su-save:disabled { opacity: .45; cursor: default; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 /* Staff area: own menu, no sponsor banner or public footer */
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 .staff-head { position: sticky; top: 0; z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--maple); }
@@ -1071,55 +1105,77 @@ const VIEWS = {
   setup() {
     const e = nextEvent, c = CFG.get(e);
     const seg = (id, opts, cur) => `<div class="sc-seg" id="${id}">${opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
+    const step = (id, v, lbl) => `<div class="su-step" data-step="${id}"><button type="button" data-d="-1" aria-label="Fewer ${lbl}">−</button><output id="${id}">${v}</output><button type="button" data-d="1" aria-label="More ${lbl}">+</button></div>`;
     return `
-    <section class="page-head sc-head"><div class="wrap">
-      <p class="eyebrow">Tournament setup · Tour staff</p><h1>Tournament setup</h1>
-      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}. Set this before check-in opens.</p>
+    <section class="page-head sc-head su-head"><div class="wrap">
+      <p class="eyebrow">${esc(longDate(e.date))}</p><h1>Tournament setup</h1>
+      <p>${esc(e.center)}, ${esc(e.city)}. Set the lanes and format, save, then open check-in when you're ready.</p>
     </div></section>
-    <section class="wrap ck-main">
-      <form class="panel su-form" id="su-form" novalidate>
-        <h3>Venue</h3>
-        <div class="field su-ven"><label for="su-ven">Bowling center</label><select id="su-ven"></select></div>
-        <p class="su-vnote" id="su-vnote"></p>
-        <div class="su-vrow" id="su-vrow">
-          <button type="button" class="ck-back" id="su-vsave">Save this format to the venue</button>
-          <button type="button" class="ck-back" id="su-vedit">Rename or remove venue</button>
-          <button type="button" class="ck-back" id="su-vadd">+ Add a new venue</button>
-        </div>
-        <div class="su-vbox" id="su-vbox" hidden>
-          <p class="sc-lbl" id="su-vbox-t">New venue</p>
-          <div class="form-grid su-two">
-            <div class="field"><label for="su-vname">Venue name</label><input id="su-vname" placeholder="e.g. Kenmore Lanes"></div>
-            <div class="field"><label for="su-vcity">City</label><input id="su-vcity" placeholder="e.g. Kenmore"></div>
+    <section class="wrap su-main">
+      <form id="su-form" novalidate>
+        <div class="panel su-card su-wide">
+          <h3>Venue</h3>
+          <div class="su-combo">
+            <label class="sr-only" for="su-vq">Bowling center</label>
+            <input id="su-vq" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="su-vlist" placeholder="Type a bowling center name" autocomplete="off" enterkeyhint="search">
+            <div class="su-vlist" id="su-vlist" role="listbox" hidden></div>
           </div>
-          <div class="su-vbtns"><button type="button" class="btn btn-primary" id="su-vok">Save venue</button><button type="button" class="ck-back" id="su-vcancel">Cancel</button><button type="button" class="ck-back su-del" id="su-vdel" hidden>Remove venue</button></div>
-          <p class="su-vnote" id="su-vbox-n"></p>
+          <p class="su-vnote" id="su-vnote"></p>
+          <div class="su-vrow" id="su-vrow">
+            <button type="button" class="ck-back" id="su-vsave">Save this format to the venue</button>
+            <button type="button" class="ck-back" id="su-vedit">Rename or remove</button>
+            <button type="button" class="ck-back" id="su-vadd">+ Add a new venue</button>
+          </div>
+          <div class="su-vbox" id="su-vbox" hidden>
+            <p class="sc-lbl" id="su-vbox-t">New venue</p>
+            <div class="form-grid su-two">
+              <div class="field"><label for="su-vname">Venue name</label><input id="su-vname" placeholder="e.g. Kenmore Lanes"></div>
+              <div class="field"><label for="su-vcity">City</label><input id="su-vcity" placeholder="e.g. Kenmore"></div>
+            </div>
+            <div class="su-vbtns"><button type="button" class="btn btn-primary" id="su-vok">Save venue</button><button type="button" class="ck-back" id="su-vcancel">Cancel</button><button type="button" class="ck-back su-del" id="su-vdel" hidden>Remove venue</button></div>
+            <p class="su-vnote" id="su-vbox-n"></p>
+          </div>
         </div>
 
-        <h3>Lanes</h3>
-        <div class="form-grid su-two">
-          <div class="field"><label for="su-first">First lane in use</label><input id="su-first" type="number" inputmode="numeric" min="1" max="99" value="${c.first}"></div>
-          <div class="field"><label for="su-last">Last lane in use</label><input id="su-last" type="number" inputmode="numeric" min="1" max="99" value="${c.last}"></div>
+        <div class="panel su-card">
+          <h3>Lanes</h3>
+          <div class="form-grid su-two">
+            <div class="field"><label for="su-first">First lane</label><input id="su-first" type="number" inputmode="numeric" min="1" max="99" value="${c.first}"></div>
+            <div class="field"><label for="su-last">Last lane</label><input id="su-last" type="number" inputmode="numeric" min="1" max="99" value="${c.last}"></div>
+          </div>
+          <div class="su-q"><span class="sc-lbl">Start placing bowlers at</span>${seg("su-dir", [["up", `Lane <span id="su-lo">${c.first}</span>, counting up`], ["down", `Lane <span id="su-hi">${c.last}</span>, counting down`]], c.dir)}</div>
+          <div class="su-q"><span class="sc-lbl">Bowlers per lane</span>${step("su-max", c.max, "bowlers")}</div>
+          <div class="su-q"><span class="sc-lbl">How to fill</span>${seg("su-fill", [["lane", "Fill each lane first"], ["spread", "One per lane, then wrap"]], c.fill)}</div>
+          <label class="ck-tog"><input type="checkbox" id="su-over" ${c.overflow ? "checked" : ""}> <span>When every lane is full, allow up to <input id="su-overmax" type="number" inputmode="numeric" min="2" max="10" value="${c.overflowMax}" class="su-mini"> per lane</span></label>
         </div>
-        <div class="su-q"><span class="sc-lbl">Start placing bowlers at</span>${seg("su-dir", [["up", `Lane <span id="su-lo">${c.first}</span>, counting up`], ["down", `Lane <span id="su-hi">${c.last}</span>, counting down`]], c.dir)}</div>
-        <div class="su-q"><span class="sc-lbl">Bowlers per lane</span>
-          <div class="su-step"><button type="button" data-d="-1" aria-label="Fewer">−</button><output id="su-max">${c.max}</output><button type="button" data-d="1" aria-label="More">+</button></div></div>
-        <div class="su-q"><span class="sc-lbl">How to fill</span>${seg("su-fill", [["lane", "Fill each lane, then the next"], ["spread", "One per lane, then wrap"]], c.fill)}</div>
-        <label class="ck-tog"><input type="checkbox" id="su-over" ${c.overflow ? "checked" : ""}> <span>When every lane is full, allow up to <input id="su-overmax" type="number" inputmode="numeric" min="2" max="10" value="${c.overflowMax}" class="su-mini"> per lane</span></label>
 
-        <h3>Games</h3>
-        <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
-        <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div>
+        <div class="su-col">
+          <div class="panel su-card">
+            <h3>Games</h3>
+            <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
+            <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div>
+          </div>
+          <div class="panel su-card">
+            <h3>Squads and check-in</h3>
+            <div class="su-q"><span class="sc-lbl">Later squads: check-in opens</span>
+              <div class="su-inl">${step("su-open", c.openMins, "minutes")}<span>minutes before the squad time</span></div></div>
+            <div class="su-sqlist" id="su-squads"></div>
+            <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
+          </div>
+        </div>
 
-        <h3>Squads</h3>
-        <div class="su-squads" id="su-squads">${c.squads.map(s => `<input value="${esc(s)}" aria-label="Squad time">`).join("")}</div>
-        <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
+        <div class="panel su-card su-wide su-sumcard"><h3>Summary</h3><div id="su-sum"></div></div>
 
-        <div class="ck-calc su-sum" id="su-sum"></div>
-        <button class="btn btn-primary ck-go" type="submit">Save and open check-in</button>
-        <div id="su-msg" class="toast" hidden></div>
+        <div class="su-bar su-wide">
+          <div class="su-state" id="su-state"></div>
+          <div class="su-btns">
+            <button class="btn btn-ghost su-save" type="submit" id="su-save">Save</button>
+            <button class="btn btn-primary" type="button" id="su-openbtn">Open check-in</button>
+          </div>
+        </div>
+        <div id="su-msg" class="toast su-wide" hidden></div>
       </form>
-      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games and squads) so you can load it again next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1512,17 +1568,19 @@ function openChamp(photo) {
 /* ---- Tournament setup (#setup): lanes, bowlers per lane, fill direction, games ---- */
 const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
-  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 6, fill: "lane", overflow: true, overflowMax: 8, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), saved: false }; },
+  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 6, fill: "lane", overflow: true, overflowMax: 8, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, saved: false }; },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
-  cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; }
+  cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
+  // "1:30" minus 60 minutes -> "12:30" (squad times are on a 12-hour clock without am/pm)
+  opensAt(t, mins) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim()); if (!m || +m[1] < 1 || +m[1] > 12 || +m[2] > 59) return null; let x = ((+m[1] % 12) * 60 + +m[2] - (mins || 0)) % 720; if (x < 0) x += 720; const h = Math.floor(x / 60) || 12; return h + ":" + String(x % 60).padStart(2, "0"); }
 };
 /* ---- Saved venues: each bowling center's usual format, loaded into setup ---- */
 const VEN = {
   KEY: "9tap-venues",
-  FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "games", "count", "squads"],
-  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); return f; },
+  FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "games", "count", "squads", "openMins"],
+  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); if (f.openMins == null) f.openMins = 60; return f; },
   same(a, b) { return JSON.stringify(VEN.fmt(a)) === JSON.stringify(VEN.fmt(b)); },
   seed() { // one sample venue per center on the schedule (lane numbers are placeholders)
     const seen = new Set(), out = [];
@@ -1753,89 +1811,148 @@ function wireSetup() {
   const e = nextEvent, c = CFG.get(e);
   // Venue: the tournament remembers its venue; a new setup starts from the venue's saved format.
   if (!c.venue || !VEN.find(c.venue)) { const v = VEN.byName(e.center); c.venue = v ? v.id : ""; if (v && !c.saved) Object.assign(c, VEN.fmt(v.fmt)); }
-  let mode = null; // "add" | "edit" while the venue box is open
+  let mode = null, dirty = false; // mode: "add" | "edit" while the venue box is open; dirty: unsaved setup changes
+  const msg = t => { const m = $("#su-msg"); m.hidden = !t; m.innerHTML = t || ""; };
   const squadsNow = () => [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
-  const drawSquads = list => { $("#su-squads").innerHTML = list.map(s => `<input value="${esc(s)}" aria-label="Squad time">`).join(""); };
-  const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
-  const drawVen = () => {
-    const list = VEN.all();
-    $("#su-ven").innerHTML = (c.venue ? "" : `<option value="">Choose a saved venue…</option>`) + list.map(v => `<option value="${esc(v.id)}"${v.id === c.venue ? " selected" : ""}>${esc(v.name)}${v.city ? " · " + esc(v.city) : ""}</option>`).join("");
-    vnote();
+  const drawSquads = list => {
+    $("#su-squads").innerHTML = (list.length ? list : [""]).map((s, i) => `<div class="su-sq"><span class="su-sqn">Squad ${i + 1}</span><input value="${esc(s)}" aria-label="Squad ${i + 1} time" placeholder="e.g. 5:00"><span class="su-sqo" data-o="${i}"></span>${i ? `<button type="button" class="su-x" data-x="${i}" aria-label="Remove squad ${i + 1}">×</button>` : ""}</div>`).join("");
+    opens();
   };
+  const opens = () => $("#su-squads").querySelectorAll(".su-sq").forEach((row, i) => {
+    const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, c.openMins);
+    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in" : o ? `Opens at ${o}` : "Enter a time like 1:30";
+  });
+  const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
+
+  /* venue search box */
+  const label = v => v ? v.name + (v.city ? " · " + v.city : "") : "";
+  let hi = 0, hits = [];
+  const showList = q => {
+    const s = (q || "").trim().toLowerCase(), all = VEN.all();
+    hits = all.filter(v => !s || (v.name + " " + (v.city || "")).toLowerCase().includes(s));
+    const exact = all.some(v => v.name.toLowerCase() === s);
+    const items = hits.map(v => ({ id: v.id, html: `<b>${esc(v.name)}</b>${v.city ? `<span>${esc(v.city)}</span>` : ""}` }));
+    if (s && !exact) items.push({ id: "__new", html: `<b>+ Add “${esc(q.trim())}” as a new venue</b>` });
+    if (!items.length) items.push({ id: "__new", html: `<b>+ Add a new venue</b>` });
+    hi = Math.min(hi, items.length - 1);
+    $("#su-vlist").innerHTML = items.map((it, i) => `<button type="button" role="option" class="su-vopt${it.id === c.venue ? " cur" : ""}" data-id="${esc(it.id)}" aria-selected="${i === hi}">${it.html}</button>`).join("");
+    $("#su-vlist").hidden = false; $("#su-vq").setAttribute("aria-expanded", "true");
+  };
+  const closeList = () => { if (!$("#su-vlist")) return; $("#su-vlist").hidden = true; $("#su-vq").setAttribute("aria-expanded", "false"); $("#su-vq").value = label(VEN.find(c.venue)); };
+  const choose = id => {
+    if (id === "__new") { const q = $("#su-vq").value.trim(); closeList(); box("add", VEN.byName(q) ? "" : q); return; }
+    const v = VEN.find(id); if (!v) return; c.venue = v.id; closeList(); fill(v.fmt); drawVen(); msg(`Loaded the saved format for ${esc(v.name)}.`);
+  };
+  $("#su-vq").addEventListener("focus", () => { $("#su-vq").select(); hi = 0; showList(""); });
+  $("#su-vq").addEventListener("input", () => { hi = 0; showList($("#su-vq").value); });
+  $("#su-vq").addEventListener("keydown", ev => {
+    const opts = [...$("#su-vlist").querySelectorAll("[data-id]")];
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); if ($("#su-vlist").hidden) showList($("#su-vq").value); hi = (hi + (ev.key === "ArrowDown" ? 1 : -1) + opts.length) % opts.length; opts.forEach((o, i) => o.setAttribute("aria-selected", String(i === hi))); opts[hi] && opts[hi].scrollIntoView({ block: "nearest" }); }
+    else if (ev.key === "Enter") { ev.preventDefault(); if (opts[hi]) choose(opts[hi].dataset.id); }
+    else if (ev.key === "Escape") { closeList(); $("#su-vq").blur(); }
+  });
+  $("#su-vlist").addEventListener("mousedown", ev => ev.preventDefault()); // keep focus so blur doesn't close before click
+  $("#su-vlist").addEventListener("click", ev => { const b = ev.target.closest("[data-id]"); if (b) choose(b.dataset.id); });
+  $("#su-vq").addEventListener("blur", () => setTimeout(closeList, 120));
+
+  const drawVen = () => { $("#su-vq").value = label(VEN.find(c.venue)); vnote(); };
   const vnote = () => {
     const v = VEN.find(c.venue), n = $("#su-vnote");
     $("#su-vsave").hidden = !v; $("#su-vedit").hidden = !v;
-    if (!v) { n.className = "su-vnote"; n.innerHTML = "Pick the bowling center to load its saved format, or add it as a new venue."; return; }
+    if (!v) { n.className = "su-vnote"; n.innerHTML = "Type the bowling center's name to load its saved format, or add it as a new venue."; return; }
     const cur = Object.assign({}, c, { squads: squadsNow() }), same = VEN.same(cur, v.fmt);
     n.className = "su-vnote" + (same ? "" : " dirty");
-    n.innerHTML = same ? `Using the saved format for <b>${esc(v.name)}</b>.` : `Changed from the saved ${esc(v.name)} format. These changes apply to this tournament; save them to the venue to use them next time too. <button type="button" class="ck-back" id="su-vrevert">Undo changes</button>`;
-    $("#su-vsave").disabled = same; $("#su-vsave").style.opacity = same ? .45 : 1;
+    n.innerHTML = same ? `Using the saved format for <b>${esc(v.name)}</b>.` : `Changed from the saved ${esc(v.name)} format. The changes apply to this tournament; save them to the venue to use them next time too. <button type="button" class="ck-back" id="su-vrevert">Undo changes</button>`;
+    $("#su-vsave").disabled = same;
     const r = $("#su-vrevert"); if (r) r.addEventListener("click", () => fill(v.fmt));
   };
-  const box = m => {
+  const box = (m, name = "") => {
     mode = m; const v = VEN.find(c.venue);
     $("#su-vbox").hidden = !m; $("#su-vrow").hidden = !!m;
     if (!m) return;
     $("#su-vbox-t").textContent = m === "add" ? "New venue" : "Edit venue";
-    $("#su-vname").value = m === "edit" && v ? v.name : ""; $("#su-vcity").value = m === "edit" && v ? v.city || "" : "";
+    $("#su-vname").value = m === "edit" && v ? v.name : name; $("#su-vcity").value = m === "edit" && v ? v.city || "" : "";
     $("#su-vdel").hidden = m !== "edit";
     $("#su-vbox-n").textContent = m === "add" ? "The lanes, games and squads below are saved as this venue's format. Change them first if this center is different." : "";
-    $("#su-vname").focus();
+    (m === "add" && name ? $("#su-vcity") : $("#su-vname")).focus();
   };
-  $("#su-ven").addEventListener("change", ev => { const v = VEN.find(ev.target.value); if (!v) return; c.venue = v.id; fill(v.fmt); drawVen(); });
   $("#su-vadd").addEventListener("click", () => box("add"));
   $("#su-vedit").addEventListener("click", () => box("edit"));
   $("#su-vcancel").addEventListener("click", () => box(null));
   $("#su-vsave").addEventListener("click", () => {
     sum(); const list = VEN.all(), v = list.find(x => x.id === c.venue); if (!v) return;
-    const sq = squadsNow(); if (!sq.length) { vmsg("Add at least one squad time before saving the venue."); return; }
-    v.fmt = VEN.fmt(Object.assign({}, c, { squads: sq })); VEN.put(list); drawVen(); vmsg(`Saved. ${v.name} will load this format next time.`);
+    const sq = squadsNow(); if (!sq.length) { msg("Add at least one squad time before saving the venue."); return; }
+    v.fmt = VEN.fmt(Object.assign({}, c, { squads: sq })); VEN.put(list); drawVen(); msg(`Saved. ${esc(v.name)} will load this format next time.`);
   });
   $("#su-vok").addEventListener("click", () => {
     const name = $("#su-vname").value.trim(), city = $("#su-vcity").value.trim(), list = VEN.all();
     if (!name) { $("#su-vbox-n").textContent = "Give the venue a name."; $("#su-vname").focus(); return; }
     const dup = list.find(x => x.name.toLowerCase() === name.toLowerCase() && !(mode === "edit" && x.id === c.venue));
-    if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved. Pick it from the list instead.`; return; }
-    if (mode === "add") { sum(); const id = "v" + Date.now().toString(36); list.push({ id, name, city, fmt: VEN.fmt(Object.assign({}, c, { squads: squadsNow().length ? squadsNow() : c.squads })) }); c.venue = id; vmsg(`Added ${name} with the format below.`); }
-    else { const v = list.find(x => x.id === c.venue); if (v) { v.name = name; v.city = city; vmsg(`Renamed to ${name}.`); } }
-    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); drawVen();
+    if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved. Type its name in the venue box instead.`; return; }
+    if (mode === "add") { sum(); const id = "v" + Date.now().toString(36), sq = squadsNow(); list.push({ id, name, city, fmt: VEN.fmt(Object.assign({}, c, { squads: sq.length ? sq : c.squads })) }); c.venue = id; msg(`Added ${esc(name)} with the format below.`); }
+    else { const v = list.find(x => x.id === c.venue); if (v) { v.name = name; v.city = city; msg(`Renamed to ${esc(name)}.`); } }
+    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); drawVen(); touch();
   });
   $("#su-vdel").addEventListener("click", () => {
     const v = VEN.find(c.venue); if (!v || !confirm(`Remove ${v.name} from saved venues? This tournament keeps its current setup.`)) return;
-    VEN.put(VEN.all().filter(x => x.id !== v.id)); c.venue = ""; box(null); drawVen(); vmsg(`Removed ${v.name}.`);
+    VEN.put(VEN.all().filter(x => x.id !== v.id)); c.venue = ""; box(null); drawVen(); msg(`Removed ${esc(v.name)}.`);
   });
-  const vmsg = t => { const m = $("#su-msg"); m.hidden = false; m.textContent = t; };
-  const pick = (id, key, num) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = num ? +b.dataset.v : b.dataset.v; sum(); });
+
+  /* format controls */
+  const pick = (id, key, num) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = num ? +b.dataset.v : b.dataset.v; if (key === "games") c.count = Math.min(3, c.games); sum(); touch(); });
   const sum = () => {
     c.first = Math.max(1, +$("#su-first").value || 1); c.last = Math.max(c.first, +$("#su-last").value || c.first);
     if (c.count > c.games) c.count = c.games;
     c.overflow = $("#su-over").checked; c.overflowMax = Math.max(c.max, +$("#su-overmax").value || c.max);
     $("#su-overmax").disabled = !c.overflow;
-    $("#su-lo").textContent = c.first; $("#su-hi").textContent = c.last; $("#su-max").textContent = c.max;
+    $("#su-lo").textContent = c.first; $("#su-hi").textContent = c.last; $("#su-max").textContent = c.max; $("#su-open").textContent = c.openMins;
     [["su-dir", c.dir], ["su-fill", c.fill], ["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
-    const n = c.last - c.first + 1, o = CFG.order(c), L = i => String.fromCharCode(65 + i);
+    const n = c.last - c.first + 1, o = CFG.order(c), sq = squadsNow();
     const firstFew = c.fill === "spread" ? `one bowler on each lane (${o.slice(0, 3).join(", ")}…), then wraps around` : `${c.max} on lane ${o[0]}, then ${c.max} on lane ${o[1] || o[0]}, and so on`;
-    $("#su-sum").innerHTML = `<b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.<br>Check-in places ${firstFew}. Bowlers pick their order at the lane.<br>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}`;
-    if (typeof vnote === "function" && $("#su-ven").options.length) vnote();
+    const later = sq.slice(1).map(t => CFG.opensAt(t, c.openMins) ? `${esc(t)} squad at ${CFG.opensAt(t, c.openMins)}` : null).filter(Boolean);
+    $("#su-sum").innerHTML = `<ul class="su-sumlist">
+      <li><b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.</li>
+      <li>Check-in places ${firstFew}. Bowlers pick their order at the lane.</li>
+      <li>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}</li>
+      <li>${sq.length} squad${sq.length === 1 ? "" : "s"}${sq.length ? ` (${sq.map(esc).join(", ")})` : ""}.${later.length ? ` Check-in opens for the ${later.join(", the ")}.` : ""}</li></ul>`;
+    opens(); vnote();
+  };
+  const touch = () => { dirty = true; state(); };
+  const state = () => {
+    const s = $("#su-state");
+    s.innerHTML = c.open ? `<span class="su-dot on"></span><span><b>Check-in is open</b>${dirty ? " · unsaved changes" : ""}</span>` : `<span class="su-dot"></span><span><b>Check-in is closed</b>${dirty ? " · unsaved changes" : c.saved ? " · setup saved" : " · not saved yet"}</span>`;
+    $("#su-openbtn").textContent = c.open ? "Close check-in" : "Open check-in";
+    $("#su-openbtn").className = "btn " + (c.open ? "btn-ghost" : "btn-primary");
+    $("#su-save").disabled = !dirty && c.saved;
+  };
+  const store = () => {
+    sum(); c.squads = squadsNow();
+    if (!c.squads.length) { msg("Add at least one squad time."); return false; }
+    if (c.squads.slice(1).some(t => !CFG.opensAt(t, c.openMins))) { msg("Squad times should look like 1:30 or 12:00."); return false; }
+    c.saved = true; c.open = !!c.open; CFG.put(e, c); dirty = false; state(); return true;
   };
   pick("su-dir", "dir"); pick("su-fill", "fill"); pick("su-games", "games", true); pick("su-count", "count", true);
-  $("#su-form").querySelectorAll(".su-step button").forEach(b => b.addEventListener("click", () => { c.max = Math.min(10, Math.max(1, c.max + +b.dataset.d)); if (c.overflowMax < c.max) $("#su-overmax").value = c.max; sum(); }));
-  ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", sum));
-  $("#su-games").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (b) { c.count = Math.min(3, c.games); sum(); } });
-  $("#su-add").addEventListener("click", () => { const i = document.createElement("input"); i.setAttribute("aria-label", "Squad time"); i.placeholder = "e.g. 5:00"; $("#su-squads").append(i); i.focus(); });
-  $("#su-squads").addEventListener("input", () => vnote());
-  $("#su-form").addEventListener("submit", ev => {
-    ev.preventDefault(); sum();
-    c.squads = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
-    const m = $("#su-msg"); m.hidden = false;
-    if (!c.squads.length) { m.textContent = "Add at least one squad time."; return; }
-    c.saved = true; CFG.put(e, c); vnote();
-    m.innerHTML = `Saved. Check-in is open: new check-ins will follow this setup. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>`;
+  $("#su-form").querySelectorAll(".su-step").forEach(st => st.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-d]"); if (!b) return; const d = +b.dataset.d;
+    if (st.dataset.step === "su-max") { c.max = Math.min(10, Math.max(1, c.max + d)); if (+$("#su-overmax").value < c.max) $("#su-overmax").value = c.max; }
+    else c.openMins = Math.min(180, Math.max(15, c.openMins + d * 15));
+    sum(); touch();
+  }));
+  ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", () => { sum(); touch(); }));
+  $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
+  $("#su-squads").addEventListener("input", () => { sum(); touch(); });
+  $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); sum(); touch(); });
+  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) msg(c.open ? `Saved. Check-in is open and new check-ins follow this setup.` : `Saved. Press <b>Open check-in</b> when you're ready for bowlers.`); });
+  $("#su-openbtn").addEventListener("click", () => {
+    const was = c.open; c.open = !was;
+    if (!store()) { c.open = was; state(); return; }
+    msg(c.open ? `Check-in is open for the ${esc(c.squads[0])} squad. Later squads open ${c.openMins} minutes before their time. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>` : "Check-in is closed. Bowlers will see a \"not open yet\" note until you open it again.");
   });
-  fill(c); drawVen();
+  fill(c); drawVen(); state();
 }
 function wireCheckin() {
   const e = CK.event(), app = $("#ck-app"), U = CK.ui;
+  if (CFG.get(e).open === false) { app.innerHTML = `<div class="panel ck-closed"><h3>Check-in isn't open yet</h3><p class="meta">The Tour staff will open check-in at the center before the ${esc(e.squads[0])} squad. Later squads open ${CFG.get(e).openMins} minutes before their time.</p></div>`; return; }
   const go = (step, extra = {}) => { Object.assign(U, { step }, extra); draw(); window.scrollTo(0, $(".ck-head").offsetTop); };
   const draw = () => {
     if (U.step === "find") {
@@ -1873,7 +1990,7 @@ function wireCheckin() {
         ${CK.card(e, m)}
         ${m.isNew ? `<p class="toast ck-note">Welcome! Your membership is pending until a director checks your average and you pay the $25 dues at the desk.</p>` : ""}
         ${U.sq < 0 ? `<div class="panel"><h3>You're checked in for every squad today.</h3><p class="meta">Re-entries are in a different squad each time.</p></div>` : `
-        <div class="ck-sec"><span class="sc-lbl">Squad</span><div class="sc-seg" id="ck-squads">${e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === U.sq}" ${taken[i] ? "disabled" : ""}>${esc(s)}${taken[i] ? "<small>Checked in</small>" : ""}</button>`).join("")}</div></div>
+        <div class="ck-sec"><span class="sc-lbl">Squad</span><div class="sc-seg" id="ck-squads">${e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === U.sq}" ${taken[i] ? "disabled" : ""}>${esc(s)}${taken[i] ? "<small>Checked in</small>" : i && CFG.opensAt(s, CFG.get(e).openMins) ? `<small>Opens ${CFG.opensAt(s, CFG.get(e).openMins)}</small>` : ""}</button>`).join("")}</div></div>
         <div class="ck-sec"><span class="sc-lbl">Side pots</span>
           <label class="ck-tog"><input type="checkbox" id="ck-jp"> <span><b>9-Tap Jackpot</b> $4 · seven 9-counts to start a game</span></label>
           <div class="ck-prog"><span>Progressive Pot</span><div class="sc-seg" id="ck-prog">${[0, 10, 20].map(v => `<button type="button" data-p="${v}" aria-pressed="${v === 0}" ${v > maxProg ? "disabled" : ""}>$${v}</button>`).join("")}</div></div>
