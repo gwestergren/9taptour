@@ -116,6 +116,7 @@ p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .nav a { transition: none; } .nav a:hover { transform: none; } }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 700 .95rem/1 var(--font-body); padding: 12px 18px; border-radius: var(--radius); border: 2px solid transparent; text-decoration: none; cursor: pointer; }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-dark { background: var(--deep); color: var(--on-deep); }
 .btn-primary:hover { filter: brightness(1.08); }
 .btn-ghost { border-color: currentColor; background: transparent; color: inherit; }
 .head-cta { padding: 10px 14px; white-space: nowrap; }
@@ -646,8 +647,12 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-bar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 -10px 24px -18px rgba(0,0,0,.5); }
 .su-state { display: flex; align-items: center; gap: 10px; font-size: .92rem; }
 .su-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+.su-dot.wait { background: var(--maple); }
+.su-live { color: var(--good); }
+.su-stop { padding: 0 !important; margin-left: 6px; font-size: .85rem !important; }
 .su-dot.on { background: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 25%, transparent); }
 .su-btns { display: flex; gap: 10px; flex: 1 1 260px; justify-content: flex-end; }
+.su-save.ok { border-color: var(--good); color: var(--good); }
 .su-btns .btn { min-height: 48px; flex: 1 1 0; max-width: 220px; }
 .su-msg { flex: 1 0 100%; order: -1; padding: 10px 12px; border-radius: var(--radius); font-size: .92rem; background: color-mix(in srgb, var(--good) 14%, transparent); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
@@ -1175,7 +1180,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #4. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1574,6 +1579,19 @@ const CFG = {
   put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
+  // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
+  dayMin(t) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim()); if (!m) return null; let h = +m[1] % 12; if (h < 9 && +m[1] !== 12) h += 12; return h * 60 + +m[2]; },
+  // Check-in runs one squad at a time: staff open it for the first squad, close each squad when bowling starts,
+  // and the next squad opens on its own N minutes before its time (or right away if staff open it early).
+  status(c, now = new Date()) {
+    const sq = c.squads || [], closed = c.closed || [], forced = c.forced || [];
+    if (!c.open) return { state: "off", k: 0 };
+    const k = sq.findIndex((_, i) => !closed.includes(i));
+    if (k < 0) return { state: "done", k: sq.length - 1 };
+    const at = k ? CFG.dayMin(sq[k]) - (c.openMins || 0) : null, nowMin = now.getHours() * 60 + now.getMinutes();
+    if (k === 0 || forced.includes(k) || at == null || nowMin >= at) return { state: "open", k };
+    return { state: "waiting", k, at: CFG.opensAt(sq[k], c.openMins) };
+  },
   // "1:30" minus 60 minutes -> "12:30" (squad times are on a 12-hour clock without am/pm)
   opensAt(t, mins) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim()); if (!m || +m[1] < 1 || +m[1] > 12 || +m[2] > 59) return null; let x = ((+m[1] % 12) * 60 + +m[2] - (mins || 0)) % 720; if (x < 0) x += 720; const h = Math.floor(x / 60) || 12; return h + ":" + String(x % 60).padStart(2, "0"); }
 };
@@ -1808,7 +1826,9 @@ const CK = {
   }
 };
 
+let setup_tick = 0;
 function wireSetup() {
+  clearInterval(setup_tick);
   const e = nextEvent, c = CFG.get(e);
   // Venue: the tournament remembers its venue; a new setup starts from the venue's saved format.
   if (!c.venue || !VEN.find(c.venue)) { const v = VEN.byName(e.center); c.venue = v ? v.id : ""; if (v && !c.saved) Object.assign(c, VEN.fmt(v.fmt)); }
@@ -1821,7 +1841,8 @@ function wireSetup() {
   };
   const opens = () => $("#su-squads").querySelectorAll(".su-sq").forEach((row, i) => {
     const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, c.openMins);
-    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in" : o ? `Opens at ${o}` : "Enter a time like 1:30";
+    const st = CFG.status(c), live = c.open && i === st.k && st.state === "open", shut = c.open && ((c.closed || []).includes(i));
+    row.querySelector(".su-sqo").innerHTML = shut ? "Check-in closed" : live ? `<b class="su-live">Check-in open now</b>` : i === 0 ? "Opens when you open check-in" : o ? `Opens at ${o}` : "Enter a time like 1:30";
   });
   const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
 
@@ -1920,11 +1941,19 @@ function wireSetup() {
   };
   const touch = () => { dirty = true; state(); };
   const state = () => {
-    const s = $("#su-state");
-    s.innerHTML = c.open ? `<span class="su-dot on"></span><span><b>Check-in is open</b>${dirty ? " · unsaved changes" : ""}</span>` : `<span class="su-dot"></span><span><b>Check-in is closed</b>${dirty ? " · unsaved changes" : c.saved ? " · setup saved" : " · not saved yet"}</span>`;
-    $("#su-openbtn").textContent = c.open ? "Close check-in" : "Open check-in";
-    $("#su-openbtn").className = "btn " + (c.open ? "btn-ghost" : "btn-primary");
+    const s = $("#su-state"), st = CFG.status(c), nm = i => esc(c.squads[i] || ""), extra = dirty ? " · unsaved changes" : "";
+    const txt = { off: `<span class="su-dot"></span><span><b>Check-in is closed</b>${extra || (c.saved ? " · setup saved" : " · not saved yet")}</span>`,
+      open: `<span class="su-dot on"></span><span><b>Check-in open: ${nm(st.k)} squad</b>${st.k < c.squads.length - 1 ? ` · ${nm(st.k + 1)} squad opens at ${CFG.opensAt(c.squads[st.k + 1], c.openMins)} after you close this one` : ""}${extra}</span>`,
+      waiting: `<span class="su-dot wait"></span><span><b>${nm(st.k - 1)} squad closed</b> · ${nm(st.k)} squad check-in opens at ${st.at}${extra}</span>`,
+      done: `<span class="su-dot"></span><span><b>All squads closed</b> · check-in is done for the day${extra}</span>` }[st.state];
+    s.innerHTML = txt + (c.open ? ` <button type="button" class="ck-back su-stop" id="su-stop">${st.state === "done" ? "Start over" : "Turn off check-in"}</button>` : "");
+    const btn = $("#su-openbtn");
+    btn.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
+    btn.dataset.act = st.state; btn.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
+    const stop = $("#su-stop"); if (stop) stop.addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; c.open = false; c.closed = []; c.forced = []; if (store()) msg("Check-in is off. Press Open check-in to start again with the first squad."); });
+    opens();
   };
+  const flash = () => { const b = $("#su-save"); b.textContent = "Saved ✓"; b.classList.add("ok"); clearTimeout(flash.t); flash.t = setTimeout(() => { if ($("#su-save")) { b.textContent = "Save"; b.classList.remove("ok"); } }, 2500); };
   const store = () => {
     sum(); c.squads = squadsNow();
     if (!c.squads.length) { msg("Add at least one squad time."); return false; }
@@ -1942,17 +1971,28 @@ function wireSetup() {
   $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
   $("#su-squads").addEventListener("input", () => { sum(); touch(); });
   $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); sum(); touch(); });
-  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.` + (c.open ? " Check-in is open and new check-ins follow this setup." : " Press <b>Open check-in</b> when you're ready for bowlers.")); });
+  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.` + (c.open ? " New check-ins follow this setup." : " Press <b>Open check-in</b> when you're ready for bowlers.")); });
   $("#su-openbtn").addEventListener("click", () => {
-    const was = c.open; c.open = !was;
-    if (!store()) { c.open = was; state(); return; }
-    msg(c.open ? `Check-in is open for the ${esc(c.squads[0])} squad. Later squads open ${c.openMins} minutes before their time. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>` : "Check-in is closed. Bowlers will see a \"not open yet\" note until you open it again.");
+    const st = CFG.status(c), act = $("#su-openbtn").dataset.act, prev = JSON.stringify([c.open, c.closed, c.forced]);
+    c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
+    if (act === "off") { c.open = true; c.closed = []; c.forced = []; }
+    else if (act === "open") c.closed.push(st.k);
+    else if (act === "waiting") c.forced.push(st.k);
+    else if (act === "done") { c.closed.pop(); c.forced.push(c.squads.length - 1); }
+    if (!store()) { [c.open, c.closed, c.forced] = JSON.parse(prev); state(); return; }
+    const now = CFG.status(c), nm = i => esc(c.squads[i]);
+    msg(act === "off" ? `Check-in is open for the ${nm(0)} squad. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>`
+      : act === "open" ? `Check-in closed for the ${nm(st.k)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.")
+      : `Check-in is open for the ${nm(now.k)} squad.`);
   });
+  setup_tick = setInterval(() => { if (!$("#su-state")) { clearInterval(setup_tick); return; } state(); }, 30000);
   fill(c); drawVen(); state();
 }
 function wireCheckin() {
   const e = CK.event(), app = $("#ck-app"), U = CK.ui;
-  if (CFG.get(e).open === false) { app.innerHTML = `<div class="panel ck-closed"><h3>Check-in isn't open yet</h3><p class="meta">The Tour staff will open check-in at the center before the ${esc(e.squads[0])} squad. Later squads open ${CFG.get(e).openMins} minutes before their time.</p></div>`; return; }
+  const cfg = CFG.get(e), cst = CFG.status(cfg), sqName = i => esc(cfg.squads[i] || e.squads[i] || "");
+  if (cfg.saved && cst.state !== "open") { app.innerHTML = `<div class="panel ck-closed"><h3>Check-in isn't open ${cst.state === "done" ? "any more" : "yet"}</h3><p class="meta">${cst.state === "off" ? `The Tour staff will open check-in at the center before the ${sqName(0)} squad.` : cst.state === "waiting" ? `Check-in for the ${sqName(cst.k)} squad opens at ${cst.at}.` : "Every squad has started bowling. See you at the next tournament!"}</p></div>`; return; }
+  const openSq = cfg.saved ? cst.k : null; // null: setup never saved, any squad (demo)
   const go = (step, extra = {}) => { Object.assign(U, { step }, extra); draw(); window.scrollTo(0, $(".ck-head").offsetTop); };
   const draw = () => {
     if (U.step === "find") {
@@ -1983,14 +2023,15 @@ function wireCheckin() {
     }
     if (U.step === "confirm") {
       const m = U.who, l = CK.list(e), taken = e.squads.map((_, i) => l.some(r => r.member === m.member && r.squad === i));
-      if (U.sq === null || taken[U.sq]) U.sq = taken.indexOf(false);
+      if (openSq !== null) U.sq = taken[openSq] ? -2 : openSq;
+      else if (U.sq === null || taken[U.sq]) U.sq = taken.indexOf(false);
       const maxProg = m.isNew ? 10 : 20;
       app.innerHTML = `
         <button type="button" class="ck-back" id="ck-back">← Not you? Search again</button>
         ${CK.card(e, m)}
         ${m.isNew ? `<p class="toast ck-note">Welcome! Your membership is pending until a director checks your average and you pay the $25 dues at the desk.</p>` : ""}
-        ${U.sq < 0 ? `<div class="panel"><h3>You're checked in for every squad today.</h3><p class="meta">Re-entries are in a different squad each time.</p></div>` : `
-        <div class="ck-sec"><span class="sc-lbl">Squad</span><div class="sc-seg" id="ck-squads">${e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === U.sq}" ${taken[i] ? "disabled" : ""}>${esc(s)}${taken[i] ? "<small>Checked in</small>" : i && CFG.opensAt(s, CFG.get(e).openMins) ? `<small>Opens ${CFG.opensAt(s, CFG.get(e).openMins)}</small>` : ""}</button>`).join("")}</div></div>
+        ${U.sq === -2 ? `<div class="panel"><h3>You're already checked in for the ${sqName(openSq)} squad.</h3><p class="meta">${openSq < e.squads.length - 1 ? `Want to re-enter? Check-in for the ${sqName(openSq + 1)} squad opens at ${CFG.opensAt(cfg.squads[openSq + 1] || e.squads[openSq + 1], cfg.openMins)}.` : "That's the last squad today."}</p></div>` : U.sq < 0 ? `<div class="panel"><h3>You're checked in for every squad today.</h3><p class="meta">Re-entries are in a different squad each time.</p></div>` : `
+        <div class="ck-sec"><span class="sc-lbl">Squad</span><div class="sc-seg" id="ck-squads">${e.squads.map((s, i) => { const off = taken[i] || (openSq !== null && i !== openSq); return `<button type="button" data-sq="${i}" aria-pressed="${i === U.sq}" ${off ? "disabled" : ""}>${esc(s)}${taken[i] ? "<small>Checked in</small>" : openSq !== null && i < openSq ? "<small>Closed</small>" : i && i !== openSq && CFG.opensAt(s, cfg.openMins) ? `<small>Opens ${CFG.opensAt(s, cfg.openMins)}</small>` : openSq === i ? "<small>Open now</small>" : ""}</button>`; }).join("")}</div></div>
         <div class="ck-sec"><span class="sc-lbl">Side pots</span>
           <label class="ck-tog"><input type="checkbox" id="ck-jp"> <span><b>9-Tap Jackpot</b> $4 · seven 9-counts to start a game</span></label>
           <div class="ck-prog"><span>Progressive Pot</span><div class="sc-seg" id="ck-prog">${[0, 10, 20].map(v => `<button type="button" data-p="${v}" aria-pressed="${v === 0}" ${v > maxProg ? "disabled" : ""}>$${v}</button>`).join("")}</div></div>

@@ -1,11 +1,38 @@
 {
   "routes": [
-    { "route": "/staff", "rewrite": "/index.html", "allowedRoles": ["staff"] },
-    { "route": "/api/staff/*", "allowedRoles": ["staff"] }
+    {
+      "route": "/staff",
+      "rewrite": "/index.html",
+      "allowedRoles": [
+        "staff"
+      ]
+    },
+    {
+      "route": "/api/staff/*",
+      "allowedRoles": [
+        "staff"
+      ]
+    }
   ],
   "responseOverrides": {
-    "401": { "redirect": "/.auth/login/aad?post_login_redirect_uri=/staff", "statusCode": 302 },
-    "403": { "redirect": "/#setup", "statusCode": 302 }
+    "401": {
+      "redirect": "/.auth/login/aad?post_login_redirect_uri=/staff",
+      "statusCode": 302
+    },
+    "403": {
+      "redirect": "/#setup",
+      "statusCode": 302
+    }
   },
-  "navigationFallback": { "rewrite": "/index.html", "exclude": ["/staff", "/img/*", "/docs/*"] }
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/staff",
+      "/img/*",
+      "/docs/*"
+    ]
+  },
+  "globalHeaders": {
+    "Cache-Control": "no-cache"
+  }
 }
