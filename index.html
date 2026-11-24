@@ -605,6 +605,17 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-squads { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .su-squads input { text-align: center; font: 700 1.05rem var(--font-num); }
 .su-sum { margin: 18px 0 14px; line-height: 1.55; }
+.su-ven select { min-height: 50px; font: 700 1.05rem var(--font-body); }
+.su-vrow { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; margin-top: 6px; }
+.su-vrow .ck-back { padding: 8px 0; }
+.su-vnote { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
+.su-vnote b { color: var(--ink); }
+.su-vnote.dirty { color: var(--ink); }
+.su-vbox { margin-top: 12px; padding: 14px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.su-vbox .form-grid { margin-bottom: 12px; }
+.su-vbox .btn { min-height: 44px; }
+.su-vbtns { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.su-del { color: #c7362b !important; }
 /* Staff area: own menu, no sponsor banner or public footer */
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 .staff-head { position: sticky; top: 0; z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--maple); }
@@ -1066,6 +1077,24 @@ const VIEWS = {
     </div></section>
     <section class="wrap ck-main">
       <form class="panel su-form" id="su-form" novalidate>
+        <h3>Venue</h3>
+        <div class="field su-ven"><label for="su-ven">Bowling center</label><select id="su-ven"></select></div>
+        <p class="su-vnote" id="su-vnote"></p>
+        <div class="su-vrow" id="su-vrow">
+          <button type="button" class="ck-back" id="su-vsave">Save this format to the venue</button>
+          <button type="button" class="ck-back" id="su-vedit">Rename or remove venue</button>
+          <button type="button" class="ck-back" id="su-vadd">+ Add a new venue</button>
+        </div>
+        <div class="su-vbox" id="su-vbox" hidden>
+          <p class="sc-lbl" id="su-vbox-t">New venue</p>
+          <div class="form-grid su-two">
+            <div class="field"><label for="su-vname">Venue name</label><input id="su-vname" placeholder="e.g. Kenmore Lanes"></div>
+            <div class="field"><label for="su-vcity">City</label><input id="su-vcity" placeholder="e.g. Kenmore"></div>
+          </div>
+          <div class="su-vbtns"><button type="button" class="btn btn-primary" id="su-vok">Save venue</button><button type="button" class="ck-back" id="su-vcancel">Cancel</button><button type="button" class="ck-back su-del" id="su-vdel" hidden>Remove venue</button></div>
+          <p class="su-vnote" id="su-vbox-n"></p>
+        </div>
+
         <h3>Lanes</h3>
         <div class="form-grid su-two">
           <div class="field"><label for="su-first">First lane in use</label><input id="su-first" type="number" inputmode="numeric" min="1" max="99" value="${c.first}"></div>
@@ -1089,7 +1118,7 @@ const VIEWS = {
         <button class="btn btn-primary ck-go" type="submit">Save and open check-in</button>
         <div id="su-msg" class="toast" hidden></div>
       </form>
-      <p class="foot-note">Prototype: the setup is saved on this device only. In the live version it would be saved with the tournament so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games and squads) so you can load it again next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1488,6 +1517,22 @@ const CFG = {
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; }
 };
+/* ---- Saved venues: each bowling center's usual format, loaded into setup ---- */
+const VEN = {
+  KEY: "9tap-venues",
+  FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "games", "count", "squads"],
+  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); return f; },
+  same(a, b) { return JSON.stringify(VEN.fmt(a)) === JSON.stringify(VEN.fmt(b)); },
+  seed() { // one sample venue per center on the schedule (lane numbers are placeholders)
+    const seen = new Set(), out = [];
+    DATA.events.forEach(e => { if (seen.has(e.center)) return; seen.add(e.center); out.push({ id: "v" + out.length, name: e.center, city: e.city, fmt: VEN.fmt(Object.assign(CFG.defaults(e), e.center === "Westside Lanes" ? { first: 1, last: 24, count: 3 } : e.center === "HiJoy Bowl" ? { first: 1, last: 20, max: 5, overflowMax: 6 } : {})) }); });
+    return out;
+  },
+  all() { let v = null; try { v = JSON.parse(localStorage.getItem(VEN.KEY)); } catch (_) {} return Array.isArray(v) ? v : VEN.seed(); },
+  put(list) { try { localStorage.setItem(VEN.KEY, JSON.stringify(list)); } catch (_) {} },
+  find(id) { return VEN.all().find(v => v.id === id); },
+  byName(name) { return VEN.all().find(v => v.name.toLowerCase() === String(name).toLowerCase()); }
+};
 /* ---- Rover score entry ---- */
 const SC = {
   squad: 0, game: null, lanes: null,
@@ -1697,6 +1742,60 @@ const CK = {
 
 function wireSetup() {
   const e = nextEvent, c = CFG.get(e);
+  // Venue: the tournament remembers its venue; a new setup starts from the venue's saved format.
+  if (!c.venue || !VEN.find(c.venue)) { const v = VEN.byName(e.center); c.venue = v ? v.id : ""; if (v && !c.saved) Object.assign(c, VEN.fmt(v.fmt)); }
+  let mode = null; // "add" | "edit" while the venue box is open
+  const squadsNow = () => [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
+  const drawSquads = list => { $("#su-squads").innerHTML = list.map(s => `<input value="${esc(s)}" aria-label="Squad time">`).join(""); };
+  const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
+  const drawVen = () => {
+    const list = VEN.all();
+    $("#su-ven").innerHTML = (c.venue ? "" : `<option value="">Choose a saved venue…</option>`) + list.map(v => `<option value="${esc(v.id)}"${v.id === c.venue ? " selected" : ""}>${esc(v.name)}${v.city ? " · " + esc(v.city) : ""}</option>`).join("");
+    vnote();
+  };
+  const vnote = () => {
+    const v = VEN.find(c.venue), n = $("#su-vnote");
+    $("#su-vsave").hidden = !v; $("#su-vedit").hidden = !v;
+    if (!v) { n.className = "su-vnote"; n.innerHTML = "Pick the bowling center to load its saved format, or add it as a new venue."; return; }
+    const cur = Object.assign({}, c, { squads: squadsNow() }), same = VEN.same(cur, v.fmt);
+    n.className = "su-vnote" + (same ? "" : " dirty");
+    n.innerHTML = same ? `Using the saved format for <b>${esc(v.name)}</b>.` : `Changed from the saved ${esc(v.name)} format. These changes apply to this tournament; save them to the venue to use them next time too. <button type="button" class="ck-back" id="su-vrevert">Undo changes</button>`;
+    $("#su-vsave").disabled = same; $("#su-vsave").style.opacity = same ? .45 : 1;
+    const r = $("#su-vrevert"); if (r) r.addEventListener("click", () => fill(v.fmt));
+  };
+  const box = m => {
+    mode = m; const v = VEN.find(c.venue);
+    $("#su-vbox").hidden = !m; $("#su-vrow").hidden = !!m;
+    if (!m) return;
+    $("#su-vbox-t").textContent = m === "add" ? "New venue" : "Edit venue";
+    $("#su-vname").value = m === "edit" && v ? v.name : ""; $("#su-vcity").value = m === "edit" && v ? v.city || "" : "";
+    $("#su-vdel").hidden = m !== "edit";
+    $("#su-vbox-n").textContent = m === "add" ? "The lanes, games and squads below are saved as this venue's format. Change them first if this center is different." : "";
+    $("#su-vname").focus();
+  };
+  $("#su-ven").addEventListener("change", ev => { const v = VEN.find(ev.target.value); if (!v) return; c.venue = v.id; fill(v.fmt); drawVen(); });
+  $("#su-vadd").addEventListener("click", () => box("add"));
+  $("#su-vedit").addEventListener("click", () => box("edit"));
+  $("#su-vcancel").addEventListener("click", () => box(null));
+  $("#su-vsave").addEventListener("click", () => {
+    sum(); const list = VEN.all(), v = list.find(x => x.id === c.venue); if (!v) return;
+    const sq = squadsNow(); if (!sq.length) { vmsg("Add at least one squad time before saving the venue."); return; }
+    v.fmt = VEN.fmt(Object.assign({}, c, { squads: sq })); VEN.put(list); drawVen(); vmsg(`Saved. ${v.name} will load this format next time.`);
+  });
+  $("#su-vok").addEventListener("click", () => {
+    const name = $("#su-vname").value.trim(), city = $("#su-vcity").value.trim(), list = VEN.all();
+    if (!name) { $("#su-vbox-n").textContent = "Give the venue a name."; $("#su-vname").focus(); return; }
+    const dup = list.find(x => x.name.toLowerCase() === name.toLowerCase() && !(mode === "edit" && x.id === c.venue));
+    if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved. Pick it from the list instead.`; return; }
+    if (mode === "add") { sum(); const id = "v" + Date.now().toString(36); list.push({ id, name, city, fmt: VEN.fmt(Object.assign({}, c, { squads: squadsNow().length ? squadsNow() : c.squads })) }); c.venue = id; vmsg(`Added ${name} with the format below.`); }
+    else { const v = list.find(x => x.id === c.venue); if (v) { v.name = name; v.city = city; vmsg(`Renamed to ${name}.`); } }
+    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); drawVen();
+  });
+  $("#su-vdel").addEventListener("click", () => {
+    const v = VEN.find(c.venue); if (!v || !confirm(`Remove ${v.name} from saved venues? This tournament keeps its current setup.`)) return;
+    VEN.put(VEN.all().filter(x => x.id !== v.id)); c.venue = ""; box(null); drawVen(); vmsg(`Removed ${v.name}.`);
+  });
+  const vmsg = t => { const m = $("#su-msg"); m.hidden = false; m.textContent = t; };
   const pick = (id, key, num) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = num ? +b.dataset.v : b.dataset.v; sum(); });
   const sum = () => {
     c.first = Math.max(1, +$("#su-first").value || 1); c.last = Math.max(c.first, +$("#su-last").value || c.first);
@@ -1708,21 +1807,23 @@ function wireSetup() {
     const n = c.last - c.first + 1, o = CFG.order(c), L = i => String.fromCharCode(65 + i);
     const firstFew = c.fill === "spread" ? `one bowler on each lane (${o.slice(0, 3).join(", ")}…), then wraps around` : `${c.max} on lane ${o[0]}, then ${c.max} on lane ${o[1] || o[0]}, and so on`;
     $("#su-sum").innerHTML = `<b>${n} lanes</b> (${c.first}–${c.last}) × ${c.max} = <b>${n * c.max} bowlers</b> per squad${c.overflow && c.overflowMax > c.max ? `, up to ${n * c.overflowMax} if it overflows` : ""}.<br>Check-in places ${firstFew}. Bowlers pick their order at the lane.<br>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}`;
+    if (typeof vnote === "function" && $("#su-ven").options.length) vnote();
   };
   pick("su-dir", "dir"); pick("su-fill", "fill"); pick("su-games", "games", true); pick("su-count", "count", true);
   $("#su-form").querySelectorAll(".su-step button").forEach(b => b.addEventListener("click", () => { c.max = Math.min(10, Math.max(1, c.max + +b.dataset.d)); if (c.overflowMax < c.max) $("#su-overmax").value = c.max; sum(); }));
   ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", sum));
   $("#su-games").addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (b) { c.count = Math.min(3, c.games); sum(); } });
   $("#su-add").addEventListener("click", () => { const i = document.createElement("input"); i.setAttribute("aria-label", "Squad time"); i.placeholder = "e.g. 5:00"; $("#su-squads").append(i); i.focus(); });
+  $("#su-squads").addEventListener("input", () => vnote());
   $("#su-form").addEventListener("submit", ev => {
     ev.preventDefault(); sum();
     c.squads = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
     const m = $("#su-msg"); m.hidden = false;
     if (!c.squads.length) { m.textContent = "Add at least one squad time."; return; }
-    c.saved = true; CFG.put(e, c);
+    c.saved = true; CFG.put(e, c); vnote();
     m.innerHTML = `Saved. Check-in is open: new check-ins will follow this setup. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>`;
   });
-  sum();
+  fill(c); drawVen();
 }
 function wireCheckin() {
   const e = CK.event(), app = $("#ck-app"), U = CK.ui;
