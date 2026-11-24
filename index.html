@@ -700,9 +700,9 @@ body.tv-mode { background: #0b1f26; }
 .tv-head > div { flex: 1; }
 .tv-clock { font: 700 4vh var(--font-num) !important; color: var(--maple) !important; }
 .tv-fs { margin-left: 1vw; padding: 1vh 1.4vw; font: 600 1.8vh var(--font-body); background: transparent; color: #b9c7c4; border: 1px solid #3a5961; border-radius: 6px; cursor: pointer; }
-.tv-scroll { flex: 1; overflow: hidden; padding: 1vh 3vw 4vh; }
+.tv-scroll { flex: 1; overflow: hidden; padding: 0 3vw 4vh; }
 .tv-board { width: 100%; border-collapse: collapse; font-size: 2.8vh; }
-.tv-board th { position: sticky; top: 0; background: #0b1f26; text-align: right; font: 700 1.9vh var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--maple); padding: 1.4vh 1vw; }
+.tv-board th { position: sticky; top: 0; z-index: 2; background: #0b1f26; text-align: right; font: 700 1.9vh var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--maple); padding: 1.4vh 1vw; }
 .tv-board td { padding: .7vh 1vw; text-align: right; border-bottom: 1px solid #1f3d45; font-variant-numeric: tabular-nums; }
 .tv-board th:nth-child(2), .tv-board td:nth-child(2) { text-align: left; }
 .tv-board td:nth-child(2) b { font-size: 3vh; margin-right: 1vw; }
@@ -713,6 +713,9 @@ body.tv-mode { background: #0b1f26; }
 .tv-board .lv-tot b { font-size: 3.4vh; color: #fff; }
 .tv-board tbody tr:nth-child(1) .lv-tot b, .tv-board tbody tr:nth-child(1) .lv-rank { color: var(--maple); }
 .tv-board tbody tr:nth-child(-n+3) { background: rgba(255,255,255,.04); }
+.tv-board tr.tv-pin td { position: sticky; z-index: 1; background: #0b1f26; box-shadow: inset 0 -1px 0 #1f3d45; }
+.tv-board tbody tr.tv-pin:nth-child(-n+3) td { background: #152930; }
+.tv-board tr.tv-pin-last td { box-shadow: inset 0 -.4vh 0 var(--maple); }
 .tv-empty { font-size: 4vh; text-align: center; margin-top: 30vh; color: #b9c7c4; }
 .staff-head { position: sticky; top: 0; z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--maple); }
 .staff-row { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; padding-block: 6px; }
@@ -1268,7 +1271,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #20. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #21. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -2391,6 +2394,9 @@ function wireTV() {
     if (!$("#tv")) return false;
     const { rows, html, head } = liveRows(e, null);
     $("#tv-body").innerHTML = rows.length ? `<table class="tv-board"><thead>${head}</thead><tbody>${html}</tbody></table>` : `<p class="tv-empty">Standings appear here as soon as the first games are in.</p>`;
+    // Keep the top 5 pinned under the header while the rest of the list scrolls.
+    const th = document.querySelector("#tv-body thead th"); let top = th ? th.offsetHeight : 0;
+    Array.from(document.querySelectorAll("#tv-body tbody tr")).slice(0, 5).forEach((tr, i, a) => { tr.classList.add("tv-pin"); if (i === a.length - 1) tr.classList.add("tv-pin-last"); tr.querySelectorAll("td").forEach(td => td.style.top = top + "px"); top += tr.offsetHeight; });
     $("#tv-clock").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     return true;
   };
