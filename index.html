@@ -635,13 +635,17 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-del { color: #c7362b !important; }
 .su-inl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .su-sqlist { display: grid; gap: 8px; margin-top: 6px; }
-.su-sq { display: grid; grid-template-columns: 72px 96px 1fr auto; gap: 10px; align-items: center; }
+.su-tw { position: relative; display: block; }
+.su-tlist { max-height: 240px; min-width: 140px; }
+.su-tlist .su-vopt { min-height: 40px; padding: 8px 12px; justify-content: center; }
+.su-tnone { margin: 0; padding: 10px 12px; font-size: .88rem; color: var(--muted); }
+.su-sq { display: grid; grid-template-columns: 72px 130px 1fr auto; gap: 10px; align-items: center; }
 .su-sqn { font-weight: 700; font-size: .9rem; }
 .su-sq input { text-align: center; font: 700 1.05rem var(--font-num); min-height: 44px; }
 .su-sqo { font-size: .85rem; color: var(--muted); line-height: 1.3; }
 .su-x { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; background: none; color: var(--muted); font-size: 1.2rem; line-height: 1; cursor: pointer; }
 .su-x:hover { color: #c7362b; border-color: #c7362b; }
-@media (max-width: 420px) { .su-sq { grid-template-columns: 64px 84px 1fr auto; gap: 8px; } }
+@media (max-width: 420px) { .su-sq { grid-template-columns: 60px 118px 1fr auto; gap: 8px; } .su-sq input { font-size: .95rem; padding-inline: 6px; } }
 .su-sumcard { background: color-mix(in srgb, var(--maple) 22%, var(--surface)); }
 .su-sumlist { margin: 0; padding-left: 18px; display: grid; gap: 4px; line-height: 1.5; }
 .su-bar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 -10px 24px -18px rgba(0,0,0,.5); }
@@ -1178,7 +1182,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #7. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #8. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1579,7 +1583,12 @@ const CFG = {
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
   // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
-  dayMin(t) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim()); if (!m) return null; let h = +m[1] % 12; if (h < 9 && +m[1] !== 12) h += 12; return h * 60 + +m[2]; },
+  // Squad times: "10:00 AM". Older data has no AM/PM: 7:00-11:59 is morning, 12:00-6:59 is afternoon/evening.
+  parseT(t) { const m = /^(\d{1,2})(?::?(\d{2}))?\s*([ap])?\.?m?\.?$/i.exec(String(t).trim()); if (!m) return null; let h = +m[1], mi = m[2] ? +m[2] : 0; if (h < 1 || h > 12 || mi > 59) return null; const ap = m[3] ? m[3].toLowerCase() : (h >= 7 && h <= 11 ? "a" : "p"); h = h % 12 + (ap === "p" ? 12 : 0); return h * 60 + mi; },
+  fmtT(x) { x = ((x % 1440) + 1440) % 1440; const h = Math.floor(x / 60), h12 = h % 12 || 12; return h12 + ":" + String(x % 60).padStart(2, "0") + (h < 12 ? " AM" : " PM"); },
+  normT(t) { const x = CFG.parseT(t); return x == null ? String(t).trim() : CFG.fmtT(x); },
+  TIMES: Array.from({ length: (22 - 7) * 4 + 1 }, (_, i) => 7 * 60 + i * 15), // 7:00 AM to 10:00 PM, every 15 minutes
+  dayMin(t) { return CFG.parseT(t); },
   // Check-in runs one squad at a time: staff open it for the first squad, close each squad when bowling starts,
   // and the next squad opens on its own N minutes before its time (or right away if staff open it early).
   status(c, now = new Date()) {
@@ -1592,13 +1601,13 @@ const CFG = {
     return { state: "waiting", k, at: CFG.opensAt(sq[k], c.openMins) };
   },
   // "1:30" minus 60 minutes -> "12:30" (squad times are on a 12-hour clock without am/pm)
-  opensAt(t, mins) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim()); if (!m || +m[1] < 1 || +m[1] > 12 || +m[2] > 59) return null; let x = ((+m[1] % 12) * 60 + +m[2] - (mins || 0)) % 720; if (x < 0) x += 720; const h = Math.floor(x / 60) || 12; return h + ":" + String(x % 60).padStart(2, "0"); }
+  opensAt(t, mins) { const x = CFG.parseT(t); return x == null ? null : CFG.fmtT(x - (mins || 0)); }
 };
 /* ---- Saved venues: each bowling center's usual format, loaded into setup ---- */
 const VEN = {
   KEY: "9tap-venues",
   FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "games", "count", "squads", "openMins"],
-  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); if (f.openMins == null) f.openMins = 60; return f; },
+  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); if (f.openMins == null) f.openMins = 60; f.squads = (f.squads || []).map(CFG.normT); return f; },
   same(a, b) { return JSON.stringify(VEN.fmt(a)) === JSON.stringify(VEN.fmt(b)); },
   seed() { // one sample venue per center on the schedule (lane numbers are placeholders)
     const seen = new Set(), out = [];
@@ -1875,12 +1884,12 @@ function wireSetup() {
   const msg = t => { const m = $("#su-msg"); m.hidden = !t; m.innerHTML = t || ""; };
   const squadsNow = () => [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
   const drawSquads = list => {
-    $("#su-squads").innerHTML = (list.length ? list : [""]).map((s, i) => `<div class="su-sq"><span class="su-sqn">Squad ${i + 1}</span><input value="${esc(s)}" aria-label="Squad ${i + 1} time" placeholder="e.g. 5:00"><span class="su-sqo" data-o="${i}"></span>${i ? `<button type="button" class="su-x" data-x="${i}" aria-label="Remove squad ${i + 1}">×</button>` : ""}</div>`).join("");
+    $("#su-squads").innerHTML = (list.length ? list : [""]).map((s, i) => `<div class="su-sq"><span class="su-sqn">Squad ${i + 1}</span><span class="su-tw"><input class="su-time" value="${esc(CFG.normT(s))}" aria-label="Squad ${i + 1} time" placeholder="e.g. 5:00 PM" autocomplete="off" role="combobox" aria-expanded="false"><span class="su-vlist su-tlist" role="listbox" hidden></span></span><span class="su-sqo" data-o="${i}"></span>${i ? `<button type="button" class="su-x" data-x="${i}" aria-label="Remove squad ${i + 1}">×</button>` : ""}</div>`).join("");
     opens();
   };
   const opens = () => $("#su-squads").querySelectorAll(".su-sq").forEach((row, i) => {
     const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, c.openMins);
-    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30";
+    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30 PM";
   });
   const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
 
@@ -1981,7 +1990,8 @@ function wireSetup() {
   const store = () => {
     sum(); c.squads = squadsNow();
     if (!c.squads.length) { msg("Add at least one squad time."); return false; }
-    if (c.squads.slice(1).some(t => !CFG.opensAt(t, c.openMins))) { msg("Squad times should look like 1:30 or 12:00."); return false; }
+    if (c.squads.some(t => CFG.parseT(t) == null)) { msg("Squad times should look like 1:30 PM or 10:00 AM."); return false; }
+    c.squads = c.squads.map(CFG.normT);
     const live = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = live[k]); // check-in state belongs to the Desk
     c.saved = true; CFG.put(e, c);
     const list = VEN.all(), v = list.find(x => x.id === c.venue); if (v) { v.fmt = VEN.fmt(c); VEN.put(list); } // the venue keeps this format for next time
@@ -1997,6 +2007,33 @@ function wireSetup() {
   ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", () => { sum(); touch(); }));
   $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
   $("#su-squads").addEventListener("input", () => { sum(); touch(); });
+  /* squad time picker: list every 15 minutes from 7:00 AM, filtered as you type */
+  let tHi = 0;
+  const tKey = x => x.toLowerCase().replace(/[\s:.]/g, "");
+  const tList = (inp, q) => {
+    const L = inp.parentNode.querySelector(".su-tlist"), k = tKey(q || ""), cur = CFG.parseT(inp.value);
+    let opts = CFG.TIMES.map(CFG.fmtT).filter(t => !k || tKey(t).startsWith(k) || tKey(t).startsWith("0" + k));
+    if (!opts.length && CFG.parseT(q) != null) opts = [CFG.normT(q)];
+    if (!k && cur != null) tHi = Math.max(0, CFG.TIMES.indexOf(cur));
+    tHi = Math.min(tHi, Math.max(0, opts.length - 1));
+    L.innerHTML = opts.map((t, i) => `<button type="button" role="option" class="su-vopt" data-t="${t}" aria-selected="${i === tHi}"><b>${t}</b></button>`).join("") || `<p class="su-tnone">No match. Try 1:30 PM</p>`;
+    L.hidden = false; inp.setAttribute("aria-expanded", "true");
+    const sel = L.querySelector('[aria-selected="true"]'); if (sel) L.scrollTop = sel.offsetTop - L.clientHeight / 2 + sel.offsetHeight / 2;
+  };
+  const tClose = inp => { const L = inp.parentNode.querySelector(".su-tlist"); if (L) L.hidden = true; inp.setAttribute("aria-expanded", "false"); };
+  const tSet = (inp, t) => { inp.value = t; tClose(inp); sum(); touch(); };
+  $("#su-squads").addEventListener("focusin", ev => { const i = ev.target.closest(".su-time"); if (i) { i.select(); tHi = 0; tList(i, ""); } });
+  $("#su-squads").addEventListener("input", ev => { const i = ev.target.closest(".su-time"); if (i) { tHi = 0; tList(i, i.value); } });
+  $("#su-squads").addEventListener("keydown", ev => {
+    const i = ev.target.closest(".su-time"); if (!i) return; const L = i.parentNode.querySelector(".su-tlist"), o = [...L.querySelectorAll("[data-t]")];
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); if (L.hidden) tList(i, ""); if (!o.length) return; tHi = (tHi + (ev.key === "ArrowDown" ? 1 : -1) + o.length) % o.length; o.forEach((b, n) => b.setAttribute("aria-selected", String(n === tHi))); o[tHi].scrollIntoView({ block: "nearest" }); }
+    else if (ev.key === "Enter") { ev.preventDefault(); if (!L.hidden && o[tHi]) tSet(i, o[tHi].dataset.t); }
+    else if (ev.key === "Escape") tClose(i);
+    else if (ev.key === "Tab" && !L.hidden && i.value.trim() && o[tHi] && CFG.parseT(i.value) == null) tSet(i, o[tHi].dataset.t);
+  });
+  $("#su-squads").addEventListener("mousedown", ev => { if (ev.target.closest(".su-tlist")) ev.preventDefault(); });
+  $("#su-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (b) tSet(b.closest(".su-tw").querySelector("input"), b.dataset.t); });
+  $("#su-squads").addEventListener("focusout", ev => { const i = ev.target.closest(".su-time"); if (!i) return; setTimeout(() => { if (!i.isConnected) return; tClose(i); const v = i.value.trim(); if (v && CFG.parseT(v) != null && CFG.normT(v) !== v) { i.value = CFG.normT(v); sum(); touch(); } }, 150); });
   $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); sum(); touch(); });
   $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}${VEN.find(c.venue) ? `, for this tournament and as ${esc(VEN.find(c.venue).name)}'s format` : ""}.` + " New check-ins follow this setup."); });
   setup_tick = setInterval(() => { if (!$("#su-state")) { clearInterval(setup_tick); return; } state(); }, 30000);
