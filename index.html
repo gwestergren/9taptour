@@ -1266,7 +1266,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #12. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #13. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1313,7 +1313,7 @@ const VIEWS = {
           <p class="meta">Open your camera and scan. Find your name, pick your squad, and you get your lane right away. New to the Tour? You can sign up on the same page.</p>
           <button type="button" class="btn btn-primary" id="dk-print">Print poster</button></div>
       </div>
-      <p class="foot-note">Lanes are assigned automatically when a bowler checks in, following the <a class="link-more" href="#setup">tournament setup</a> (start lane, direction and bowlers per lane), next to a friend when they name one. Change a lane here, or use <b>Bowl with</b> to put friends on the same pair. Every change shows up on the rovers' score entry. The Google Sheet columns are: Date, Tournament, Squad, Member #, Last, First, City, Average, Handicap, Bonus pins, Lane, Jackpot, Progressive, New member, Paid, Checked in.</p>
+      <p class="foot-note">Lanes are assigned automatically when a bowler checks in, following the <a class="link-more" href="#setup">tournament setup</a> (start lane, direction and bowlers per lane), next to a friend when they name one. Change a lane here, or use <b>Bowl with</b> to put friends on the same pair. Every change shows up on the rovers' score entry. The Google Sheet columns are: Date, Tournament, Squad, Member #, Last, First, Average, Handicap, Bonus pins, Lane, Jackpot, Progressive, New member, Paid, Checked in.</p>
     </section>`;
   },
 
@@ -1930,14 +1930,14 @@ const CK = {
     return { r, f: f && r.lane && CK.pair(r.lane) === CK.pair(f.lane) ? f : null, repeat };
   },
   rows(e, sq) {
-    const head = ["Date","Tournament","Squad","Member #","Last","First","City","Average","Handicap","Bonus pins","Lane","Jackpot","Progressive","New member","Paid","Checked in"];
+    const head = ["Date","Tournament","Squad","Member #","Last","First","Average","Handicap","Bonus pins","Lane","Jackpot","Progressive","New member","Paid","Checked in"];
     const t = d => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    return [head].concat(CK.list(e).filter(r => sq == null || r.squad === sq).map(r => [shortDate(e.date), e.center, e.squads[r.squad], r.member, r.last, r.first, r.city, r.avg || "", CK.rh(r), r.bonus, r.lane ? r.lane + r.pos : "", r.jackpot ? 4 : 0, r.prog, r.isNew ? "Y" : "", r.paid ? "Y" : "", t(r.at)]));
+    return [head].concat(CK.list(e).filter(r => sq == null || r.squad === sq).map(r => [shortDate(e.date), e.center, e.squads[r.squad], r.member, r.last, r.first, r.avg || "", CK.rh(r), r.bonus, r.lane ? r.lane + r.pos : "", r.jackpot ? 4 : 0, r.prog, r.isNew ? "Y" : "", r.paid ? "Y" : "", t(r.at)]));
   },
   card(e, m, r) {
     const f = (k, v, cls = "") => `<div class="ck-f ${cls}"><span>${k}</span><b>${v}</b></div>`;
     return `<div class="ck-card">
-      <div class="ck-card-top"><img src="img/tour-logo.png" alt="" width="44" height="44"><div><b>${esc(m.last)}, ${esc(m.first)}</b><span>${esc(m.city)}</span></div></div>
+      <div class="ck-card-top"><img src="img/tour-logo.png" alt="" width="44" height="44"><div><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)}</span></div></div>
       <div class="ck-grid">
         ${r ? f("Date", shortDate(e.date)) + f("Tournament", esc(e.center)) + f("Squad time", esc(e.squads[r.squad])) + f("Starting lane", r.lane ? `<span class="num">${r.lane}${r.pos}</span>` : "At the desk", "lane") : ""}
         ${f("Membership #", `<span class="num">${esc(m.member)}</span>`)}
@@ -2169,7 +2169,7 @@ function wireCheckin() {
       const hits = () => {
         const q = $("#ck-q").value, h = CK.find(q);
         $("#ck-hits").innerHTML = !q.trim() ? `<p class="meta">Your membership # is on your Tour card, or just type your last name.</p>`
-          : h.length ? h.map(m => `<button type="button" class="ck-hit" data-m="${esc(m.member)}"><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)} · ${esc(m.city)} · Avg ${m.avg || "pending"}</span></button>`).join("")
+          : h.length ? h.map(m => `<button type="button" class="ck-hit" data-m="${esc(m.member)}"><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)} · Avg ${m.avg || "pending"}</span></button>`).join("")
           : `<p class="meta">No member matches “${esc(q)}”. Check the spelling, or create a membership below.</p>`;
       };
       $("#ck-q").addEventListener("input", hits);
@@ -2233,7 +2233,6 @@ function wireCheckin() {
           <div class="form-grid">
             <div class="field"><label for="n-first">First name</label><input id="n-first" autocomplete="given-name" required></div>
             <div class="field"><label for="n-last">Last name</label><input id="n-last" autocomplete="family-name" required></div>
-            <div class="field"><label for="n-city">City</label><input id="n-city" autocomplete="address-level2" required></div>
             <div class="field"><label for="n-cell">Cell phone</label><input id="n-cell" type="tel" autocomplete="tel"></div>
             <div class="field full"><label for="n-email">Email</label><input id="n-email" type="email" autocomplete="email"></div>
             <fieldset class="field full fs"><legend>Highest league average, this season or last</legend><div class="form-grid g-avg2">
@@ -2267,11 +2266,11 @@ function wireCheckin() {
         ev.preventDefault();
         const v = id => $("#" + id).value.trim(), msg = $("#n-msg"), none = $("#n-none").checked, a = Number(v("n-avg")), g = Number(v("n-games"));
         const bad = t => { msg.hidden = false; msg.textContent = t; };
-        if (!v("n-first") || !v("n-last") || !v("n-city")) return bad("Add your first name, last name and city.");
+        if (!v("n-first") || !v("n-last")) return bad("Add your first name and last name.");
         if (!none && !a) return bad("Enter your league average, or check the box if you don't have one.");
         if (!none && a > 210) return bad("The maximum book average to join is 210. Please see a director at the desk.");
         if (!$("#n-agree").checked || !v("n-sign")) return bad("Check the box and type your name as your signature.");
-        const nm = CK.newMembers(), m = { member: "N" + (101 + nm.length), first: v("n-first"), last: v("n-last"), city: v("n-city"), avg: none || (g && g < 15) ? null : Math.max(125, a + 20), bonus: 0, isNew: true, cell: v("n-cell"), email: v("n-email") };
+        const nm = CK.newMembers(), m = { member: "N" + (101 + nm.length), first: v("n-first"), last: v("n-last"), avg: none || (g && g < 15) ? null : Math.max(125, a + 20), bonus: 0, isNew: true, cell: v("n-cell"), email: v("n-email") };
         nm.push(m); CK.put("9tap-newmembers", nm);
         go("confirm", { who: m, sq: null });
       });
@@ -2297,7 +2296,7 @@ function wireDesk() {
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.isNew ? `<span class="tag">New member</span>` : ""}
-          <small>#${esc(r.member)} · ${esc(r.city)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.rh(r)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
+          <small>#${esc(r.member)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.rh(r)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(r.friend)}` : "No friend request"}</small>
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
         <div class="dk-ctl">
@@ -2331,7 +2330,7 @@ function wireDesk() {
   };
   const hits = () => {
     const q = $("#dk-q").value, L = CK.list(e), h = CK.find(q);
-    $("#dk-hits").innerHTML = !q.trim() ? "" : h.length ? h.map(m => { const inn = L.some(r => r.member === m.member && r.squad === CK.deskSq); return `<button type="button" class="ck-hit" data-m="${esc(m.member)}" ${inn ? "disabled" : ""}><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)} · ${esc(m.city)} · Avg ${m.avg || "pending"}${inn ? " · already checked in" : ""}</span></button>`; }).join("") : `<p class="meta">No member matches “${esc(q)}”.</p>`;
+    $("#dk-hits").innerHTML = !q.trim() ? "" : h.length ? h.map(m => { const inn = L.some(r => r.member === m.member && r.squad === CK.deskSq); return `<button type="button" class="ck-hit" data-m="${esc(m.member)}" ${inn ? "disabled" : ""}><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)} · Avg ${m.avg || "pending"}${inn ? " · already checked in" : ""}</span></button>`; }).join("") : `<p class="meta">No member matches “${esc(q)}”.</p>`;
   };
   $("#dk-q").addEventListener("input", hits);
   $("#dk-hits").addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if (!b || b.disabled) return; const m = CK.members().find(x => x.member === b.dataset.m), { r } = CK.checkIn(e, m, CK.deskSq, { jackpot: false, prog: 0, friend: "", desk: true }); $("#dk-q").value = ""; hits(); msg(`${m.first} ${m.last} checked in for ${e.squads[CK.deskSq]}, lane ${r.lane ? r.lane + r.pos : "to assign"}.`); draw(); $("#dk-q").focus(); });
@@ -2412,9 +2411,9 @@ function wireBowlers() {
   const msg = t => { const m = $("#bw-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
   const list = () => {
     const q = $("#bw-q").value.trim().toLowerCase(), all = CK.members().slice().sort((a, b) => a.last.localeCompare(b.last) || a.first.localeCompare(b.first));
-    const hits = q ? all.filter(m => (m.first + " " + m.last + " " + m.last + " " + m.member + " " + (m.city || "")).toLowerCase().includes(q)) : all;
+    const hits = q ? all.filter(m => (m.first + " " + m.last + " " + m.member).toLowerCase().includes(q)) : all;
     $("#bw-count").textContent = `${hits.length} of ${all.length} members`;
-    $("#bw-list").innerHTML = hits.map(m => `<tr${open === m.member ? ' class="cur"' : ""}><td class="num">${esc(m.member)}</td><td><b>${esc(m.first)} ${esc(m.last)}</b><small>${esc(m.city || "")}${m.isNew ? " · new member" : ""}</small></td><td class="num">${m.avg || "–"}</td><td class="num">${CK.rh(m)}${m.hcp != null && m.hcp !== "" ? "<small>set by hand</small>" : ""}</td><td class="num">${m.bonus || 0}</td><td><button type="button" class="ck-back" data-edit="${esc(m.member)}">Edit</button></td></tr>`).join("") || `<tr><td colspan="6">No members match. <button type="button" class="ck-back" data-edit="new">Add a new member</button></td></tr>`;
+    $("#bw-list").innerHTML = hits.map(m => `<tr${open === m.member ? ' class="cur"' : ""}><td class="num">${esc(m.member)}</td><td><b>${esc(m.first)} ${esc(m.last)}</b>${m.isNew ? "<small>New member</small>" : ""}</td><td class="num">${m.avg || "–"}</td><td class="num">${CK.rh(m)}${m.hcp != null && m.hcp !== "" ? "<small>set by hand</small>" : ""}</td><td class="num">${m.bonus || 0}</td><td><button type="button" class="ck-back" data-edit="${esc(m.member)}">Edit</button></td></tr>`).join("") || `<tr><td colspan="6">No members match. <button type="button" class="ck-back" data-edit="new">Add a new member</button></td></tr>`;
   };
   const form = () => {
     const box = $("#bw-edit");
@@ -2425,7 +2424,6 @@ function wireBowlers() {
       <div class="form-grid bw-grid">
         <div class="field"><label for="bw-first">First name</label><input id="bw-first" value="${esc(m.first)}"></div>
         <div class="field"><label for="bw-last">Last name</label><input id="bw-last" value="${esc(m.last)}"></div>
-        <div class="field"><label for="bw-city">City</label><input id="bw-city" value="${esc(m.city || "")}"></div>
         <div class="field"><label for="bw-avg">Tour average</label><input id="bw-avg" type="number" inputmode="numeric" min="0" max="300" value="${m.avg || ""}"></div>
         <div class="field"><label for="bw-hcp">Handicap</label><input id="bw-hcp" type="number" inputmode="numeric" min="-100" max="200" value="${m.hcp != null && m.hcp !== "" ? m.hcp : ""}" placeholder=""><span class="meta" id="bw-auto"></span></div>
         <div class="field"><label for="bw-bonus">Bonus pins</label><input id="bw-bonus" type="number" inputmode="numeric" min="0" max="5" value="${m.bonus || 0}"></div>
@@ -2440,7 +2438,7 @@ function wireBowlers() {
       const first = $("#bw-first").value.trim(), last = $("#bw-last").value.trim(), avg = Number($("#bw-avg").value), hv = $("#bw-hcp").value.trim(), bonus = Math.max(0, Math.min(5, Math.round(+$("#bw-bonus").value || 0)));
       if (!first || !last) { msg("Enter a first and last name."); return; }
       if (!avg || avg < 50 || avg > 300) { msg("Enter a Tour average between 50 and 300."); $("#bw-avg").focus(); return; }
-      CK.saveMember({ member: m.member, first, last, city: $("#bw-city").value.trim(), avg, bonus, hcp: hv === "" ? null : Math.round(+hv) });
+      CK.saveMember({ member: m.member, first, last, avg, bonus, hcp: hv === "" ? null : Math.round(+hv) });
       msg(`${open === "new" ? "Added" : "Saved"} ${first} ${last} (#${m.member}): average ${avg}, handicap ${hv === "" ? CK.hcp(avg) : Math.round(+hv)}, ${bonus} bonus pin${bonus === 1 ? "" : "s"}.`);
       open = null; form(); list();
     });
@@ -2450,7 +2448,7 @@ function wireBowlers() {
   $("#bw-list").addEventListener("click", ev => { const b = ev.target.closest("[data-edit]"); if (!b) return; open = b.dataset.edit; form(); list(); });
   $("#bw-add").addEventListener("click", () => { open = "new"; form(); list(); });
   $("#bw-csv").addEventListener("click", () => {
-    const rows = [["Member #", "Last", "First", "City", "Average", "Handicap", "Handicap set by hand", "Bonus pins"]].concat(CK.members().map(m => [m.member, m.last, m.first, m.city || "", m.avg || "", CK.rh(m), m.hcp != null && m.hcp !== "" ? "Y" : "", m.bonus || 0]));
+    const rows = [["Member #", "Last", "First", "Average", "Handicap", "Handicap set by hand", "Bonus pins"]].concat(CK.members().map(m => [m.member, m.last, m.first, m.avg || "", CK.rh(m), m.hcp != null && m.hcp !== "" ? "Y" : "", m.bonus || 0]));
     const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "9-tap-members.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
