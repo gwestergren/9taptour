@@ -1170,7 +1170,7 @@ const VIEWS = {
     <section class="wrap sc-main lv-main" data-live>
       <div class="lv-top"><div class="sc-seg" id="lv-sq"></div><a class="btn btn-ghost lv-tv" href="#tv" target="${staff ? "_blank" : "_self"}">Show on a TV</a></div>
       <div id="lv-body"></div>
-      <p class="foot-note">Each game counts its score plus handicap plus bonus pins (small number = scratch). Hdcp and Bonus show the total for the games counted so far, with the per-game amount underneath; Total = Scratch + Hdcp + Bonus. Standings update on their own as rovers enter scores${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
+      <p class="foot-note">Each game counts its score plus handicap plus bonus pins (small number = scratch). HDCP: 36 + 5 under a name means 36 handicap plus 5 bonus pins a game; the Hdcp and Bonus columns show the totals for the games counted so far, and Total = Scratch + Hdcp + Bonus. Standings update on their own as rovers enter scores${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
     </section>`;
   },
 
@@ -1268,7 +1268,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #19. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #20. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -2367,7 +2367,7 @@ function liveRows(e, sq) {
   // Each game is shown with handicap and bonus pins added (score + handicap + bonus), so the counted games add up to Total.
   const games = r => Array.from({ length: ng }, (_, i) => { const v = r.arr[i]; return `<td class="g num${r.drop.includes(i) ? " drop" : ""}">${typeof v === "number" ? `${v + r.b.hcp}<small>${v}</small>` : "–"}</td>`; }).join("");
   return { ng, rows, head: `<tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th class="lv-scr">Scratch</th><th class="lv-scr">Hdcp</th><th class="lv-scr">Bonus</th><th>Total</th></tr>`,
-    html: rows.map((r, i) => `<tr><td class="num lv-rank">${i + 1}</td><td><b>${esc(r.b.name)}</b><small>${esc(CFG.normT(e.squads[r.sq]))} squad</small></td>${games(r)}<td class="num lv-scr">${r.scr}</td><td class="num lv-scr">${r.hc}<small>${r.b.hc}</small></td><td class="num lv-scr">${r.bo}<small>${r.b.bo}</small></td><td class="num lv-tot"><b>${r.hd}</b></td></tr>`).join("") };
+    html: rows.map((r, i) => `<tr><td class="num lv-rank">${i + 1}</td><td><b>${esc(r.b.name)}</b><small>${esc(CFG.normT(e.squads[r.sq]))} squad · HDCP: ${r.b.hc} + ${r.b.bo}</small></td>${games(r)}<td class="num lv-scr">${r.scr}</td><td class="num lv-scr">${r.hc}</td><td class="num lv-scr">${r.bo}</td><td class="num lv-tot"><b>${r.hd}</b></td></tr>`).join("") };
 }
 function wireLive() {
   const e = SC.event();
