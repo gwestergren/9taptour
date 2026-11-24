@@ -1570,7 +1570,7 @@ const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, saved: false }; },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); CFG.fix(c); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
-  fix(f) { if (f && f.max === 6 && f.overflowMax === 8) { f.max = 3; f.overflowMax = 4; } return f; }, // old default was 6 per lane
+  fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
