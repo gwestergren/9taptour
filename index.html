@@ -668,6 +668,39 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 /* Staff area: own menu, no sponsor banner or public footer */
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
+body.tv-mode .banner, body.tv-mode .site-head, body.tv-mode .site-foot, body.tv-mode .staff-head { display: none !important; }
+body.tv-mode { background: #0b1f26; }
+.lv-top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.lv-top .sc-seg { flex: 1 1 320px; }
+.lv-tv { flex: none; }
+.lv-board td small { display: block; font-size: .8rem; }
+.lv-board .lv-rank { font-weight: 700; color: var(--muted); width: 36px; }
+.lv-board .lv-tot b { font-size: 1.1rem; }
+.lv-board tbody tr:nth-child(-n+3) .lv-rank { color: var(--accent); }
+.lv-upd { margin-top: 8px; }
+@media (max-width: 560px) { .lv-board .lv-scr { display: none; } }
+.tv { position: fixed; inset: 0; display: flex; flex-direction: column; background: #0b1f26; color: #f3f1e6; font-family: var(--font-body); }
+.tv-head { display: flex; align-items: center; gap: 2vw; padding: 1.6vh 3vw; background: #0f2b33; border-bottom: .6vh solid var(--maple); }
+.tv-head img { height: 6vh; width: auto; }
+.tv-head b { display: block; font: 900 3.4vh/1.1 var(--font-display, var(--font-body)); text-transform: uppercase; letter-spacing: .02em; }
+.tv-head span { font-size: 2.2vh; color: #b9c7c4; }
+.tv-head > div { flex: 1; }
+.tv-clock { font: 700 4vh var(--font-num) !important; color: var(--maple) !important; }
+.tv-fs { margin-left: 1vw; padding: 1vh 1.4vw; font: 600 1.8vh var(--font-body); background: transparent; color: #b9c7c4; border: 1px solid #3a5961; border-radius: 6px; cursor: pointer; }
+.tv-scroll { flex: 1; overflow: hidden; padding: 1vh 3vw 4vh; }
+.tv-board { width: 100%; border-collapse: collapse; font-size: 2.8vh; }
+.tv-board th { position: sticky; top: 0; background: #0b1f26; text-align: right; font: 700 1.9vh var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--maple); padding: 1.4vh 1vw; }
+.tv-board td { padding: .7vh 1vw; text-align: right; border-bottom: 1px solid #1f3d45; font-variant-numeric: tabular-nums; }
+.tv-board th:nth-child(2), .tv-board td:nth-child(2) { text-align: left; }
+.tv-board td:nth-child(2) b { font-size: 3vh; margin-right: 1vw; }
+.tv-board td small { font-size: 1.8vh; color: #9fb2ae; }
+.tv-board .g { color: #b9c7c4; }
+.tv-board .drop { text-decoration: line-through; opacity: .5; }
+.tv-board .lv-rank { color: #9fb2ae; font-weight: 700; width: 5vw; }
+.tv-board .lv-tot b { font-size: 3.4vh; color: #fff; }
+.tv-board tbody tr:nth-child(1) .lv-tot b, .tv-board tbody tr:nth-child(1) .lv-rank { color: var(--maple); }
+.tv-board tbody tr:nth-child(-n+3) { background: rgba(255,255,255,.04); }
+.tv-empty { font-size: 4vh; text-align: center; margin-top: 30vh; color: #b9c7c4; }
 .staff-head { position: sticky; top: 0; z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 3px solid var(--maple); }
 .staff-row { display: flex; align-items: center; gap: 12px; min-height: 56px; flex-wrap: wrap; padding-block: 6px; }
 .staff-brand { display: flex; align-items: center; gap: 8px; color: var(--maple); text-decoration: none; font: 700 .8rem var(--font-body); letter-spacing: .14em; text-transform: uppercase; }
@@ -740,6 +773,7 @@ body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none
       <a href="#home">Home</a>
       <a href="#schedule">Schedule</a>
       <a href="#results">Results</a>
+      <a href="#live">Standings</a>
       <a href="#bowler-of-the-year" title="Bowler of the Year" aria-label="Bowler of the Year">BOTY</a>
       <a href="#rules">Rules</a>
       <a href="#about">About</a>
@@ -1093,7 +1127,25 @@ const VIEWS = {
     </section>`;
   },
 
-  standings() { SC.game = "board"; return VIEWS.scores(); },
+  standings() { return VIEWS.live(true); },
+
+  live(staff) {
+    const e = SC.event();
+    return `
+    <section class="page-head sc-head"><div class="wrap">
+      <h1>Standings</h1>
+      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}</p>
+    </div></section>
+    <section class="wrap sc-main lv-main" data-live>
+      <div class="lv-top"><div class="sc-seg" id="lv-sq"></div><a class="btn btn-ghost lv-tv" href="#tv" target="${staff ? "_blank" : "_self"}">Show on a TV</a></div>
+      <div id="lv-body"></div>
+      <p class="foot-note">Standings update on their own as rovers enter scores, with handicap${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
+    </section>`;
+  },
+
+  tv() {
+    return `<div class="tv" id="tv"><header class="tv-head"><img src="img/tour-logo.png" alt=""><div><b>9-Tap Tour · Live standings</b><span id="tv-where"></span></div><span class="tv-clock" id="tv-clock"></span><button type="button" class="tv-fs" id="tv-fs">Full screen</button></header><div class="tv-scroll" id="tv-scroll"><div id="tv-body"></div></div></div>`;
+  },
 
   pin() {
     return `
@@ -1185,7 +1237,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #10. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #11. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1633,7 +1685,14 @@ const VEN = {
 /* ---- Rover score entry ---- */
 const SC = {
   squad: 0, game: null, lanes: null,
-  event() { return CK.event(); },
+  // Scores and standings stay on the last tournament until the day of the next one, then roll over.
+  event() { const played = DATA.events.filter(x => parse(x.date) <= today); return CK.eventFor(played.length ? played[played.length - 1] : nextEvent); },
+  // Standings rows: one per entry. All squads together (sq null) skips entries with no games yet.
+  board(e, sq) {
+    const ng = SC.games(e), rows = [];
+    (sq == null ? e.squads.map((_, i) => i) : [sq]).forEach(i => { const st = SC.load(e, i); SC.roster(e, i).forEach(b => { const arr = st.scores[b.id] || [], c = SC.counted(arr, ng); if (sq == null && !c.n) return; rows.push({ b, sq: i, arr, scr: c.sum, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }); }); });
+    return rows.sort((x, y) => y.hd - x.hd || y.n - x.n || x.b.name.localeCompare(y.b.name));
+  },
   games(e) { return CFG.get(e).games; },
   key(e, sq) { return `9tap-scores3:${e.date}:${sq}`; },
   FIRST: ["Dave","Linda","Mike","Karen","Tony","Sharon","Ray","Debbie","Jim","Carla","Steve","Pam","Rick","Tina","Gary","Lori","Ron","Wendy","Don","Kim","Phil","Jenny","Mark","Rose","Al","Bev","Ed","Sue","Larry","Nancy"],
@@ -1758,7 +1817,8 @@ const CK = {
   deskSq: null,
   CITIES: ["Tacoma","Puyallup","Lakewood","Olympia","Port Orchard","Federal Way","Kent","Auburn","Gig Harbor","Bremerton","Everett","Lynnwood","Spanaway","Renton","Sumner","Bonney Lake","Lacey","Kenmore","Arlington","Shelton"],
   // The next tournament on the schedule (date moves on by itself), with the venue and squads saved on Setup.
-  event() { const c = CFG.get(nextEvent), v = c.venue && VEN.find(c.venue); return Object.assign({}, nextEvent, { squads: c.squads }, v ? { center: v.name, city: v.city || nextEvent.city } : {}); },
+  event() { return CK.eventFor(nextEvent); },
+  eventFor(base) { const c = CFG.get(base), v = c.venue && VEN.find(c.venue); return Object.assign({}, base, { squads: c.squads }, v ? { center: v.name, city: v.city || base.city } : {}); },
   members() {
     if (!CK._m) {
       let s = 29547; const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
@@ -2249,8 +2309,65 @@ function wireDesk() {
   const onStore = ev => { if (!document.getElementById("dk-body")) return window.removeEventListener("storage", onStore); if (ev.key === CK.key(e)) draw(); };
   window.addEventListener("storage", onStore);
 }
+/* ---- Live standings (#live public, #standings staff) and TV display (#tv) ---- */
+const LIVE = { sq: null, tvTimer: 0, tvScroll: 0 };
+function liveRows(e, sq) {
+  const ng = SC.games(e), rows = SC.board(e, sq);
+  const games = r => Array.from({ length: ng }, (_, i) => { const v = r.arr[i]; return `<td class="g num${r.drop.includes(i) ? " drop" : ""}">${typeof v === "number" ? v : "–"}</td>`; }).join("");
+  return { ng, rows, html: rows.map((r, i) => `<tr><td class="num lv-rank">${i + 1}</td><td><b>${esc(r.b.name)}</b><small>${sq == null ? esc(CFG.normT(e.squads[r.sq])) + " squad · " : ""}Lane ${r.b.lane} · Hdcp ${r.b.hcp}</small></td>${games(r)}<td class="num lv-scr">${r.scr}</td><td class="num lv-tot"><b>${r.hd}</b></td></tr>`).join("") };
+}
+function wireLive() {
+  const e = SC.event();
+  if (LIVE.sq !== null && LIVE.sq >= e.squads.length) LIVE.sq = null;
+  const draw = () => {
+    if (!$("[data-live]")) return false;
+    $("#lv-sq").innerHTML = [[null, "All squads"]].concat(e.squads.map((t, i) => [i, CFG.normT(t)])).map(([v, t]) => `<button type="button" data-sq="${v === null ? "" : v}" aria-pressed="${v === LIVE.sq}">${esc(t)}</button>`).join("");
+    const { ng, rows, html } = liveRows(e, LIVE.sq);
+    $("#lv-body").innerHTML = rows.length ? `<div class="table-wrap"><table class="sc-board lv-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th class="lv-scr">Scratch</th><th>Total</th></tr></thead><tbody>${html}</tbody></table></div><p class="meta lv-upd">Updated ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>`
+      : `<div class="panel"><h3>No scores yet</h3><p class="meta">Standings show up here as soon as the first games are entered.</p></div>`;
+    return true;
+  };
+  $("#lv-sq").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; LIVE.sq = b.dataset.sq === "" ? null : +b.dataset.sq; draw(); });
+  draw(); clearInterval(LIVE.t); LIVE.t = setInterval(() => { if (!draw()) clearInterval(LIVE.t); }, 15000);
+  LIVE.redraw = draw;
+}
+function wireTV() {
+  const e = SC.event();
+  $("#tv-where").textContent = `${e.center} · ${e.city} · ${longDate(e.date)}`;
+  const draw = () => {
+    if (!$("#tv")) return false;
+    const { ng, rows, html } = liveRows(e, null);
+    $("#tv-body").innerHTML = rows.length ? `<table class="tv-board"><thead><tr><th>#</th><th>Bowler</th>${Array.from({ length: ng }, (_, i) => `<th class="g">G${i + 1}</th>`).join("")}<th>Scratch</th><th>Total</th></tr></thead><tbody>${html}</tbody></table>` : `<p class="tv-empty">Standings appear here as soon as the first games are in.</p>`;
+    $("#tv-clock").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return true;
+  };
+  draw(); LIVE.redraw = draw;
+  clearInterval(LIVE.tvTimer); LIVE.tvTimer = setInterval(() => { if (!draw()) clearInterval(LIVE.tvTimer); }, 10000);
+  // Slow auto-scroll when the list is longer than the screen: pause at the top, scroll down, pause, jump back.
+  cancelAnimationFrame(LIVE.tvScroll);
+  let phase = "top", t0 = performance.now(), last = t0;
+  const sc = $("#tv-scroll");
+  const step = now => {
+    if (!$("#tv")) return;
+    const dt = (now - last) / 1000; last = now; const max = sc.scrollHeight - sc.clientHeight;
+    if (max <= 4) { sc.scrollTop = 0; phase = "top"; t0 = now; }
+    else if (phase === "top" && now - t0 > 5000) phase = "down";
+    else if (phase === "down") { sc.scrollTop = Math.min(max, sc.scrollTop + 40 * dt); if (sc.scrollTop >= max - 1) { phase = "bottom"; t0 = now; } }
+    else if (phase === "bottom" && now - t0 > 5000) { sc.scrollTop = 0; phase = "top"; t0 = now; }
+    LIVE.tvScroll = requestAnimationFrame(step);
+  };
+  LIVE.tvScroll = requestAnimationFrame(step);
+  const fs = $("#tv-fs");
+  fs.hidden = !document.documentElement.requestFullscreen;
+  fs.addEventListener("click", () => { document.documentElement.requestFullscreen().catch(() => {}); });
+  document.addEventListener("fullscreenchange", () => { if ($("#tv-fs")) $("#tv-fs").hidden = !!document.fullscreenElement; });
+}
+// Another tab or window on this device saved scores: refresh any open standings right away.
+window.addEventListener("storage", ev => { if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw(); });
 function wire(view) {
-  if (view === "scores" || view === "standings") wireScores();
+  if (view === "scores") wireScores();
+  if (view === "standings" || view === "live") wireLive();
+  if (view === "tv") wireTV();
   if (view === "pin") wirePin();
   if (view === "checkin") wireCheckin();
   if (view === "desk") wireDesk();
@@ -2340,9 +2457,10 @@ function route() {
   const staff = STAFF.views.includes(view);
   if (staff && !STAFF.ok()) view = "pin";
   document.body.classList.toggle("staff", staff);
+  document.body.classList.toggle("tv-mode", view === "tv");
   $("#staff-head").hidden = !staff;
   if (view === "scores" && SC.game === "board") SC.game = null;
-  $("#app").innerHTML = VIEWS[view]();
+  $("#app").innerHTML = view === "live" ? VIEWS.live(false) : VIEWS[view]();
   document.querySelectorAll(".staff-nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   document.querySelectorAll(".nav a").forEach(a => { if (a.getAttribute("href") === "#" + view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   wire(view);
