@@ -1079,7 +1079,7 @@ const VIEWS = {
 
         <h3>Games</h3>
         <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
-        <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[2, "Best 2"], [3, "Best 3"], [4, "All 4"]], c.count)}</div>
+        <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div>
 
         <h3>Squads</h3>
         <div class="su-squads" id="su-squads">${c.squads.map(s => `<input value="${esc(s)}" aria-label="Squad time">`).join("")}</div>
@@ -1483,7 +1483,7 @@ function openChamp(photo) {
 const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 6, fill: "lane", overflow: true, overflowMax: 8, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), saved: false }; },
-  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} return Object.assign(CFG.defaults(e), v || {}); },
+  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; }
