@@ -1271,7 +1271,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #23. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #24. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1950,7 +1950,7 @@ const CK = {
   card(e, m, r) {
     const f = (k, v, cls = "") => `<div class="ck-f ${cls}"><span>${k}</span><b>${v}</b></div>`;
     return `<div class="ck-card">
-      <div class="ck-card-top"><img src="img/tour-logo.png" alt="" width="44" height="44"><div><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)}</span></div></div>
+      <div class="ck-card-top"><img src="img/tour-logo.png" alt="" width="44" height="36"><div><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)}</span></div></div>
       <div class="ck-grid">
         ${r ? f("Date", shortDate(e.date)) + f("Tournament", esc(e.center)) + f("Squad time", esc(e.squads[r.squad])) + f("Starting lane", r.lane ? `<span class="num">${r.lane}${r.pos}</span>` : "At the desk", "lane") : ""}
         ${f("Membership #", `<span class="num">${esc(m.member)}</span>`)}
