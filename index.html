@@ -647,6 +647,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-bar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 -10px 24px -18px rgba(0,0,0,.5); }
 .su-state { display: flex; align-items: center; gap: 10px; font-size: .92rem; }
 .su-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+.dk-ctl-ck { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 18px; margin-bottom: 16px; }
+.ckc-btns { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ckc-btns .btn { min-height: 48px; }
 .su-dot.wait { background: var(--maple); }
 .su-live { color: var(--good); }
 .su-stop { padding: 0 !important; margin-left: 6px; font-size: .85rem !important; }
@@ -744,12 +747,12 @@ body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none
 
 <header class="staff-head" id="staff-head" hidden>
   <div class="wrap staff-row">
-    <a class="staff-brand" href="#setup"><img src="img/tour-logo.png" width="34" height="28" alt="">Staff</a>
+    <a class="staff-brand" href="#desk"><img src="img/tour-logo.png" width="34" height="28" alt="">Staff</a>
     <nav class="staff-nav" aria-label="Staff">
-      <a href="#setup">Setup</a>
       <a href="#desk">Desk</a>
       <a href="#scores">Scores</a>
       <a href="#standings">Standings</a>
+      <a href="#setup">Setup</a>
     </nav>
     <div class="staff-end"><a href="#home">Public site</a><button type="button" id="staff-lock">Lock</button></div>
   </div>
@@ -782,7 +785,7 @@ body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none
           <li><a href="https://www.youtube.com/@9-taptourbowling227" target="_blank" rel="noopener">Videos on YouTube</a></li>
           <li><a href="#contact">Contact us</a></li>
           <li><a href="#checkin">Bowler check-in</a></li>
-          <li><a href="#setup">Staff login</a></li>
+          <li><a href="#desk">Staff login</a></li>
           <li><a href="https://www.9taptour.com/9tap.html" target="_blank" rel="noopener">Current website</a></li>
         </ul>
       </div>
@@ -1112,10 +1115,7 @@ const VIEWS = {
     const seg = (id, opts, cur) => `<div class="sc-seg" id="${id}">${opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
     const step = (id, v, lbl) => `<div class="su-step" data-step="${id}"><button type="button" data-d="-1" aria-label="Fewer ${lbl}">−</button><output id="${id}">${v}</output><button type="button" data-d="1" aria-label="More ${lbl}">+</button></div>`;
     return `
-    <section class="page-head sc-head su-head"><div class="wrap">
-      <p class="eyebrow">${esc(longDate(e.date))}</p><h1>Tournament setup</h1>
-      <p>${esc(e.center)}, ${esc(e.city)}. Set the lanes and format, save, then open check-in when you're ready.</p>
-    </div></section>
+    <section class="page-head sc-head su-head"><div class="wrap"><h1>Tournament Setup</h1></div></section>
     <section class="wrap su-main">
       <form id="su-form" novalidate>
         <div class="panel su-card su-wide">
@@ -1175,11 +1175,10 @@ const VIEWS = {
           <div id="su-msg" class="su-msg" role="status" hidden></div>
           <div class="su-btns">
             <button class="btn btn-ghost su-save" type="submit" id="su-save">Save</button>
-            <button class="btn btn-primary" type="button" id="su-openbtn">Open check-in</button>
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #6. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #7. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1206,6 +1205,7 @@ const VIEWS = {
       <div class="sc-row"><span class="sc-lbl">Squad</span><div class="sc-seg" id="dk-squads"></div></div>
     </div></div>
     <section class="wrap sc-main">
+      ${CKCTL.html()}
       <div class="dk-tools">
         <button type="button" class="btn btn-ghost" id="dk-copy">Copy for Google Sheet</button>
         <button type="button" class="btn btn-ghost" id="dk-csv">Download CSV</button>
@@ -1833,6 +1833,38 @@ const CK = {
   }
 };
 
+/* ---- Squad check-in control (Desk): open the first squad, close each squad when bowling starts ---- */
+const CKCTL = {
+  html() { return `<div class="panel dk-ctl-ck" id="ckc"><div class="su-state" id="ckc-state"></div><div class="ckc-btns"><button type="button" class="ck-back su-stop" id="ckc-stop" hidden></button><button type="button" class="btn btn-primary" id="ckc-btn"></button></div></div>`; },
+  wire(e, say) {
+    const draw = () => {
+      if (!$("#ckc")) return false;
+      const c = CFG.get(e), st = CFG.status(c), nm = i => esc(c.squads[i] || "");
+      $("#ckc-state").innerHTML = { off: `<span class="su-dot"></span><span><b>Check-in is closed</b> · bowlers can't check in on their phones yet</span>`,
+        open: `<span class="su-dot on"></span><span><b>Check-in open: ${nm(st.k)} squad</b>${st.k < c.squads.length - 1 ? ` · close it when bowling starts; the ${nm(st.k + 1)} squad then opens at ${CFG.opensAt(c.squads[st.k + 1], c.openMins)}` : " · last squad"}</span>`,
+        waiting: `<span class="su-dot wait"></span><span><b>${nm(st.k - 1)} squad closed</b> · ${nm(st.k)} squad check-in opens on its own at ${st.at}</span>`,
+        done: `<span class="su-dot"></span><span><b>All squads closed</b> · check-in is done for the day</span>` }[st.state];
+      const b = $("#ckc-btn");
+      b.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
+      b.dataset.act = st.state; b.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
+      const stop = $("#ckc-stop"); stop.hidden = !c.open; stop.textContent = st.state === "done" ? "Start over" : "Turn off check-in";
+      return true;
+    };
+    $("#ckc-btn").addEventListener("click", () => {
+      const c = CFG.get(e), st = CFG.status(c), act = $("#ckc-btn").dataset.act;
+      c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
+      if (act === "off") { c.open = true; c.closed = []; c.forced = []; c.saved = true; }
+      else if (act === "open") c.closed.push(st.k);
+      else if (act === "waiting") c.forced.push(st.k);
+      else if (act === "done") { c.closed.pop(); c.forced.push(c.squads.length - 1); }
+      CFG.put(e, c); draw();
+      const now = CFG.status(c), nm = i => c.squads[i];
+      say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(st.k)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(now.k)} squad.`);
+    });
+    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; CFG.put(e, c); draw(); say("Check-in is off. Press Open check-in to start again with the first squad."); });
+    draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
+  }
+};
 let setup_tick = 0;
 function wireSetup() {
   clearInterval(setup_tick);
@@ -1848,8 +1880,7 @@ function wireSetup() {
   };
   const opens = () => $("#su-squads").querySelectorAll(".su-sq").forEach((row, i) => {
     const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, c.openMins);
-    const st = CFG.status(c), live = c.open && i === st.k && st.state === "open", shut = c.open && ((c.closed || []).includes(i));
-    row.querySelector(".su-sqo").innerHTML = shut ? "Check-in closed" : live ? `<b class="su-live">Check-in open now</b>` : i === 0 ? "Opens when you open check-in" : o ? `Opens at ${o}` : "Enter a time like 1:30";
+    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30";
   });
   const fill = f => { Object.assign(c, VEN.fmt(f)); $("#su-first").value = c.first; $("#su-last").value = c.last; $("#su-over").checked = c.overflow; $("#su-overmax").value = c.overflowMax; drawSquads(c.squads); sum(); };
 
@@ -1943,16 +1974,7 @@ function wireSetup() {
   };
   const touch = () => { dirty = true; state(); };
   const state = () => {
-    const s = $("#su-state"), st = CFG.status(c), nm = i => esc(c.squads[i] || ""), extra = dirty ? " · unsaved changes" : "";
-    const txt = { off: `<span class="su-dot"></span><span><b>Check-in is closed</b>${extra || (c.saved ? " · setup saved" : " · not saved yet")}</span>`,
-      open: `<span class="su-dot on"></span><span><b>Check-in open: ${nm(st.k)} squad</b>${st.k < c.squads.length - 1 ? ` · ${nm(st.k + 1)} squad opens at ${CFG.opensAt(c.squads[st.k + 1], c.openMins)} after you close this one` : ""}${extra}</span>`,
-      waiting: `<span class="su-dot wait"></span><span><b>${nm(st.k - 1)} squad closed</b> · ${nm(st.k)} squad check-in opens at ${st.at}${extra}</span>`,
-      done: `<span class="su-dot"></span><span><b>All squads closed</b> · check-in is done for the day${extra}</span>` }[st.state];
-    s.innerHTML = txt + (c.open ? ` <button type="button" class="ck-back su-stop" id="su-stop">${st.state === "done" ? "Start over" : "Turn off check-in"}</button>` : "");
-    const btn = $("#su-openbtn");
-    btn.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
-    btn.dataset.act = st.state; btn.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
-    const stop = $("#su-stop"); if (stop) stop.addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; c.open = false; c.closed = []; c.forced = []; if (store()) msg("Check-in is off. Press Open check-in to start again with the first squad."); });
+    $("#su-state").innerHTML = `<span class="su-dot${dirty ? " wait" : c.saved ? " on" : ""}"></span><span><b>${dirty ? "Unsaved changes" : c.saved ? "Setup saved" : "Not saved yet"}</b> · open and close check-in on the <a class="link-more" href="#desk">Desk</a></span>`;
     opens();
   };
   const flash = () => { const b = $("#su-save"); b.textContent = "Saved ✓"; b.classList.add("ok"); clearTimeout(flash.t); flash.t = setTimeout(() => { if ($("#su-save")) { b.textContent = "Save"; b.classList.remove("ok"); } }, 2500); };
@@ -1960,7 +1982,8 @@ function wireSetup() {
     sum(); c.squads = squadsNow();
     if (!c.squads.length) { msg("Add at least one squad time."); return false; }
     if (c.squads.slice(1).some(t => !CFG.opensAt(t, c.openMins))) { msg("Squad times should look like 1:30 or 12:00."); return false; }
-    c.saved = true; c.open = !!c.open; CFG.put(e, c);
+    const live = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = live[k]); // check-in state belongs to the Desk
+    c.saved = true; CFG.put(e, c);
     const list = VEN.all(), v = list.find(x => x.id === c.venue); if (v) { v.fmt = VEN.fmt(c); VEN.put(list); } // the venue keeps this format for next time
     dirty = false; state(); vnote(); return true;
   };
@@ -1975,20 +1998,7 @@ function wireSetup() {
   $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
   $("#su-squads").addEventListener("input", () => { sum(); touch(); });
   $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); sum(); touch(); });
-  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}${VEN.find(c.venue) ? `, for this tournament and as ${esc(VEN.find(c.venue).name)}'s format` : ""}.` + (c.open ? " New check-ins follow this setup." : " Press <b>Open check-in</b> when you're ready for bowlers.")); });
-  $("#su-openbtn").addEventListener("click", () => {
-    const st = CFG.status(c), act = $("#su-openbtn").dataset.act, prev = JSON.stringify([c.open, c.closed, c.forced]);
-    c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
-    if (act === "off") { c.open = true; c.closed = []; c.forced = []; }
-    else if (act === "open") c.closed.push(st.k);
-    else if (act === "waiting") c.forced.push(st.k);
-    else if (act === "done") { c.closed.pop(); c.forced.push(c.squads.length - 1); }
-    if (!store()) { [c.open, c.closed, c.forced] = JSON.parse(prev); state(); return; }
-    const now = CFG.status(c), nm = i => esc(c.squads[i]);
-    msg(act === "off" ? `Check-in is open for the ${nm(0)} squad. <a class="link-more" href="#desk">Go to the desk</a> · <a class="link-more" href="#desk/poster">Print the QR poster</a>`
-      : act === "open" ? `Check-in closed for the ${nm(st.k)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.")
-      : `Check-in is open for the ${nm(now.k)} squad.`);
-  });
+  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}${VEN.find(c.venue) ? `, for this tournament and as ${esc(VEN.find(c.venue).name)}'s format` : ""}.` + " New check-ins follow this setup."); });
   setup_tick = setInterval(() => { if (!$("#su-state")) { clearInterval(setup_tick); return; } state(); }, 30000);
   fill(c); drawVen(); state();
 }
@@ -2133,6 +2143,7 @@ function wireDesk() {
   const e = CK.event();
   if (CK.deskSq === null) CK.deskSq = 0;
   const msg = t => { const m = $("#dk-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
+  CKCTL.wire(e, msg);
   const draw = () => {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
     $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(s)}<small>${l.filter(r => r.squad === i).length} self check-in${l.filter(r => r.squad === i).length === 1 ? "" : "s"}</small></button>`).join("");
@@ -2257,7 +2268,7 @@ function wire(view) {
    When a data API is added (Google Sheet), its /api/staff/* routes get the same allowedRoles so data is protected
    on the server too. The demo PIN is a temporary fallback until staff invites are set up. */
 const STAFF = {
-  views: ["setup", "desk", "scores", "standings"],
+  views: ["desk", "scores", "standings", "setup"],
   PIN: "987654321",
   me: null,
   load() { if (!/^https?:/.test(location.protocol)) return Promise.resolve(); return fetch("/.auth/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { STAFF.me = j && j.clientPrincipal; }).catch(() => {}); },
@@ -2294,7 +2305,7 @@ function route() {
 $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.toggle("open"); $("#menu-btn").setAttribute("aria-expanded", String(o)); });
 window.addEventListener("hashchange", route);
 // /staff is the protected entry point (see staticwebapp.config.json); show the app at the site root.
-if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" + (location.hash || "#setup"));
+if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" + (location.hash || "#desk"));
 STAFF.load().finally(route);
 </script>
 

@@ -20,7 +20,7 @@
       "statusCode": 302
     },
     "403": {
-      "redirect": "/#setup",
+      "redirect": "/#desk",
       "statusCode": 302
     }
   },
