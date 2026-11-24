@@ -670,6 +670,17 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 body.tv-mode .banner, body.tv-mode .site-head, body.tv-mode .site-foot, body.tv-mode .staff-head { display: none !important; }
 body.tv-mode { background: #0b1f26; }
+.bw-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.bw-top input { flex: 1 1 260px; min-height: 48px; }
+.bw-top .btn { min-height: 48px; }
+.bw-form { margin-bottom: 16px; }
+.bw-form h3 { margin-bottom: 12px; }
+.bw-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; }
+@media (max-width: 640px) { .bw-grid { grid-template-columns: 1fr 1fr; } }
+.bw-board td small { display: block; font-size: .78rem; }
+.bw-board tr.cur td { background: color-mix(in srgb, var(--maple) 25%, transparent); }
+.bw-board td:last-child { text-align: right; }
+.bw-board .ck-back { padding: 4px 0; }
 .lv-top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .lv-top .sc-seg { flex: 1 1 320px; }
 .lv-tv { flex: none; }
@@ -793,6 +804,7 @@ body.tv-mode { background: #0b1f26; }
       <a href="#desk">Desk</a>
       <a href="#scores">Scores</a>
       <a href="#standings">Standings</a>
+      <a href="#bowlers">Bowlers</a>
       <a href="#setup">Setup</a>
     </nav>
     <div class="staff-end"><a href="#home">Public site</a><button type="button" id="staff-lock">Lock</button></div>
@@ -1129,6 +1141,23 @@ const VIEWS = {
 
   standings() { return VIEWS.live(true); },
 
+  bowlers() {
+    return `
+    <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>Look up a member to change their average, handicap or bonus pins, or add a new member.</p></div></section>
+    <section class="wrap sc-main bw-main">
+      <div class="bw-top">
+        <input id="bw-q" type="search" placeholder="Search by name, member # or city" autocomplete="off">
+        <button type="button" class="btn btn-primary" id="bw-add">+ Add member</button>
+        <button type="button" class="btn btn-ghost" id="bw-csv">Download CSV</button>
+      </div>
+      <div id="bw-edit"></div>
+      <p class="meta" id="bw-count"></p>
+      <div class="table-wrap"><table class="sc-board bw-board"><thead><tr><th>#</th><th>Bowler</th><th>Avg</th><th>Hdcp</th><th>Bonus</th><th></th></tr></thead><tbody id="bw-list"></tbody></table></div>
+      <div id="bw-msg" class="toast" hidden></div>
+      <p class="foot-note">Handicap is 90% of the difference between the Tour average and 220 (averages under 125 count as 125). Leave the handicap box empty to use that, or type a number to set it by hand. Bonus pins (0 to 5) are added on top. Changes show up right away on the Desk, bowler check-in, scores and standings. Prototype: the member list is a sample of 60 bowlers plus anyone added here, saved on this device only. In the live version this list would be the Members tab of the Tour's Google Sheet, with the same columns as the CSV.</p>
+    </section>`;
+  },
+
   live(staff) {
     const e = SC.event();
     return `
@@ -1237,7 +1266,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #11. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #12. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1709,7 +1738,7 @@ const SC = {
       out.push({ id: lane + "-" + k, lane, name: n, avg, hcp: Math.trunc((220 - avg) * 0.9) + bonus });
     } }
     if (sampleOnly) return out;
-    CK.list(e).filter(r => r.squad === sq && r.lane).forEach(r => out.push({ id: "ck-" + r.member, lane: r.lane, name: r.first + " " + r.last, avg: r.avg || "–", hcp: CK.hcp(r.avg) + (r.bonus || 0), checkedIn: true }));
+    CK.list(e).filter(r => r.squad === sq && r.lane).forEach(r => out.push({ id: "ck-" + r.member, lane: r.lane, name: r.first + " " + r.last, avg: r.avg || "–", hcp: CK.rh(r) + (r.bonus || 0), checkedIn: true }));
     return out.sort((a, b) => a.lane - b.lane);
   },
   load(e, sq) {
@@ -1831,8 +1860,21 @@ const CK = {
       }
       CK._m = out;
     }
-    return CK._m.concat(CK.newMembers());
+    const ed = CK.get("9tap-member-edits", {});
+    return CK._m.concat(CK.newMembers()).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
   },
+  // Handicap: a staff-set handicap wins; otherwise 90% of (220 - average). Bonus pins are added on top.
+  rh(x) { return x && x.hcp != null && x.hcp !== "" ? +x.hcp : CK.hcp(x && x.avg); },
+  // Save a member's details (staff Bowlers page). Sample members get an override; added members are edited in place.
+  // Today's check-ins (and the last tournament's) pick up the change so the Desk, scores and standings agree.
+  saveMember(m) {
+    const nm = CK.newMembers(), i = nm.findIndex(x => x.member === m.member), keep = { first: m.first, last: m.last, city: m.city, avg: m.avg, bonus: m.bonus, hcp: m.hcp };
+    if (i >= 0) { Object.assign(nm[i], keep); CK.put("9tap-newmembers", nm); }
+    else if (CK._m.some(x => x.member === m.member)) { const ed = CK.get("9tap-member-edits", {}); ed[m.member] = keep; CK.put("9tap-member-edits", ed); }
+    else { nm.push(Object.assign({ member: m.member, isNew: false, addedBy: "staff" }, keep)); CK.put("9tap-newmembers", nm); }
+    [CK.event(), SC.event()].forEach(ev => { const L = CK.list(ev); let hit = false; L.forEach(r => { if (r.member === m.member) { Object.assign(r, keep); hit = true; } }); if (hit) CK.save(ev, L); });
+  },
+  nextNumber() { const all = CK.members().map(m => +m.member).filter(Number.isFinite); return String(Math.max(4999, ...all) + 1); },
   get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (_) { return d; } },
   put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
   newMembers() { return CK.get("9tap-newmembers", []); },
@@ -1880,7 +1922,7 @@ const CK = {
   },
   checkIn(e, m, sq, opts) {
     const l = CK.list(e);
-    const r = { member: m.member, first: m.first, last: m.last, city: m.city, avg: m.avg, bonus: m.bonus || 0, isNew: !!m.isNew, squad: sq, lane: null, pos: "", jackpot: opts.jackpot, prog: opts.prog, friend: opts.friend || "", via: opts.desk ? "desk" : "phone", paid: false, at: Date.now() };
+    const r = { member: m.member, first: m.first, last: m.last, city: m.city, avg: m.avg, bonus: m.bonus || 0, hcp: m.hcp != null ? m.hcp : null, isNew: !!m.isNew, squad: sq, lane: null, pos: "", jackpot: opts.jackpot, prog: opts.prog, friend: opts.friend || "", via: opts.desk ? "desk" : "phone", paid: false, at: Date.now() };
     const f = CK.friendOf(l, sq, r.friend, r);
     l.push(r); r.lane = CK.pick(e, sq, l, r, f); CK.save(e, l);
     const repeat = f && f.lane && CK.usedPairs(l, r).has(CK.pair(f.lane)) ? CK.pairName(CK.pair(f.lane)) : null;
@@ -1890,7 +1932,7 @@ const CK = {
   rows(e, sq) {
     const head = ["Date","Tournament","Squad","Member #","Last","First","City","Average","Handicap","Bonus pins","Lane","Jackpot","Progressive","New member","Paid","Checked in"];
     const t = d => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    return [head].concat(CK.list(e).filter(r => sq == null || r.squad === sq).map(r => [shortDate(e.date), e.center, e.squads[r.squad], r.member, r.last, r.first, r.city, r.avg || "", CK.hcp(r.avg), r.bonus, r.lane ? r.lane + r.pos : "", r.jackpot ? 4 : 0, r.prog, r.isNew ? "Y" : "", r.paid ? "Y" : "", t(r.at)]));
+    return [head].concat(CK.list(e).filter(r => sq == null || r.squad === sq).map(r => [shortDate(e.date), e.center, e.squads[r.squad], r.member, r.last, r.first, r.city, r.avg || "", CK.rh(r), r.bonus, r.lane ? r.lane + r.pos : "", r.jackpot ? 4 : 0, r.prog, r.isNew ? "Y" : "", r.paid ? "Y" : "", t(r.at)]));
   },
   card(e, m, r) {
     const f = (k, v, cls = "") => `<div class="ck-f ${cls}"><span>${k}</span><b>${v}</b></div>`;
@@ -1900,7 +1942,7 @@ const CK = {
         ${r ? f("Date", shortDate(e.date)) + f("Tournament", esc(e.center)) + f("Squad time", esc(e.squads[r.squad])) + f("Starting lane", r.lane ? `<span class="num">${r.lane}${r.pos}</span>` : "At the desk", "lane") : ""}
         ${f("Membership #", `<span class="num">${esc(m.member)}</span>`)}
         ${f("Average", m.avg ? `<span class="num">${m.avg}</span>` : "Set at desk")}
-        ${f("Handicap", `<span class="num">${CK.hcp(m.avg)}</span>`)}
+        ${f("Handicap", `<span class="num">${CK.rh(m)}</span>`)}
         ${f("Bonus pins", `<span class="num">${m.bonus || 0}</span>`)}
       </div></div>`;
   }
@@ -2255,7 +2297,7 @@ function wireDesk() {
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.isNew ? `<span class="tag">New member</span>` : ""}
-          <small>#${esc(r.member)} · ${esc(r.city)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.hcp(r.avg)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
+          <small>#${esc(r.member)} · ${esc(r.city)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.rh(r)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(r.friend)}` : "No friend request"}</small>
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
         <div class="dk-ctl">
@@ -2364,7 +2406,58 @@ function wireTV() {
 }
 // Another tab or window on this device saved scores: refresh any open standings right away.
 window.addEventListener("storage", ev => { if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw(); });
+/* ---- Staff Bowlers page (#bowlers): search, edit average / handicap / bonus pins, add members ---- */
+function wireBowlers() {
+  let open = null; // member # being edited, or "new"
+  const msg = t => { const m = $("#bw-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
+  const list = () => {
+    const q = $("#bw-q").value.trim().toLowerCase(), all = CK.members().slice().sort((a, b) => a.last.localeCompare(b.last) || a.first.localeCompare(b.first));
+    const hits = q ? all.filter(m => (m.first + " " + m.last + " " + m.last + " " + m.member + " " + (m.city || "")).toLowerCase().includes(q)) : all;
+    $("#bw-count").textContent = `${hits.length} of ${all.length} members`;
+    $("#bw-list").innerHTML = hits.map(m => `<tr${open === m.member ? ' class="cur"' : ""}><td class="num">${esc(m.member)}</td><td><b>${esc(m.first)} ${esc(m.last)}</b><small>${esc(m.city || "")}${m.isNew ? " · new member" : ""}</small></td><td class="num">${m.avg || "–"}</td><td class="num">${CK.rh(m)}${m.hcp != null && m.hcp !== "" ? "<small>set by hand</small>" : ""}</td><td class="num">${m.bonus || 0}</td><td><button type="button" class="ck-back" data-edit="${esc(m.member)}">Edit</button></td></tr>`).join("") || `<tr><td colspan="6">No members match. <button type="button" class="ck-back" data-edit="new">Add a new member</button></td></tr>`;
+  };
+  const form = () => {
+    const box = $("#bw-edit");
+    if (!open) { box.innerHTML = ""; return; }
+    const m = open === "new" ? { member: CK.nextNumber(), first: "", last: "", city: "", avg: "", bonus: 0, hcp: null } : CK.members().find(x => x.member === open);
+    box.innerHTML = `<form class="panel bw-form" id="bw-form" novalidate>
+      <h3>${open === "new" ? "New member" : `${esc(m.first)} ${esc(m.last)}`} <span class="meta">#${esc(m.member)}</span></h3>
+      <div class="form-grid bw-grid">
+        <div class="field"><label for="bw-first">First name</label><input id="bw-first" value="${esc(m.first)}"></div>
+        <div class="field"><label for="bw-last">Last name</label><input id="bw-last" value="${esc(m.last)}"></div>
+        <div class="field"><label for="bw-city">City</label><input id="bw-city" value="${esc(m.city || "")}"></div>
+        <div class="field"><label for="bw-avg">Tour average</label><input id="bw-avg" type="number" inputmode="numeric" min="0" max="300" value="${m.avg || ""}"></div>
+        <div class="field"><label for="bw-hcp">Handicap</label><input id="bw-hcp" type="number" inputmode="numeric" min="-100" max="200" value="${m.hcp != null && m.hcp !== "" ? m.hcp : ""}" placeholder=""><span class="meta" id="bw-auto"></span></div>
+        <div class="field"><label for="bw-bonus">Bonus pins</label><input id="bw-bonus" type="number" inputmode="numeric" min="0" max="5" value="${m.bonus || 0}"></div>
+      </div>
+      <div class="su-vbtns"><button class="btn btn-primary" type="submit">${open === "new" ? "Add member" : "Save changes"}</button><button type="button" class="ck-back" id="bw-cancel">Cancel</button></div>
+    </form>`;
+    const auto = () => { const a = +$("#bw-avg").value || 0; $("#bw-hcp").placeholder = String(CK.hcp(a)); $("#bw-auto").textContent = $("#bw-hcp").value === "" ? `Empty = ${CK.hcp(a)} from the average` : `Set by hand (average gives ${CK.hcp(a)})`; };
+    ["bw-avg", "bw-hcp"].forEach(id => $("#" + id).addEventListener("input", auto)); auto();
+    $("#bw-cancel").addEventListener("click", () => { open = null; form(); list(); });
+    $("#bw-form").addEventListener("submit", ev => {
+      ev.preventDefault();
+      const first = $("#bw-first").value.trim(), last = $("#bw-last").value.trim(), avg = Number($("#bw-avg").value), hv = $("#bw-hcp").value.trim(), bonus = Math.max(0, Math.min(5, Math.round(+$("#bw-bonus").value || 0)));
+      if (!first || !last) { msg("Enter a first and last name."); return; }
+      if (!avg || avg < 50 || avg > 300) { msg("Enter a Tour average between 50 and 300."); $("#bw-avg").focus(); return; }
+      CK.saveMember({ member: m.member, first, last, city: $("#bw-city").value.trim(), avg, bonus, hcp: hv === "" ? null : Math.round(+hv) });
+      msg(`${open === "new" ? "Added" : "Saved"} ${first} ${last} (#${m.member}): average ${avg}, handicap ${hv === "" ? CK.hcp(avg) : Math.round(+hv)}, ${bonus} bonus pin${bonus === 1 ? "" : "s"}.`);
+      open = null; form(); list();
+    });
+    $("#bw-first").focus(); box.scrollIntoView({ block: "nearest" });
+  };
+  $("#bw-q").addEventListener("input", list);
+  $("#bw-list").addEventListener("click", ev => { const b = ev.target.closest("[data-edit]"); if (!b) return; open = b.dataset.edit; form(); list(); });
+  $("#bw-add").addEventListener("click", () => { open = "new"; form(); list(); });
+  $("#bw-csv").addEventListener("click", () => {
+    const rows = [["Member #", "Last", "First", "City", "Average", "Handicap", "Handicap set by hand", "Bonus pins"]].concat(CK.members().map(m => [m.member, m.last, m.first, m.city || "", m.avg || "", CK.rh(m), m.hcp != null && m.hcp !== "" ? "Y" : "", m.bonus || 0]));
+    const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(",")).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "9-tap-members.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  list();
+}
 function wire(view) {
+  if (view === "bowlers") wireBowlers();
   if (view === "scores") wireScores();
   if (view === "standings" || view === "live") wireLive();
   if (view === "tv") wireTV();
@@ -2433,7 +2526,7 @@ function wire(view) {
    When a data API is added (Google Sheet), its /api/staff/* routes get the same allowedRoles so data is protected
    on the server too. The demo PIN is a temporary fallback until staff invites are set up. */
 const STAFF = {
-  views: ["desk", "scores", "standings", "setup"],
+  views: ["desk", "scores", "standings", "bowlers", "setup"],
   PIN: "987654321",
   me: null,
   load() { if (!/^https?:/.test(location.protocol)) return Promise.resolve(); return fetch("/.auth/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { STAFF.me = j && j.clientPrincipal; }).catch(() => {}); },
