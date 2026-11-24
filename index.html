@@ -1268,7 +1268,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #16. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #17. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1722,7 +1722,11 @@ const SC = {
   board(e, sq) {
     const ng = SC.games(e), rows = [];
     (sq == null ? e.squads.map((_, i) => i) : [sq]).forEach(i => { const st = SC.load(e, i); SC.roster(e, i).forEach(b => { const arr = st.scores[b.id] || [], c = SC.counted(arr, ng); if (sq == null && !c.n) return; rows.push({ b, sq: i, arr, scr: c.sum, hc: b.hc * c.n, bo: b.bo * c.n, hd: c.sum + b.hcp * c.n, n: c.n, drop: c.drop }); }); });
-    return rows.sort((x, y) => y.hd - x.hd || y.n - x.n || x.b.name.localeCompare(y.b.name));
+    rows.sort((x, y) => y.hd - x.hd || y.n - x.n || x.b.name.localeCompare(y.b.name));
+    if (sq != null) return rows;
+    // Re-entries: a bowler who bowled more than one squad is listed once, with their best single-squad series.
+    const seen = new Set();
+    return rows.filter(r => { const k = r.b.member || r.b.name; if (seen.has(k)) return false; seen.add(k); return true; });
   },
   games(e) { return CFG.get(e).games; },
   key(e, sq) { return `9tap-scores3:${e.date}:${sq}`; },
