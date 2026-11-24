@@ -1127,7 +1127,6 @@ const VIEWS = {
           </div>
           <p class="su-vnote" id="su-vnote"></p>
           <div class="su-vrow" id="su-vrow">
-            <button type="button" class="ck-back" id="su-vsave">Save this format to the venue</button>
             <button type="button" class="ck-back" id="su-vedit">Rename or remove</button>
             <button type="button" class="ck-back" id="su-vadd">+ Add a new venue</button>
           </div>
@@ -1180,7 +1179,7 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <p class="foot-note">Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #5. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
+      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. Prototype: venues and the setup are saved on this device only, and the sample venues' lane numbers are placeholders. Page version: Nov 24 #6. In the live version they would be saved with the Tour so every phone (check-in, desk and rovers) uses the same lanes and format.</p>
     </section>`;
   },
 
@@ -1574,7 +1573,7 @@ function openChamp(photo) {
 const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, saved: false }; },
-  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); CFG.fix(c); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
+  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
@@ -1606,11 +1605,19 @@ const VEN = {
     DATA.events.forEach(e => { if (seen.has(e.center)) return; seen.add(e.center); out.push({ id: "v" + out.length, name: e.center, city: e.city, fmt: VEN.fmt(Object.assign(CFG.defaults(e), e.center === "Westside Lanes" ? { first: 1, last: 24, count: 3 } : e.center === "HiJoy Bowl" ? { first: 1, last: 20 } : {})) }); });
     return out;
   },
-  all() { let v = null; try { v = JSON.parse(localStorage.getItem(VEN.KEY)); } catch (_) {} if (Array.isArray(v)) v.forEach(x => { CFG.fix(x.fmt); if (x.name === "Lucky Strike Lynnwood") x.name = "Lucky Strike"; }); return Array.isArray(v) ? v : VEN.seed(); },
+  all() { let v = null; try { v = JSON.parse(localStorage.getItem(VEN.KEY)); } catch (_) {}  return Array.isArray(v) ? v : VEN.seed(); },
   put(list) { try { localStorage.setItem(VEN.KEY, JSON.stringify(list)); } catch (_) {} },
   find(id) { return VEN.all().find(v => v.id === id); },
   byName(name) { return VEN.all().find(v => v.name.toLowerCase() === String(name).toLowerCase()); }
 };
+// One-time cleanup of data saved by earlier versions of this page (old 6/8 and 5/6 defaults, old venue name).
+// Runs once per browser so later choices like 5 per lane are never changed back.
+(() => { try {
+  if (localStorage.getItem("9tap-migr1")) return;
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!/^9tap-setup:/.test(k)) continue; const v = JSON.parse(localStorage.getItem(k)); if (v) { CFG.fix(v); localStorage.setItem(k, JSON.stringify(v)); } }
+  const vs = JSON.parse(localStorage.getItem(VEN.KEY)); if (Array.isArray(vs)) { vs.forEach(x => { CFG.fix(x.fmt); if (x.name === "Lucky Strike Lynnwood") x.name = "Lucky Strike"; }); VEN.put(vs); }
+  localStorage.setItem("9tap-migr1", "1");
+} catch (_) {} })();
 /* ---- Rover score entry ---- */
 const SC = {
   squad: 0, game: null, lanes: null,
@@ -1863,9 +1870,10 @@ function wireSetup() {
   const closeList = () => { if (!$("#su-vlist")) return; $("#su-vlist").hidden = true; $("#su-vq").setAttribute("aria-expanded", "false"); $("#su-vq").value = label(VEN.find(c.venue)); };
   const choose = id => {
     if (id === "__new") { const q = $("#su-vq").value.trim(); closeList(); box("add", VEN.byName(q) ? "" : q); return; }
-    const v = VEN.find(id); if (!v) return; c.venue = v.id; closeList(); fill(v.fmt); drawVen(); touch(); msg(`Loaded the saved format for ${esc(v.name)}. Press Save to use it for this tournament.`);
+    const v = VEN.find(id); if (!v) return; c.venue = v.id; closeList(); $("#su-vq").blur(); fill(v.fmt); drawVen(); touch(); msg(`Loaded the saved format for ${esc(v.name)}. Press Save to use it for this tournament.`);
   };
   $("#su-vq").addEventListener("focus", () => { $("#su-vq").select(); hi = 0; showList(""); });
+  $("#su-vq").addEventListener("click", () => { if ($("#su-vlist").hidden) { $("#su-vq").select(); hi = 0; showList(""); } });
   $("#su-vq").addEventListener("input", () => { hi = 0; showList($("#su-vq").value); });
   $("#su-vq").addEventListener("keydown", ev => {
     const opts = [...$("#su-vlist").querySelectorAll("[data-id]")];
@@ -1880,12 +1888,11 @@ function wireSetup() {
   const drawVen = () => { $("#su-vq").value = label(VEN.find(c.venue)); vnote(); };
   const vnote = () => {
     const v = VEN.find(c.venue), n = $("#su-vnote");
-    $("#su-vsave").hidden = !v; $("#su-vedit").hidden = !v;
+    $("#su-vedit").hidden = !v;
     if (!v) { n.className = "su-vnote"; n.innerHTML = "Type the bowling center's name to load its saved format, or add it as a new venue."; return; }
     const cur = Object.assign({}, c, { squads: squadsNow() }), same = VEN.same(cur, v.fmt);
     n.className = "su-vnote" + (same ? "" : " dirty");
-    n.innerHTML = same ? `Using the saved format for <b>${esc(v.name)}</b>.` : `Changed from the saved ${esc(v.name)} format. The changes apply to this tournament; save them to the venue to use them next time too. <button type="button" class="ck-back" id="su-vrevert">Undo changes</button>`;
-    $("#su-vsave").disabled = same;
+    n.innerHTML = same ? `Using the saved format for <b>${esc(v.name)}</b>.` : `Changed from the saved ${esc(v.name)} format. Press <b>Save</b> to keep the changes for this tournament and for ${esc(v.name)} next time. <button type="button" class="ck-back" id="su-vrevert">Undo changes</button>`;
     const r = $("#su-vrevert"); if (r) r.addEventListener("click", () => { fill(v.fmt); touch(); });
   };
   const box = (m, name = "") => {
@@ -1901,11 +1908,6 @@ function wireSetup() {
   $("#su-vadd").addEventListener("click", () => box("add"));
   $("#su-vedit").addEventListener("click", () => box("edit"));
   $("#su-vcancel").addEventListener("click", () => box(null));
-  $("#su-vsave").addEventListener("click", () => {
-    sum(); const list = VEN.all(), v = list.find(x => x.id === c.venue); if (!v) return;
-    const sq = squadsNow(); if (!sq.length) { msg("Add at least one squad time before saving the venue."); return; }
-    v.fmt = VEN.fmt(Object.assign({}, c, { squads: sq })); VEN.put(list); drawVen(); msg(`Saved. ${esc(v.name)} will load this format next time.`);
-  });
   $("#su-vok").addEventListener("click", () => {
     const name = $("#su-vname").value.trim(), city = $("#su-vcity").value.trim(), list = VEN.all();
     if (!name) { $("#su-vbox-n").textContent = "Give the venue a name."; $("#su-vname").focus(); return; }
@@ -1958,7 +1960,9 @@ function wireSetup() {
     sum(); c.squads = squadsNow();
     if (!c.squads.length) { msg("Add at least one squad time."); return false; }
     if (c.squads.slice(1).some(t => !CFG.opensAt(t, c.openMins))) { msg("Squad times should look like 1:30 or 12:00."); return false; }
-    c.saved = true; c.open = !!c.open; CFG.put(e, c); dirty = false; state(); return true;
+    c.saved = true; c.open = !!c.open; CFG.put(e, c);
+    const list = VEN.all(), v = list.find(x => x.id === c.venue); if (v) { v.fmt = VEN.fmt(c); VEN.put(list); } // the venue keeps this format for next time
+    dirty = false; state(); vnote(); return true;
   };
   pick("su-dir", "dir"); pick("su-fill", "fill"); pick("su-games", "games", true); pick("su-count", "count", true);
   $("#su-form").querySelectorAll(".su-step").forEach(st => st.addEventListener("click", ev => {
@@ -1971,7 +1975,7 @@ function wireSetup() {
   $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
   $("#su-squads").addEventListener("input", () => { sum(); touch(); });
   $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); sum(); touch(); });
-  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.` + (c.open ? " New check-ins follow this setup." : " Press <b>Open check-in</b> when you're ready for bowlers.")); });
+  $("#su-form").addEventListener("submit", ev => { ev.preventDefault(); if (store()) flash(), msg(`Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}${VEN.find(c.venue) ? `, for this tournament and as ${esc(VEN.find(c.venue).name)}'s format` : ""}.` + (c.open ? " New check-ins follow this setup." : " Press <b>Open check-in</b> when you're ready for bowlers.")); });
   $("#su-openbtn").addEventListener("click", () => {
     const st = CFG.status(c), act = $("#su-openbtn").dataset.act, prev = JSON.stringify([c.open, c.closed, c.forced]);
     c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
