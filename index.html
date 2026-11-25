@@ -961,7 +961,9 @@ function relDays(e) {
 
 const squadsHTML = sq => `<div class="squads">${sq.map(s => `<span class="squad">${s}</span>`).join("")}</div>`;
 
-function eventRow(e) {
+const mapsUrl = e => "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(`${e.center}, ${(e.addr || "").replace(/\s*\(.*?\)/g, "")}, ${e.city}, WA`.replace(/, ,/g, ","));
+
+function eventRow(e, withMaps) {
   const st = eventStatus(e), isNext = e === nextEvent, d = parse(e.date);
   const side = st === "past"
     ? `<span class="tag muted">Completed</span><a class="link-more" href="#results">Results</a>`
@@ -970,7 +972,7 @@ function eventRow(e) {
   return `<div class="event-row ${st === "past" ? "past" : ""} ${isNext ? "next" : ""}">
     <div class="cal"><div class="m">${MON[d.getMonth()]}</div><div class="d">${d.getDate()}</div><div class="w">${DAY[d.getDay()]}</div></div>
     <div style="min-width:0"><h4>${esc(e.center)}</h4><div class="meta">${esc(e.city)}, WA${e.tag ? ` · ${esc(e.tag)}` : ""}</div>${squadsHTML(e.squads)}</div>
-    <div class="event-side">${side}</div>
+    <div class="event-side">${side}${withMaps === true && st !== "past" ? `<a class="link-more" href="${mapsUrl(e)}" target="_blank" rel="noopener">Directions</a>` : ""}</div>
   </div>`;
 }
 
@@ -1073,7 +1075,7 @@ const VIEWS = {
     const sections = byMonth.length ? byMonth.map(g => `
     <section class="wrap section">
       <div class="section-head"><h2>${g.name}</h2></div>
-      <div class="event-rows">${g.items.map(eventRow).join("")}</div>
+      <div class="event-rows">${g.items.map(e => eventRow(e, true)).join("")}</div>
     </section>`).join("") : `
     <section class="wrap section"><div class="panel"><h3>No tournaments scheduled yet</h3><p class="meta" style="margin-top:6px">The next schedule will be posted here. Past events are on the <a class="link-more" href="#results">Results</a> page.</p></div></section>`;
     return `
