@@ -210,6 +210,28 @@ p { margin: 0; }
 .t-pick a { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; }
 .t-pick a:hover { border-color: var(--accent); color: var(--accent); }
 .t-pick a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.r-hist { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.rh-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.rh-lab { font: 700 .72rem var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.rh-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.rh-opts a, .rh-opts span { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; text-align: center; white-space: nowrap; }
+.rh-opts a:hover { border-color: var(--accent); color: var(--accent); }
+.rh-opts a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rh-opts span { opacity: .4; }
+.rh-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+.rh-months a, .rh-months span { padding: 8px 0; }
+.rh-older { font-size: .85rem; }
+.champ-initials { width: 126px; aspect-ratio: 126 / 112; flex: none; display: grid; place-items: center; border-radius: var(--radius); background: var(--accent); color: #fff; font: 700 2.4rem var(--font-display, var(--font-body)); letter-spacing: .04em; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+@media (max-width: 900px) { .rh-months { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .r-hist { padding: 14px; gap: 12px; }
+  .rh-row { grid-template-columns: 1fr; gap: 6px; }
+  .rh-opts a, .rh-opts span { padding: 7px 11px; font-size: .8rem; }
+  .rh-months a, .rh-months span { padding: 8px 0; }
+  .rh-events { flex-direction: column; }
+  .rh-events a { text-align: left; border-radius: 12px; white-space: normal; }
+  .champ-initials { width: 92px; font-size: 1.8rem; }
+}
 .dlg-more { text-align: center; margin: 14px 0 0; }
 @media (max-width: 760px) { .cb-stats { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { .champ-card { transition: none; } .champ-card:hover { transform: none; } }
@@ -1091,24 +1113,37 @@ const VIEWS = {
 
   results() {
     const id = (location.hash.split("/")[1] || "");
-    const c = DATA.champions.find(x => x.photo === id) || DATA.champions[0];
+    const c = HIST.find(id) || HIST.latest();
     const rows = CUR_RESULTS = eventResults(c);
     const real = c.photo === "michael-miller";
-    const dateTxt = c.date ? new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : c.when;
-    const chip = x => (x.date ? new Date(x.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : x.when.replace(/ \d{4}$/, "")) + " · " + x.where;
+    const fmt = (d, o) => new Date(d + "T12:00").toLocaleDateString("en-US", o);
+    const y = +c.date.slice(0, 4), mo = +c.date.slice(5, 7) - 1;
+    const years = HIST.years(), oldest = Math.min(...years);
+    const months = HIST.MON.map((m, i) => { const ev = HIST.inMonth(y, i); return ev.length
+      ? `<a href="#results/${ev[0].id}"${i === mo ? ' aria-current="page"' : ""} title="${m} ${y}">${m.slice(0, 3)}</a>`
+      : `<span aria-disabled="true" title="No tournaments">${m.slice(0, 3)}</span>`; }).join("");
+    const events = HIST.inMonth(y, mo).map(x => `<a href="#results/${x.id}"${x === c ? ' aria-current="page"' : ""}>${esc(fmt(x.date, { month: "short", day: "numeric" }))} · ${esc(x.where)}</a>`).join("");
     const won = r => r[5] + (real ? (DATA.progressivePaid[r[1]] || 0) : 0);
     const place = (r, i) => ["1st place", "2nd place", "3rd place"][i] + (/T$/.test(r[0]) ? " (tie)" : "");
+    const initials = c.name.split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).slice(0, 2).map(w => w[0]).join("");
+    const note = real ? `Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.`
+      : c.real ? "<b>Winner, total, first-place check and entries are from the old site.</b> The rest of this list is sample data for the mockup."
+      : "<b>Sample results for this mockup.</b> The real list would be posted after the tournament.";
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">${c === DATA.champions[0] ? "Latest results" : "Tournament results"}</p><h1>${esc(c.where)}</h1>
-      <p>${esc(dateTxt)} · ${esc(c.city)}, WA · ${c.entries} entries · ${money(c.paid)} paid out · Low to cash: <span class="num">${rows[rows.length - 1][4]}</span></p>
+      <p class="eyebrow">${c === HIST.latest() ? "Latest results" : "Tournament results"}${c.tag ? ` · ${esc(c.tag)}` : ""}</p><h1>${esc(c.where)}</h1>
+      <p>${esc(fmt(c.date, { month: "long", day: "numeric", year: "numeric" }))} · ${esc(c.city)}, WA · ${c.entries} entries · ${money(c.paid)} paid out · Low to cash: <span class="num">${rows[rows.length - 1][4]}</span></p>
     </div></section>
     <section class="wrap section" style="padding-bottom:0">
-      <nav class="t-pick" aria-label="Choose a tournament">${DATA.champions.map(x => `<a href="#results/${x.photo}"${x === c ? ' aria-current="page"' : ""}>${esc(chip(x))}</a>`).join("")}</nav>
+      <nav class="r-hist" aria-label="Browse past tournaments" onclick="if (event.target.closest('a[href^=&quot;#results/&quot;]')) RH_KEEP = true">
+        <div class="rh-row"><span class="rh-lab">Year</span><div class="rh-opts">${years.map(yr => `<a href="#results/${HIST.inYear(yr)[0].id}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}<a class="rh-older" href="#results-archive" onclick="document.getElementById('results-archive').scrollIntoView({ behavior: 'smooth' }); return false">Before ${oldest}</a></div></div>
+        <div class="rh-row"><span class="rh-lab">Month</span><div class="rh-opts rh-months">${months}</div></div>
+        <div class="rh-row"><span class="rh-lab">Tournament</span><div class="rh-opts rh-events">${events}</div></div>
+      </nav>
     </section>
     <section class="wrap section">
       <article class="story-body" style="margin-bottom:26px">
-        <header class="story-head"><img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}"><div><p class="eyebrow">Champion · Won ${money(c.won)}</p><h3 class="story-title">${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}</h3></div></header>
+        <header class="story-head">${c.champ ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : `<span class="champ-initials" aria-hidden="true">${esc(initials)}</span>`}<div><p class="eyebrow">Champion · Won ${money(c.won)}</p><h3 class="story-title">${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}</h3></div></header>
         ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
       </article>
       <div class="podium-cards">${[0,1,2].map(i => { const r = rows[i]; return `
@@ -1126,11 +1161,11 @@ const VIEWS = {
         <thead><tr><th>Place</th><th>Bowler</th><th class="r">Hdcp</th><th class="r">Bonus</th><th class="r">Total</th><th class="r">Prize</th></tr></thead>
         <tbody id="res-body"></tbody>
       </table></div>
-      <p class="foot-note">Totals are three games of pinfall plus handicap (best 3 of 4 at 4-game events). ${real ? `Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.` : "<b>Sample results for this mockup.</b> The real list would be posted after the tournament."}</p>
+      <p class="foot-note">Totals are three games of pinfall plus handicap (best 3 of 4 at 4-game events). ${note}</p>
     </section>
-    <section class="wrap section">
-      <div class="section-head"><h2>Results archive</h2><p>Every season back to 2002. These open the results on the current site.</p></div>
-      <div class="archive">${DATA.archive.slice().reverse().map(([y, u]) => `<a href="${u}" target="_blank" rel="noopener">${y}</a>`).join("")}</div>
+    <section class="wrap section" id="results-archive">
+      <div class="section-head"><h2>Older seasons</h2><p>Seasons before ${oldest} open the results on the current site.</p></div>
+      <div class="archive">${DATA.archive.filter(([yr]) => parseInt(yr) < oldest).reverse().map(([yr, u]) => `<a href="${u}" target="_blank" rel="noopener">${yr}</a>`).join("")}</div>
     </section>`;
   },
 
@@ -1618,16 +1653,77 @@ const VIEWS = {
   }
 };
 
-let CUR_RESULTS = DATA.results;
+/* ---- Results history (#results/<id>): every tournament by year → month → event.
+   2026 Jul 12 is real; 2025 Jan–Jun winners/totals/entries are real (old site); everything else is sample data for the mockup. ---- */
+const HIST = (() => {
+  const centers = [["Bowlero Paradise","Parkland"],["Bowlero Lanes","Lakewood"],["Daffodil Bowl","Puyallup"],["Secoma Lanes","Federal Way"],["Kent Bowl","Kent"],
+    ["Kenmore Lanes","Kenmore"],["Hi-Joy Bowl","Port Orchard"],["Bowlero Acme","Lakewood"],["Bowlero Lynnwood","Lynnwood"],["West Seattle Bowl","Seattle"],
+    ["Westside Lanes","Olympia"],["Angel of the Winds","Arlington"],["Bowlero South Seattle","Seattle"],["Lucky Strike","Lynnwood"]];
+  const cityOf = w => (centers.find(c => w.startsWith(c[0]) || c[0].startsWith(w)) || ["", "Tacoma"])[1];
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const names = [...new Set([...DATA.results.map(r => r[1]), ...DATA.boy.map(b => b[0])])];
+  const heads = ["Wins by {m} pins", "First Tour title, won by {m} pins", "Comes from behind to win by {m} pins", "Holds off the field by {m} pins", "Strong last game seals it by {m} pins", "Wins at a packed house by {m} pins"];
+  const bios = ["{f} took the lead in the second game and never gave it back, finishing {m} pins ahead of the field.",
+    "{f} bowled steady all day, with no game below 200 with handicap, and won by {m} pins.",
+    "{f} needed a big last game and delivered, edging the field by {m} pins.",
+    "A Tour regular, {f} picked up another win and plans to put the money toward next month's entries."];
+  let seed = 9;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const sunday = (y, m, nth) => { const d = new Date(y, m, 1); d.setDate(1 + ((7 - d.getDay()) % 7) + 7 * (nth - 1)); return d; };
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const list = [];
+  const add = (date, where, o) => {
+    const entries = o.entries || 160 + Math.floor(rnd() * 130), won = o.won || Math.round((1900 + rnd() * 1400) / 5) * 5;
+    const m = 2 + Math.floor(rnd() * 14), f = o.name.split(" ")[0];
+    list.push(Object.assign({ id: `${date}-${slug(where)}`, date, where, city: cityOf(where), entries, won, paid: Math.round(entries * 65 / 10) * 10,
+      total: 760 + Math.floor(rnd() * 120), hdcp: 10 + Math.floor(rnd() * 50), bonus: Math.floor(rnd() * 4),
+      head: pick(heads).replace("{m}", m), bio: [pick(bios).replace("{f}", f).replace("{m}", m)], sample: true },
+      Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))));
+  };
+  // Real 2025 winners (Jan–Jun), from the old site
+  [["01-12","Bowlero Paradise","Jesse Sherman",800,2368,0],["01-19","Bowlero Acme","Amy Silverhorn",840,2709,203],["01-26","Bowlero Lynnwood","Chandra Martinez",807,2617,164],
+   ["02-01","Bowlero Acme","Jessica Trinidad-Hill",781,1200,208],["02-09","Daffodil Bowl","Johnny Seng",861,2608,221],["02-16","Bowlero Lanes","Karl Helbich",874,2781,277],
+   ["02-22","Kenmore Lanes","Jeff Price",834,3232,225],["03-01","Bowlero Paradise","Cliff Taimanglo",850,1750,293],["03-16","Secoma Lanes","Skip Shear",809,3415,296],
+   ["03-22","Hi-Joy Bowl","Bruce Mang",873,3394,244],["03-29","Bowlero Acme","Mike Crowe",764,3024,299],["04-05","Kent Bowl","Michael Hendricks",898,3346,196],
+   ["04-12","Bowlero Lanes","Oscar Gestoso",826,2745,227],["04-27","West Seattle Bowl","Walt Dalrymple",825,2550,204],["05-17","Bowlero Paradise","Johnny Seng",818,2433,238],
+   ["05-24","Secoma Lanes","Eddie Burdsall",702,3011,301],["06-01","Daffodil Bowl","Paul Kelly",828,3117,215],["06-07","Kent Bowl","Thang Duc Thai",841,2694,0],
+   ["06-29","Hi-Joy Bowl","Chuck Marshall",841,2786,201]
+  ].forEach(([d, w, n, t, won, e]) => add("2025-" + d, w, { name: n, total: t, won, entries: e || undefined, real: true }));
+  // Sample seasons: two Sundays a month, Year End Championship in December
+  for (const y of [2022, 2023, 2024, 2025]) for (let mo = 0; mo < 12; mo++) {
+    if (y === 2025 && mo < 6) continue;
+    const days = mo === 11 ? [2, 3] : mo === 6 ? [3] : [2, 4];
+    days.forEach((nth, k) => {
+      const yec = mo === 11 && k === 1;
+      add(iso(sunday(y, mo, nth)), yec ? "Bowlero Lanes" : pick(centers)[0], { name: pick(names), tag: yec ? "Year End Championship" : undefined, entries: yec ? 96 + Math.floor(rnd() * 20) : undefined });
+    });
+  }
+  // 2026: the champions already on the site, plus a few sample events to fill the months
+  const when2026 = { "dennis-latham": "2026-05-10", "marilyn-mateo": "2026-05-24", "ashley-kochel": "2026-06-07", "dean-hale-jr": "2026-06-14" };
+  DATA.champions.forEach(c => list.push(Object.assign({}, c, { id: c.photo, date: c.date || when2026[c.photo], sample: !!c.mock, champ: true })));
+  [["2026-01-11"],["2026-01-25"],["2026-02-08"],["2026-02-22"],["2026-03-15"],["2026-04-12"],["2026-04-26"]].forEach(([d]) => add(d, pick(centers)[0], { name: pick(names) }));
+  list.sort((a, b) => b.date.localeCompare(a.date));
+  const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return {
+    list, MON,
+    find: id => list.find(x => x.id === id),
+    latest: () => list.find(x => x.id === DATA.champions[0].photo) || list[0],
+    years: () => [...new Set(list.map(x => +x.date.slice(0, 4)))],
+    inYear: y => list.filter(x => +x.date.slice(0, 4) === y),
+    inMonth: (y, m) => list.filter(x => +x.date.slice(0, 4) === y && +x.date.slice(5, 7) - 1 === m).reverse()
+  };
+})();
+let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
   if (c.photo === "michael-miller") return DATA.results;
-  let seed = [...c.photo].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  let seed = [...(c.id || c.photo)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   const pool = [...new Set([...DATA.results.map(r => r[1]), ...DATA.boy.map(b => b[0])])].filter(n => n !== c.name && n !== c.second);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   if (c.second) pool.unshift(c.second);
-  const best = c.games.slice().sort((x, y) => y - x).slice(0, 3).reduce((x, y) => x + y, 0);
-  const top = best + c.hdcp * 3 + (c.bonus || 0) * 3;
+  const best = c.games ? c.games.slice().sort((x, y) => y - x).slice(0, 3).reduce((x, y) => x + y, 0) : 0;
+  const top = c.total || best + c.hdcp * 3 + (c.bonus || 0) * 3;
   const n = Math.min(pool.length + 1, Math.round(c.entries / 5));
   const m = (c.head.match(/by (\d+) pins/) || [])[1];
   let tot = top - (m ? +m : 4 + Math.floor(rnd() * 10));
@@ -2599,7 +2695,10 @@ function route() {
   wire(view);
   $("#nav").classList.remove("open"); $("#menu-btn").setAttribute("aria-expanded", "false");
   const target = anchor && document.getElementById(anchor);
-  if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
+  const ph = view === "results" && RH_KEEP && $(".page-head"); RH_KEEP = false;
+  if (target) target.scrollIntoView();
+  else if (ph) window.scrollTo(0, ph.getBoundingClientRect().top + scrollY - $(".site-head").offsetHeight); // keep the year/month picker in view while browsing
+  else window.scrollTo(0, 0);
 }
 $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.toggle("open"); $("#menu-btn").setAttribute("aria-expanded", String(o)); });
 window.addEventListener("hashchange", route);
