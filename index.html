@@ -966,7 +966,7 @@ function eventRow(e) {
   const side = st === "past"
     ? `<span class="tag muted">Completed</span><a class="link-more" href="#results">Results</a>`
     : e.invite ? `<span class="tag">Invitation only</span>`
-    : `<span class="tag ${isNext ? "" : "good"}">${isNext ? relDays(e) : "Open"}</span><a class="link-more" href="#join">How to enter</a>`;
+    : `<span class="tag ${isNext ? "" : "good"}">${isNext ? relDays(e) : "Open"}</span>`;
   return `<div class="event-row ${st === "past" ? "past" : ""} ${isNext ? "next" : ""}">
     <div class="cal"><div class="m">${MON[d.getMonth()]}</div><div class="d">${d.getDate()}</div><div class="w">${DAY[d.getDay()]}</div></div>
     <div style="min-width:0"><h4>${esc(e.center)}</h4><div class="meta">${esc(e.city)}, WA${e.tag ? ` · ${esc(e.tag)}` : ""}</div>${squadsHTML(e.squads)}</div>
