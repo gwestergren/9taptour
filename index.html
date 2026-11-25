@@ -220,12 +220,15 @@ p { margin: 0; }
 .rh-opts span { opacity: .4; }
 .rh-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
 .rh-months a, .rh-months span { padding: 8px 0; }
-.rh-older { font-size: .85rem; }
+.rh-older { display: block; margin-top: 4px; font: 600 .74rem var(--font-body); letter-spacing: 0; text-transform: none; color: var(--accent); text-decoration: none; }
+.rh-older:hover { text-decoration: underline; }
 .champ-initials { width: 126px; aspect-ratio: 126 / 112; flex: none; display: grid; place-items: center; border-radius: var(--radius); background: var(--accent); color: #fff; font: 700 2.4rem var(--font-display, var(--font-body)); letter-spacing: .04em; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
 @media (max-width: 900px) { .rh-months { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (max-width: 600px) {
   .r-hist { padding: 14px; gap: 12px; }
   .rh-row { grid-template-columns: 1fr; gap: 6px; }
+  .rh-lab { display: flex; justify-content: space-between; align-items: baseline; }
+  .rh-older { margin-top: 0; }
   .rh-opts a, .rh-opts span { padding: 7px 11px; font-size: .8rem; }
   .rh-months a, .rh-months span { padding: 8px 0; }
   .rh-events { flex-direction: column; }
@@ -1136,7 +1139,7 @@ const VIEWS = {
     </div></section>
     <section class="wrap section" style="padding-bottom:0">
       <nav class="r-hist" aria-label="Browse past tournaments" onclick="if (event.target.closest('a[href^=&quot;#results/&quot;]')) RH_KEEP = true">
-        <div class="rh-row"><span class="rh-lab">Year</span><div class="rh-opts">${years.map(yr => `<a href="#results/${HIST.inYear(yr)[0].id}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}<a class="rh-older" href="#results-archive" onclick="document.getElementById('results-archive').scrollIntoView({ behavior: 'smooth' }); return false">Before ${oldest}</a></div></div>
+        <div class="rh-row"><span class="rh-lab">Year<a class="rh-older" href="#results-archive" onclick="document.getElementById('results-archive').scrollIntoView({ behavior: 'smooth' }); return false">Before ${oldest} ↓</a></span><div class="rh-opts rh-months">${years.map(yr => `<a href="#results/${HIST.inYear(yr)[0].id}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}</div></div>
         <div class="rh-row"><span class="rh-lab">Month</span><div class="rh-opts rh-months">${months}</div></div>
         <div class="rh-row"><span class="rh-lab">Tournament</span><div class="rh-opts rh-events">${events}</div></div>
       </nav>
@@ -1395,7 +1398,7 @@ const VIEWS = {
     </div></section>
     <section class="wrap section" style="padding-bottom:0">
       <nav class="r-hist" aria-label="Choose a season" onclick="if (event.target.closest('a')) RH_KEEP = true">
-        <div class="rh-row"><span class="rh-lab">Season</span><div class="rh-opts">${years.map(yr => `<a href="#bowler-of-the-year/${yr}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}</div></div>
+        <div class="rh-row"><span class="rh-lab">Season</span><div class="rh-opts rh-months">${years.map(yr => `<a href="#bowler-of-the-year/${yr}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}</div></div>
       </nav>
     </section>
     <section class="wrap section">
@@ -1713,6 +1716,13 @@ const HIST = (() => {
   const when2026 = { "dennis-latham": "2026-05-10", "marilyn-mateo": "2026-05-24", "ashley-kochel": "2026-06-07", "dean-hale-jr": "2026-06-14" };
   DATA.champions.forEach(c => list.push(Object.assign({}, c, { id: c.photo, date: c.date || when2026[c.photo], sample: !!c.mock, champ: true })));
   [["2026-01-11"],["2026-01-25"],["2026-02-08"],["2026-02-22"],["2026-03-15"],["2026-04-12"],["2026-04-26"]].forEach(([d]) => add(d, pick(centers)[0], { name: pick(names) }));
+  // Earlier sample seasons (added last so the 2022–2026 samples above stay the same)
+  for (let y = 2015; y <= 2021; y++) for (let mo = 0; mo < 12; mo++) {
+    (mo === 11 ? [2, 3] : mo === 6 ? [3] : [2, 4]).forEach((nth, k) => {
+      const yec = mo === 11 && k === 1;
+      add(iso(sunday(y, mo, nth)), yec ? "Bowlero Lanes" : pick(centers)[0], { name: pick(names), tag: yec ? "Year End Championship" : undefined, entries: yec ? 96 + Math.floor(rnd() * 20) : undefined });
+    });
+  }
   list.sort((a, b) => b.date.localeCompare(a.date));
   const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return {
