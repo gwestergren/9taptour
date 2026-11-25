@@ -1378,26 +1378,36 @@ const VIEWS = {
   },
 
   "bowler-of-the-year"() {
-    const max = DATA.boy[0][1];
+    const years = HIST.years(), y = years.includes(+location.hash.split("/")[1]) ? +location.hash.split("/")[1] : 2025;
+    const boy = BOY.get(y), max = boy[0][1];
     let prev = null, rank = 0;
-    const rows = DATA.boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
-      <tr class="${rank <= 3 ? "top3" : ""}"><td class="place">${rank}${DATA.boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
+    const rows = boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
+      <tr class="${rank <= 3 ? "top3" : ""}"><td class="place">${rank}${boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
       <td class="bar-cell"><div class="bar"><i style="width:${(p / max * 100).toFixed(1)}%"></i></div></td><td class="r num">${p}</td></tr>`; }).join("");
+    const intro = y === 2025 ? "These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted."
+      : y === 2026 ? "The 2026 race is still going. Sample standings through the November 22 tournament."
+      : `Final ${y} standings after the Year End Championship. Sample data for this mockup.`;
+    const won = y === 2026 || y === 2025 ? "Leader" : `${y} Bowler of the Year`;
     return `
     <section class="page-head"><div class="wrap">
-      <p class="eyebrow">2025 season</p><h1>Bowler of the Year</h1>
-      <p>The season-long points race across every Tour event. These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted.</p>
+      <p class="eyebrow">${y} season</p><h1>Bowler of the Year</h1>
+      <p>The season-long points race across every Tour event. ${intro}</p>
     </div></section>
+    <section class="wrap section" style="padding-bottom:0">
+      <nav class="r-hist" aria-label="Choose a season" onclick="if (event.target.closest('a')) RH_KEEP = true">
+        <div class="rh-row"><span class="rh-lab">Season</span><div class="rh-opts">${years.map(yr => `<a href="#bowler-of-the-year/${yr}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}</div></div>
+      </nav>
+    </section>
     <section class="wrap section">
-      <div class="podium-cards">${DATA.boy.slice(0, 3).map(([n, p], i) => `
-        <div class="panel pc ${i === 0 ? "first" : ""}"><div class="p">${["Leader","2nd","3rd"][i]}</div><div class="n">${esc(n)}</div>
+      <div class="podium-cards">${boy.slice(0, 3).map(([n, p], i) => `
+        <div class="panel pc ${i === 0 ? "first" : ""}"><div class="p">${[won,"2nd","3rd"][i]}</div><div class="n">${esc(n)}</div>
         <div class="s"><span>Points <b>${p}</b></span>${i ? `<span>Back <b>${max - p}</b></span>` : ""}</div></div>`).join("")}
       </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Rank</th><th>Bowler</th><th>Points</th><th class="r">Total</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
-      <p class="foot-note">Top 25 shown. In the new site this table would update after every tournament instead of living in a PDF.</p>
+      <p class="foot-note">Top 25 shown. ${y === 2025 ? "" : "<b>Sample standings for this mockup.</b> "}In the new site this table would update after every tournament instead of living in a PDF. Past seasons: <a class="link-more" href="#results">tournament results by year</a>.</p>
     </section>`;
   },
 
@@ -1714,6 +1724,22 @@ const HIST = (() => {
     inMonth: (y, m) => list.filter(x => +x.date.slice(0, 4) === y && +x.date.slice(5, 7) - 1 === m).reverse()
   };
 })();
+/* Bowler of the Year by season: 2025 is the real table (as of Sep 1, 2025); other seasons are sample standings led by that year's sample winners. */
+const BOY = {
+  cache: {},
+  get(y) {
+    if (y === 2025) return DATA.boy;
+    if (this.cache[y]) return this.cache[y];
+    let seed = y * 7919;
+    const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+    const winners = [...new Set(HIST.inYear(y).map(e => e.name))];
+    const rest = [...new Set([...DATA.results.map(r => r[1]), ...DATA.boy.map(b => b[0])])].filter(n => !winners.includes(n));
+    for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+    const order = []; winners.slice().sort(() => rnd() - .5).forEach((w, i) => { order.push(w); if (i % 2) order.push(rest.shift()); });
+    let pts = (y === 2026 ? 470 : 600) + Math.floor(rnd() * 60);
+    return this.cache[y] = order.concat(rest).slice(0, 25).map((n, i) => [n, i ? (pts -= Math.floor(rnd() * 22)) : pts]);
+  }
+};
 let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
   if (c.photo === "michael-miller") return DATA.results;
@@ -2695,7 +2721,7 @@ function route() {
   wire(view);
   $("#nav").classList.remove("open"); $("#menu-btn").setAttribute("aria-expanded", "false");
   const target = anchor && document.getElementById(anchor);
-  const ph = view === "results" && RH_KEEP && $(".page-head"); RH_KEEP = false;
+  const ph = (view === "results" || view === "bowler-of-the-year") && RH_KEEP && $(".page-head"); RH_KEEP = false;
   if (target) target.scrollIntoView();
   else if (ph) window.scrollTo(0, ph.getBoundingClientRect().top + scrollY - $(".site-head").offsetHeight); // keep the year/month picker in view while browsing
   else window.scrollTo(0, 0);
