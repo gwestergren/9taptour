@@ -718,6 +718,19 @@ body.tv-mode { background: #0b1f26; }
 .lv-board .lv-tot b { font-size: 1.1rem; }
 .lv-board tbody tr:nth-child(-n+3) .lv-rank { color: var(--accent); }
 .lv-upd { margin-top: 8px; }
+.lv-ctl { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.lv-ctl > div:first-child { flex: 1 1 320px; }
+.lv-ctl h3 { margin: 0 0 4px; }
+.lv-ctl-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.lv-demo { flex: 1 1 100%; display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.lv-demo input { margin-top: 3px; }
+.lv-off { max-width: 640px; }
+.lv-off h3 { margin-top: 0; }
+.tv-off { text-align: center; margin-top: 14vh; color: #e8efed; }
+.tv-off-k { font-size: 3vh; letter-spacing: .12em; text-transform: uppercase; color: var(--maple); margin: 0; }
+.tv-off-n { font-size: 9vh; font-weight: 800; margin: 1vh 0; color: #fff; }
+.tv-off-m { font-size: 3.6vh; margin: 0 0 6vh; }
+.tv-off-x { font-size: 2.8vh; color: #b9c7c4; margin: 1vh 0; }
 @media (max-width: 560px) { .lv-board .lv-scr { display: none; } }
 .tv { position: fixed; inset: 0; display: flex; flex-direction: column; background: #0b1f26; color: #f3f1e6; font-family: var(--font-body); }
 .tv-head { display: flex; align-items: center; gap: 2vw; padding: 1.6vh 3vw; background: #0f2b33; border-bottom: .6vh solid var(--maple); }
@@ -970,6 +983,7 @@ const longDate = d => parse(d).toLocaleDateString("en-US", { weekday: "long", mo
 const shortDate = d => { const x = parse(d); return `${String(x.getMonth()+1).padStart(2,"0")}/${String(x.getDate()).padStart(2,"0")}/${String(x.getFullYear()).slice(2)}`; };
 
 const today = (() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); })();
+const TODAY_ISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 function eventStatus(e) {
   const d = parse(e.date);
   if (d < today) return "past";
@@ -1130,12 +1144,13 @@ const VIEWS = {
     const place = (r, i) => ["1st place", "2nd place", "3rd place"][i] + (/T$/.test(r[0]) ? " (tie)" : "");
     const initials = c.name.split(/\s+/).filter(w => /^[A-Za-z]/.test(w)).slice(0, 2).map(w => w[0]).join("");
     const note = real ? `Prize shows the singles payout only. Michael Miller added ${money(1563)} from the Progressive Pot for ${money(2613)} total.`
+      : c.final ? `<b>Posted from the tournament-day standings</b>${c.auto ? " automatically at midnight" : " when staff finalized the day"}. Everyone who bowled is listed; prize amounts are estimated for the mockup.`
       : c.real ? "<b>Winner, total, first-place check and entries are from the old site.</b> The rest of this list is sample data for the mockup."
       : "<b>Sample results for this mockup.</b> The real list would be posted after the tournament.";
     return `
     <section class="page-head"><div class="wrap">
       <p class="eyebrow">${c === HIST.latest() ? "Latest results" : "Tournament results"}${c.tag ? ` · ${esc(c.tag)}` : ""}</p><h1>${esc(c.where)}</h1>
-      <p>${esc(fmt(c.date, { month: "long", day: "numeric", year: "numeric" }))} · ${esc(c.city)}, WA · ${c.entries} entries · ${money(c.paid)} paid out · Low to cash: <span class="num">${rows[rows.length - 1][4]}</span></p>
+      <p>${esc(fmt(c.date, { month: "long", day: "numeric", year: "numeric" }))} · ${esc(c.city)}, WA · ${c.entries} entries · ${money(c.paid)} paid out · Low to cash: <span class="num">${c.lowCash || rows[rows.length - 1][4]}</span></p>
     </div></section>
     <section class="wrap section" style="padding-bottom:0">
       <nav class="r-hist" aria-label="Browse past tournaments" onclick="if (event.target.closest('a[href^=&quot;#results/&quot;]')) RH_KEEP = true">
@@ -1157,7 +1172,7 @@ const VIEWS = {
       </div>
       ${real ? `<p class="foot-note" style="margin:-8px 0 22px">Mary Bridgman tied Kris Koepke for 3rd at 798. Winnings above include Progressive Pot shares.</p>` : ""}
       <div class="toolbar">
-        <h2 style="font-size:1.8rem">All cashers</h2>
+        <h2 style="font-size:1.8rem">${c.final ? "Final standings" : "All cashers"}</h2>
         <div class="field search"><label for="find">Find a bowler</label><input id="find" type="search" placeholder="Type a name" autocomplete="off"></div>
       </div>
       <div class="table-wrap"><table>
@@ -1185,6 +1200,7 @@ const VIEWS = {
       <div class="sc-row" id="sc-lane-row"><span class="sc-lbl">Lanes</span><div class="sc-seg sc-lanes" id="sc-lanes"></div></div>
     </div></div>
     <section class="wrap sc-main">
+      ${FIN.get(e.date) ? `<p class="toast">This tournament is final and on <a class="link-more" href="#results/${FIN.get(e.date).id}">Results</a>. Score changes here show up there after you press Update results on Standings.</p>` : ""}
       <p class="sc-checkin" id="sc-checkin"></p>
       <div id="sc-body"></div>
       <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
@@ -1212,21 +1228,31 @@ const VIEWS = {
   },
 
   live(staff) {
-    const e = SC.event();
+    const e = SC.event(), st = FIN.state(e), f = FIN.get(e.date), fmt = d => parse(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const board = staff || st === "live";
+    const ctl = !staff ? "" : `
+      <div class="panel lv-ctl">
+        ${f ? `<div><h3>Final · posted to Results</h3><p class="meta">${esc(e.center)}, ${esc(fmt(e.date))} ${f.auto ? "finalized by itself at midnight" : "was finalized"}. Public Standings and the TV now point to <a class="link-more" href="#results/${f.id}">the results page</a>.</p></div>
+          <div class="lv-ctl-btns"><button type="button" class="btn btn-primary" id="lv-refin">Update results</button><button type="button" class="btn btn-ghost" id="lv-reopen">Reopen day</button></div>`
+        : `<div><h3>${FIN.isDay(e) ? "Finalize the day" : `Finalize ${esc(fmt(e.date))}`}</h3><p class="meta">When the last squad is done, finalize to post these standings as the ${esc(e.center)} results page. ${FIN.isDay(e) ? "If nobody does, it happens by itself at midnight." : "This tournament was not finalized on its day."}</p></div>
+          <div class="lv-ctl-btns"><button type="button" class="btn btn-primary" id="lv-fin">Finalize day</button></div>`}
+        ${FIN.isDay(e) ? "" : `<label class="lv-demo"><input type="checkbox" id="lv-demo"${FIN.demo() ? " checked" : ""}> Demo mode: show these standings as live on the public Standings page and the TV, even though there's no tournament today</label>`}
+      </div>`;
     return `
     <section class="page-head sc-head"><div class="wrap">
       <h1>Standings</h1>
-      <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}</p>
+      <p>${board ? `${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}${!staff && !FIN.isDay(e) ? " · Demo" : ""}` : "Live scores on tournament day"}</p>
     </div></section>
-    <section class="wrap sc-main lv-main" data-live>
-      <div class="lv-top"><div class="sc-seg" id="lv-sq"></div><a class="btn btn-ghost lv-tv" href="#tv" target="${staff ? "_blank" : "_self"}">Show on a TV</a></div>
+    <section class="wrap sc-main lv-main" data-live>${ctl}
+      ${board ? `<div class="lv-top"><div class="sc-seg" id="lv-sq"></div><a class="btn btn-ghost lv-tv" href="#tv" target="${staff ? "_blank" : "_self"}">Show on a TV</a></div>
       <div id="lv-body"></div>
-      <p class="foot-note">Each game counts its score plus handicap plus bonus pins (small number = scratch). HDCP: 36 + 5 under a name means 36 handicap plus 5 bonus pins a game; the Hdcp and Bonus columns show the totals for the games counted so far, and Total = Scratch + Hdcp + Bonus. Standings update on their own as rovers enter scores${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. They stay up until the day of the next tournament. Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>
+      <p class="foot-note">Each game counts its score plus handicap plus bonus pins (small number = scratch). HDCP: 36 + 5 under a name means 36 handicap plus 5 bonus pins a game; the Hdcp and Bonus columns show the totals for the games counted so far, and Total = Scratch + Hdcp + Bonus. Standings update on their own as rovers enter scores${CFG.get(e).count < SC.games(e) ? ` and the best ${CFG.get(e).count} of ${SC.games(e)} games counting` : ""}. ${staff ? "The public page shows them only on tournament day; once the day is finalized (or at midnight) they become that event's Results page." : "When the day is final they move to Results."} Prototype: most bowlers are sample data, and live updates only reach screens on the same device until scores are saved to the Tour's Google Sheet.</p>`
+      : FIN.offHTML(e)}
     </section>`;
   },
 
   tv() {
-    return `<div class="tv" id="tv"><header class="tv-head"><img src="img/tour-logo.png" alt=""><div><b>9-Tap Tour · Live standings</b><span id="tv-where"></span></div><span class="tv-clock" id="tv-clock"></span><button type="button" class="tv-fs" id="tv-fs">Full screen</button></header><div class="tv-top" id="tv-top"></div><div class="tv-scroll" id="tv-scroll"><div id="tv-body"></div></div></div>`;
+    return `<div class="tv" id="tv"><header class="tv-head"><img src="img/tour-logo.png" alt=""><div><b id="tv-title">9-Tap Tour · Live standings</b><span id="tv-where"></span></div><span class="tv-clock" id="tv-clock"></span><button type="button" class="tv-fs" id="tv-fs">Full screen</button></header><div class="tv-top" id="tv-top"></div><div class="tv-scroll" id="tv-scroll"><div id="tv-body"></div></div></div>`;
   },
 
   pin() {
@@ -1728,7 +1754,7 @@ const HIST = (() => {
   return {
     list, MON,
     find: id => list.find(x => x.id === id),
-    latest: () => list.find(x => x.id === DATA.champions[0].photo) || list[0],
+    latest: () => list.find(x => x.final) || list.find(x => x.id === DATA.champions[0].photo) || list[0],
     years: () => [...new Set(list.map(x => +x.date.slice(0, 4)))],
     inYear: y => list.filter(x => +x.date.slice(0, 4) === y),
     inMonth: (y, m) => list.filter(x => +x.date.slice(0, 4) === y && +x.date.slice(5, 7) - 1 === m).reverse()
@@ -1753,6 +1779,7 @@ const BOY = {
 let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
   if (c.photo === "michael-miller") return DATA.results;
+  if (c.rows) return c.rows;
   let seed = [...(c.id || c.photo)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   const pool = [...new Set([...DATA.results.map(r => r[1]), ...DATA.boy.map(b => b[0])])].filter(n => n !== c.name && n !== c.second);
@@ -1778,8 +1805,8 @@ function renderResults(q = "") {
   const rows = CUR_RESULTS.filter(r => !t || r[1].toLowerCase().includes(t));
   body.innerHTML = rows.length ? rows.map(r => `<tr class="${/^[123]T?$/.test(r[0]) ? "podium" : ""}">
     <td class="place">${r[0]}</td><td>${esc(r[1])}</td><td class="r num">${r[2]}</td><td class="r num">${r[3]}</td>
-    <td class="r num"><b>${r[4]}</b></td><td class="r num">${money(r[5])}</td></tr>`).join("")
-    : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". Only the top ${CUR_RESULTS.length} cashed at this event.</td></tr>`;
+    <td class="r num"><b>${r[4]}</b></td><td class="r num">${r[5] ? money(r[5]) : "–"}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". ${CUR_RESULTS.some(r => !r[5]) ? "Nobody by that name bowled this event." : `Only the top ${CUR_RESULTS.length} cashed at this event.`}</td></tr>`;
 }
 
 function renderChamps(month) {
@@ -1916,10 +1943,65 @@ const SC = {
     }
     return v;
   },
-  save(e, sq, v) { try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} },
+  save(e, sq, v) { v.savedOn = TODAY_ISO; try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} },
   // Only the best N games count (setup "games that count"); lower games beyond N are dropped.
   counted(arr, ng) { const keep = Math.min(CFG.get(SC.event()).count, ng), idx = arr.map((x, i) => i).filter(i => typeof arr[i] === "number").sort((a, b) => arr[b] - arr[a] || a - b), use = idx.slice(0, keep); return { sum: use.reduce((s, i) => s + arr[i], 0), drop: idx.length > keep ? idx.slice(keep) : [], n: use.length }; }
 };
+/* ---- Tournament day: live standings become that event's Results page ----
+   Public Standings (#live) and the TV (#tv) are live only on tournament day. Staff press "Finalize day" on Standings,
+   or the day finalizes by itself after midnight (only for scores entered on the tournament day itself, so demo scores
+   typed on another day are never posted). A finalized day is added to the Results history (HIST) as that event's page.
+   Demo mode (staff Standings) shows the last tournament as live on the public page and TV on any day. */
+const FIN = {
+  KEY: "9tap-finals", DEMO: "9tap-demo-live",
+  all() { try { return JSON.parse(localStorage.getItem(FIN.KEY)) || {}; } catch (_) { return {}; } },
+  get(date) { return FIN.all()[date] || null; },
+  put(o) { try { localStorage.setItem(FIN.KEY, JSON.stringify(o)); } catch (_) {} },
+  demo() { try { return localStorage.getItem(FIN.DEMO) === "1"; } catch (_) { return false; } },
+  setDemo(v) { try { v ? localStorage.setItem(FIN.DEMO, "1") : localStorage.removeItem(FIN.DEMO); } catch (_) {} },
+  isDay(e) { return e.date === TODAY_ISO; },
+  // What public Standings and the TV show: "live", "final" (today's day is finalized) or "off" (no tournament today).
+  state(e) { if (FIN.get(e.date)) return FIN.isDay(e) || FIN.demo() ? "final" : "off"; return FIN.isDay(e) || FIN.demo() ? "live" : "off"; },
+  hasScores(e) { return e.squads.some((_, i) => { try { const v = JSON.parse(localStorage.getItem(SC.key(e, i))); return v && v.scores && Object.keys(v.scores).length; } catch (_) { return false; } }); },
+  enteredOnDay(e) { return e.squads.some((_, i) => { try { const v = JSON.parse(localStorage.getItem(SC.key(e, i))); return v && v.savedOn === e.date; } catch (_) { return false; } }); },
+  // Build the Results page for a tournament day from its standings (all squads, each bowler's best single-squad series).
+  build(e, auto) {
+    const rows = SC.board(e, null), ng = SC.games(e), cnt = Math.min(CFG.get(e).count, ng);
+    if (!rows.length) return null;
+    const entries = e.squads.reduce((n, _, i) => n + SC.roster(e, i).filter(b => (SC.load(e, i).scores[b.id] || []).some(x => typeof x === "number")).length, 0);
+    const paid = Math.round(entries * 65 / 10) * 10, won = Math.max(100, Math.round(paid * 0.08 / 5) * 5), cash = Math.max(1, Math.min(rows.length, Math.round(entries / 5)));
+    const prize = i => i === 0 ? won : i >= cash ? 0 : Math.round((65 + (won * 0.5 - 65) * Math.pow((cash - 1 - i) / Math.max(1, cash - 2), 2.2)) / 5) * 5;
+    const out = rows.map((r, i) => { const tied = rows.filter(x => x.hd === r.hd), first = rows.indexOf(tied[0]);
+      const share = Math.round(tied.reduce((a, x) => a + prize(rows.indexOf(x)), 0) / tied.length / 5) * 5;
+      return [String(first + 1) + (tied.length > 1 ? "T" : ""), r.b.name, r.hc, r.bo, r.hd, share]; });
+    const w = rows[0], m = rows[1] ? w.hd - rows[1].hd : 0, f = w.b.name.split(" ")[0];
+    return { id: `${e.date}-${e.center.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`, date: e.date, where: e.center, city: e.city, tag: e.tag,
+      entries, paid, won: out[0][5] || won, name: w.b.name, total: w.hd, hdcp: w.hc, bonus: w.bo, lowCash: out[cash - 1][4],
+      head: rows[1] ? (m ? `Wins by ${m} pin${m === 1 ? "" : "s"}` : "Wins on a tie") : "Wins the day",
+      bio: [`${f} finished on top of ${entries} entries with ${w.hd} (${w.scr} scratch plus ${w.hc} handicap and ${w.bo} bonus pins${cnt < ng ? `, best ${cnt} of ${ng} games` : ""}).`],
+      rows: out, final: true, auto: !!auto, finalizedAt: new Date().toISOString() };
+  },
+  finalize(e, auto) { const r = FIN.build(e, auto); if (!r) return null; const a = FIN.all(); a[e.date] = r; FIN.put(a); FIN.sync(); return r; },
+  reopen(e) { const a = FIN.all(); delete a[e.date]; FIN.put(a); FIN.sync(); },
+  // Keep HIST (Results year / month / tournament browser) in step with the finalized days on this device.
+  sync() {
+    for (let i = HIST.list.length - 1; i >= 0; i--) if (HIST.list[i].final) HIST.list.splice(i, 1);
+    Object.values(FIN.all()).forEach(r => { const i = HIST.list.findIndex(x => x.date === r.date); if (i >= 0) HIST.list.splice(i, 1); HIST.list.push(r); });
+    HIST.list.sort((a, b) => b.date.localeCompare(a.date));
+  },
+  // Midnight rule: a past tournament day with scores entered that day is finalized by itself.
+  auto() { DATA.events.filter(x => x.date < TODAY_ISO && !FIN.get(x.date)).forEach(x => { const e = CK.eventFor(x); if (FIN.enteredOnDay(e)) FIN.finalize(e, true); }); },
+  latestLink() { const c = HIST.latest(); return `#results/${c.id}`; },
+  // Panel shown on Standings and the TV when nothing is live.
+  offHTML(e) {
+    const c = HIST.latest(), nx = nextEvent, f = FIN.get(e.date), fmt = d => parse(d).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+    if (FIN.state(e) === "final") return `<div class="panel lv-off"><h3>Today's tournament is final</h3><p>${esc(f.name)} won at ${esc(e.center)} with ${f.total}. The final standings are on the Results page.</p><p><a class="btn btn-primary" href="#results/${f.id}">See today's results</a></p></div>`;
+    const up = parse(nx.date) >= today ? `<p class="meta">Next tournament: ${esc(longDate(nx.date))} at ${esc(nx.center)}, ${esc(nx.city)}. Live standings start here when the first games are in.</p>` : "";
+    return `<div class="panel lv-off"><h3>No tournament today</h3><p>The latest results are from ${esc(c.where)} on ${esc(fmt(c.date))}, won by ${esc(c.name)} with ${c.total || eventResults(c)[0][4]}.</p><p><a class="btn btn-primary" href="#results/${c.id}">See the latest results</a></p>${up}</div>`;
+  }
+};
+// Open screens (like a TV left on all night) reload just after midnight so the day rolls over.
+setTimeout(() => location.reload(), new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 30) - new Date());
 function wireScores() {
   const e = SC.event(), ng = SC.games(e), sq = SC.squad;
   const roster = SC.roster(e, sq), state = SC.load(e, sq);
@@ -2538,6 +2620,12 @@ function wireLive() {
       : `<div class="panel"><h3>No scores yet</h3><p class="meta">Standings show up here as soon as the first games are entered.</p></div>`;
     return true;
   };
+  const tap2 = (id, label, fn) => { const b = $(id); if (!b) return; let armed = false; b.addEventListener("click", () => { if (!armed) { armed = true; const t = b.textContent; b.textContent = label; setTimeout(() => { armed = false; if (document.body.contains(b)) b.textContent = t; }, 3000); return; } fn(); route(); }); };
+  tap2("#lv-fin", "Tap again to post to Results", () => FIN.finalize(e));
+  tap2("#lv-refin", "Tap again to replace the results", () => FIN.finalize(e));
+  tap2("#lv-reopen", "Tap again to take it off Results", () => FIN.reopen(e));
+  if ($("#lv-demo")) $("#lv-demo").addEventListener("change", ev => { FIN.setDemo(ev.target.checked); });
+  if (!$("#lv-sq")) { LIVE.redraw = () => { if ($("[data-live]")) route(); }; return; }
   $("#lv-sq").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; LIVE.sq = b.dataset.sq === "" ? null : +b.dataset.sq; draw(); });
   draw(); clearInterval(LIVE.t); LIVE.t = setInterval(() => { if (!draw()) clearInterval(LIVE.t); }, 15000);
   LIVE.redraw = draw;
@@ -2547,6 +2635,17 @@ function wireTV() {
   $("#tv-where").textContent = `${e.center} · ${e.city} · ${longDate(e.date)}`;
   const draw = () => {
     if (!$("#tv")) return false;
+    $("#tv-clock").textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const st = FIN.state(e);
+    if (st !== "live") {
+      const c = st === "final" ? FIN.get(e.date) : HIST.latest(), nx = nextEvent;
+      $("#tv-where").textContent = st === "final" ? `${e.center} · ${e.city} · Final` : "No tournament today";
+      $("#tv-title").textContent = "9-Tap Tour";
+      $("#tv-top").innerHTML = "";
+      $("#tv-body").innerHTML = `<div class="tv-off"><p class="tv-off-k">${st === "final" ? "Final results" : "Latest results"}</p><p class="tv-off-n">${esc(c.name)}</p><p class="tv-off-m">won at ${esc(c.where)} with ${c.total || eventResults(c)[0][4]} · ${esc(parse(c.date).toLocaleDateString("en-US", { month: "long", day: "numeric" }))}</p>${parse(nx.date) > today ? `<p class="tv-off-x">Next tournament: ${esc(longDate(nx.date))} · ${esc(nx.center)}, ${esc(nx.city)}</p>` : ""}<p class="tv-off-x">Full results at 9taptour.com</p></div>`;
+      return true;
+    }
+    $("#tv-where").textContent = `${e.center} · ${e.city} · ${longDate(e.date)}`; $("#tv-title").textContent = "9-Tap Tour · Live standings";
     const { rows, html, head } = liveRows(e, null);
     // The header and top 5 sit in their own solid block that never moves; only the rest of the list scrolls below it.
     const trs = html.split("</tr>").filter(x => x.trim()).map(x => x + "</tr>");
@@ -2578,7 +2677,10 @@ function wireTV() {
   document.addEventListener("fullscreenchange", () => { if ($("#tv-fs")) $("#tv-fs").hidden = !!document.fullscreenElement; });
 }
 // Another tab or window on this device saved scores: refresh any open standings right away.
-window.addEventListener("storage", ev => { if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw(); });
+window.addEventListener("storage", ev => {
+  if (ev.key === FIN.KEY || ev.key === FIN.DEMO) { FIN.sync(); const v = (location.hash || "").slice(1).split("/")[0]; if (["live", "tv", "standings", "results"].includes(v)) route(); return; }
+  if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw();
+});
 /* ---- Staff Bowlers page (#bowlers): search, edit average / handicap / bonus pins, add members ---- */
 function wireBowlers() {
   let open = null; // member # being edited, or "new"
@@ -2740,6 +2842,7 @@ $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.t
 window.addEventListener("hashchange", route);
 // /staff is the protected entry point (see staticwebapp.config.json); show the app at the site root.
 if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" + (location.hash || "#desk"));
+FIN.auto(); FIN.sync();
 STAFF.load().finally(route);
 </script>
 
