@@ -1466,8 +1466,8 @@ const VIEWS = {
         ${FIN.isDay(e) ? "" : `<label class="lv-demo"><input type="checkbox" id="lv-demo"${FIN.demo() ? " checked" : ""}> Demo mode: show these standings as live on the public Standings page and the TV, even though there's no tournament today</label>`}
       </div>`;
     return `
-    <section class="page-head sc-head"><div class="wrap">
-      <h1>Standings</h1>
+    <section class="page-head${staff ? " sc-head" : ""}"><div class="wrap">
+      ${staff ? "" : `<p class="eyebrow">${board ? "Live standings" : "Fall 2026"}</p>`}<h1>Standings</h1>
       <p>${board ? `${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}${!staff && !FIN.isDay(e) ? " · Demo" : ""}` : "Live scores on tournament day"}</p>
     </div></section>
     <section class="wrap sc-main lv-main" data-live>${ctl}
