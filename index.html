@@ -1149,7 +1149,7 @@ const VIEWS = {
         return `<div class="spotlight">
         <p class="eyebrow" style="color:var(--maple)">Latest champion · ${esc(c.where)} · ${esc(parse(c.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p>
         <div class="spot-row">
-          ${c.champ ? `<img class="spot-photo" src="img/champ-${c.photo}.jpg" width="126" height="112" alt="${esc(c.name)}">` : mockPic(c, "spot-photo")}
+          ${c.photo ? `<img class="spot-photo" src="img/champ-${c.photo}.jpg" width="126" height="112" alt="${esc(c.name)}">` : mockPic(c, "spot-photo")}
           <div class="spot-text">
             <h1>${esc(first)}${last ? `<br>${esc(last)}` : ""}</h1>
             ${c.head ? `<p class="spot-sub">${esc(c.head)}</p>` : ""}
@@ -1295,7 +1295,7 @@ const VIEWS = {
     <section class="wrap section">
       <div class="r-top">
       <article class="story-body">
-        <header class="story-head">${c.champ ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : mockPic(c, "champ-initials")}<div><p class="eyebrow">Champion${c.recap && !c.top[0][2] ? "" : ` · Won ${money(c.won)}`}</p><h3 class="story-title">${c.recap && c.champ ? `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}` : c.recap ? `${esc(c.name)}<span class="story-sub">${esc(c.head)}</span>` : `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}`}</h3></div></header>
+        <header class="story-head">${c.photo ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : mockPic(c, "champ-initials")}<div><p class="eyebrow">Champion${c.recap && !c.top[0][2] ? "" : ` · Won ${money(c.won)}`}</p><h3 class="story-title">${c.recap && c.champ ? `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}` : c.recap ? `${esc(c.name)}<span class="story-sub">${esc(c.head)}</span>` : `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}`}</h3></div></header>
         ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
       </article>
       ${newsletterCard(c)}
@@ -2355,6 +2355,9 @@ const HIST = (() => {
   // 2026 champions with photos (Michael Miller, Jul 12; Ruta Hert, Mar 1). The mock Wall of Champions entries aren't real tournaments, so they stay off this list.
   DATA.champions.filter(c => !c.mock).forEach(c => { const r = recapFields(RECAP[c.date]);
     list.push(Object.assign({}, c, { id: c.photo, sample: false, champ: true }, r.recap ? { top: r.top, entries: r.entries || c.entries, lowCash: r.lowCash, recap: true } : {})); });
+  // Real winner photos for recap champions (file img/champ-<id>.jpg), by tournament date.
+  const PHOTOS = { "2026-11-22": "miles-nerona" };
+  list.forEach(x => { if (!x.photo && PHOTOS[x.date]) x.photo = PHOTOS[x.date]; });
   list.sort((a, b) => b.date.localeCompare(a.date));
   const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return {
@@ -2520,7 +2523,7 @@ function mockPic(c, cls = "") {
   const h = [...c.name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7), [c1, c2] = MOCK_BG[h % MOCK_BG.length], pose = MOCK_POSE[(h >>> 3) % MOCK_POSE.length];
   return `<span class="mock-pic ${cls}" style="--m1:${c1};--m2:${c2}" role="img" aria-label="Sample photo for ${esc(c.name)}"><svg viewBox="0 0 126 112" aria-hidden="true"><path d="M0 84 126 70v42H0z" class="mf"/><g class="mp-pins"><path d="M14 58c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/><path d="M24 56c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/><path d="M106 54c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/></g><g class="ms">${pose}</g></svg><span class="mock-tag">Sample photo</span></span>`;
 }
-const wallPic = (c, w, h) => c.champ ? `<img src="img/champ-${c.photo}.jpg" width="${w}" height="${h}" alt="">`
+const wallPic = (c, w, h) => c.photo ? `<img src="img/champ-${c.photo}.jpg" width="${w}" height="${h}" alt="">`
   : mockPic(c, "cc-initials");
 const JP_LABEL = { jackpot: "9-Tap Jackpot", golden: "Golden Shot", middle: "Middle string", front: "Consolation" };
 function renderJackpots(year) {
@@ -2559,7 +2562,7 @@ function openChamp(photo) {
   if (!d) { d = document.createElement("dialog"); d.id = "champ-dlg"; d.className = "champ-dlg"; document.body.appendChild(d);
     d.addEventListener("click", e => { if (e.target === d) d.close(); }); }
   d.innerHTML = `<button type="button" class="dlg-x" aria-label="Close">×</button>
-    <div class="dlg-head">${c.champ ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : wallPic(c)}<div>
+    <div class="dlg-head">${c.photo ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : wallPic(c)}<div>
       <p class="eyebrow">Champion · ${esc(c.where)} · ${esc(c.when || new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }))}</p><div class="dlg-name"><h2>${esc(c.name)}</h2>${wallWon(c) ? `<span class="dlg-won">Won <b>${money(wallWon(c))}</b></span>` : ""}</div>${c.real && !c.recap ? "" : `<p class="dlg-sub">${esc(c.head)}</p>`}</div></div>
     ${c.real && !c.recap ? `<p>${esc(c.name)} won at ${esc(c.where)} with ${/^8/.test(c.total) ? "an" : "a"} ${c.total} total. The winner, total, first-place check and entries come from the old site's 2025 results; there's no write-up for this one.</p>` : c.winnerOnly ? `<p>${esc(c.name)} won at ${esc(c.where)} on April 18. The Tour's April 26 email mentions the win; the recap email for this day isn't in the inbox, so there's no story yet.</p>` : c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
     ${c.games ? (() => { const keep = c.games.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(x => x[1]);
