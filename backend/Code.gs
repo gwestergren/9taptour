@@ -91,8 +91,14 @@ const ACTIONS = {
     appendRows('Check-ins', [r]);
     return {};
   },
-  // Staff save the whole check-in list for a day (Desk changes lanes, removes bowlers, marks paid...).
-  saveCheckins(b) { replaceWhere('Check-ins', x => x['Date'] === b.date, rowsFor(b.rows, b.date)); return {}; },
+  // Staff save changes to a day's check-ins (Desk changes lanes, removes bowlers, marks paid...).
+  // Only the bowlers sent are replaced and only those in "removed" are deleted, so check-ins from phones are kept.
+  saveCheckins(b) {
+    const key = r => String(r['Member #']) + ':' + String(r['Squad']);
+    const touch = new Set((b.rows || []).concat(b.removed || []).map(key));
+    replaceWhere('Check-ins', x => x['Date'] === b.date && touch.has(key(x)), rowsFor(b.rows, b.date));
+    return {};
+  },
   // Rovers save one squad's scores. Rows: { Squad, Lane, Member #, Bowler, Game 1..4 }.
   saveScores(b) {
     const sq = String(b.squad);

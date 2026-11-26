@@ -1252,7 +1252,7 @@ const SHEET = {
   // Load the last good copy right away (before the page draws), then ask the sheet for a fresh one.
   boot() { const c = SHEET.get(SHEET.CACHE, null); if (c && c.data) { SHEET.apply(c.data, true); SHEET.at = c.at; } },
   refresh() {
-    return fetch(SHEET.URL + "?tabs=Tournaments,Pots,Venues&since=" + new Date(Date.now() - 42 * 86400000).toISOString().slice(0, 10), { cache: "no-store" })
+    return fetch(SHEET.URL + "?tabs=Tournaments,Pots,Venues,Members&since=" + new Date(Date.now() - 42 * 86400000).toISOString().slice(0, 10), { cache: "no-store" })
       .then(r => r.json()).then(j => {
         if (!j || !j.ok) throw new Error(j && j.error || "No answer");
         const before = JSON.stringify(SHEET.get(SHEET.CACHE, {}).data || null);
@@ -1280,6 +1280,58 @@ const SHEET = {
   },
   check(k) { return fetch(SHEET.URL, { method: "POST", body: JSON.stringify({ action: "checkKey", key: k }) }).then(r => r.json()).then(j => !!(j && j.ok)).catch(() => null); },
   pending() { return SHEET.get(SHEET.QUEUE, []).length; },
+  /* ---- Tournament day: members, check-ins, scores and Finalize day ----
+     These switch on only when the Members tab holds the real member list (member numbers filled in, from Rob's import).
+     Until then the site keeps its built-in sample bowlers for the demo, and none of them are ever sent to the sheet. */
+  members() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || [];
+    return M.filter(r => String(r["Member #"] || "").trim()).map(r => ({ member: String(r["Member #"]).trim(), first: r["First name"] || "", last: r["Last name"] || "", city: r.City || "",
+      avg: +r.Average || 0, bonus: +r["Bonus pins"] || 0, hcp: r["Handicap override"] === "" || r["Handicap override"] == null ? null : +r["Handicap override"], nick: r["Nickname / other names"] || "" })); },
+  ready() { return SHEET.members().length >= 1; },
+  yes: v => v ? "Yes" : "",
+  ckOut(r) { return { "Squad": r.squad, "Member #": r.member, "First name": r.first, "Last name": r.last, "City": r.city, "Average": r.avg, "Handicap": r.hcp == null ? "" : r.hcp,
+    "Bonus pins": r.bonus, "New member": SHEET.yes(r.isNew), "Lane": r.lane || "", "9-Tap Jackpot": SHEET.yes(r.jackpot), "Progressive": r.prog || "", "Bowl with": r.friend || "",
+    "Checked in by": r.via || "", "Paid": SHEET.yes(r.paid), "Checked in at": r.at ? new Date(r.at).toISOString() : "" }; },
+  ckIn(x) { return { member: String(x["Member #"]), first: x["First name"], last: x["Last name"], city: x.City, avg: +x.Average || 0, bonus: +x["Bonus pins"] || 0,
+    hcp: x.Handicap === "" || x.Handicap == null ? null : +x.Handicap, isNew: !!x["New member"], squad: +x.Squad || 0, lane: +x.Lane || null, pos: "",
+    jackpot: !!x["9-Tap Jackpot"], prog: x.Progressive === "" ? 0 : (isNaN(+x.Progressive) ? x.Progressive : +x.Progressive), friend: x["Bowl with"] || "",
+    via: x["Checked in by"] || "", paid: !!x.Paid, at: Date.parse(x["Checked in at"]) || Date.now() }; },
+  // Check-in list saved on this device: staff send the whole day; a bowler's phone sends just its own new check-in.
+  saveCheckins(e, l, old) {
+    if (!SHEET.ready()) return;
+    // Staff send only what changed, so a bowler's phone check-in that just reached the sheet is never wiped out.
+    if (SHEET.key()) { const was = new Map((old || []).map(r => [r.member + ":" + r.squad, JSON.stringify(SHEET.ckOut(r))]));
+      const rows = l.filter(r => was.get(r.member + ":" + r.squad) !== JSON.stringify(SHEET.ckOut(r))).map(SHEET.ckOut);
+      const removed = (old || []).filter(o => !l.some(r => r.member === o.member && r.squad === o.squad)).map(o => ({ "Member #": o.member, "Squad": o.squad }));
+      if (rows.length || removed.length) SHEET.send({ action: "saveCheckins", date: e.date, rows, removed }); return; }
+    l.filter(r => r.via === "phone" && !r._sent).forEach(r => { r._sent = 1;
+      fetch(SHEET.URL, { method: "POST", body: JSON.stringify({ action: "checkin", row: Object.assign({ "Date": e.date }, SHEET.ckOut(r)) }) }).catch(() => {}); });
+  },
+  saveScores(e, sq, v) {
+    if (!SHEET.ready()) return;
+    const ros = SC.roster(e, sq), rows = Object.entries(v.scores || {}).map(([id, g]) => { const b = ros.find(x => x.id === id); if (!b) return null;
+      return { "Lane": b.lane, "Member #": b.member || "", "Bowler": b.name, "Entry id": id, "Game 1": g[0] ?? "", "Game 2": g[1] ?? "", "Game 3": g[2] ?? "", "Game 4": g[3] ?? "" }; }).filter(Boolean);
+    SHEET.send({ action: "saveScores", id: "sc" + e.date + ":" + sq, date: e.date, squad: sq, rows, by: (STAFF.me && STAFF.me.userDetails) || "staff" });
+  },
+  finalize(e, r) { if (SHEET.ready()) SHEET.send({ action: "finalize", id: "fin" + e.date, date: e.date, result: { where: r.where, city: r.city, name: r.name, total: r.total, won: r.won, entries: r.entries, paid: r.paid, lowCash: r.lowCash, rows: r.rows } }); },
+  reopen(e) { if (SHEET.ready()) SHEET.send({ action: "reopen", id: "fin" + e.date, date: e.date }); },
+  // On tournament day, read the day's check-ins and scores every 15 seconds so every phone, the Desk and the TV agree.
+  pullDay(e) {
+    if (!SHEET.ready() || !e) return Promise.resolve();
+    return fetch(SHEET.URL + "?tabs=Check-ins,Scores&date=" + e.date, { cache: "no-store" }).then(r => r.json()).then(j => {
+      if (!j || !j.ok) return; const q = SHEET.get(SHEET.QUEUE, []), changed = [];
+      if (!q.some(x => x.action === "saveCheckins" && x.date === e.date)) { const k = CK.key(e), v = JSON.stringify((j.data["Check-ins"] || []).map(SHEET.ckIn));
+        if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } }
+      const by = {}; (j.data.Scores || []).forEach(x => { const sq = +x.Squad || 0; (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null)); });
+      Object.keys(by).forEach(sq => { if (q.some(x => x.action === "saveScores" && x.date === e.date && String(x.squad) === sq)) return; const k = SC.key(e, +sq), v = JSON.stringify(by[sq]);
+        if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } });
+      changed.forEach(key => window.dispatchEvent(new StorageEvent("storage", { key })));
+    }).catch(() => {});
+  },
+  // Desk, check-in, scores, standings and TV keep the next (and last) tournament's check-ins and scores in step.
+  startDay() { if (SHEET._day) return; const tick = () => { if (!SHEET.ready() || document.hidden) return; const v = (location.hash || "#home").slice(1).split("/")[0];
+      if (!["desk", "checkin", "scores", "standings", "live", "tv", "bowlers"].includes(v)) return;
+      [CK.event(), SC.event()].filter((x, i, a) => x && a.findIndex(y => y.date === x.date) === i).forEach(SHEET.pullDay); };
+    SHEET._day = setInterval(tick, 15000); window.addEventListener("hashchange", tick); tick(); },
   // Setup panel: connect this device to the sheet with the staff key (until staff sign-in carries it for us).
   drawBox() {
     const box = document.getElementById("su-sheet"); if (!box) return;
@@ -2890,7 +2942,7 @@ const SC = {
     const pool = mem.filter(m => !ckd.has(m.member));
     // Sample bowlers are drawn from the member list, so handicap and bonus pins edited on the Bowlers page apply here too. may use any of the center's 32 lanes; some pairs sit empty. Bowlers per lane vary (1 to 3).
     const empty = [[3, 7, 9, 12, 15], [2, 6, 10, 11, 14], [4, 5, 8, 13, 16]][sq % 3];
-    const cf = CFG.get(e); for (let lane = cf.first; lane <= cf.last; lane++) { if (empty.includes(Math.ceil((lane - cf.first + 1) / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
+    const cf = CFG.get(e); if (!SHEET.ready()) for (let lane = cf.first; lane <= cf.last; lane++) { if (empty.includes(Math.ceil((lane - cf.first + 1) / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
       const left = pool.filter(m => !used.has(m.member)), pickR = rnd();
       if (left.length) { const m = left[Math.floor(pickR * left.length)]; used.add(m.member); out.push(SC.entry("s" + lane + "-" + k, lane, m)); continue; }
       let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
@@ -2905,14 +2957,14 @@ const SC = {
   load(e, sq) {
     try { const v = JSON.parse(localStorage.getItem(SC.key(e, sq))); if (v && v.scores) return v; } catch (_) {}
     const v = { scores: {} };
-    if (sq === 0) { // demo: first squad has Game 1 in; Games 2 and 3 are empty, ready to enter
+    if (sq === 0 && !SHEET.ready()) { // demo: first squad has Game 1 in; Games 2 and 3 are empty, ready to enter
       let s = 99;
       const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
       SC.roster(e, sq).forEach((b, i) => { const g = [Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70)))]; v.scores[b.id] = g; });
     }
     return v;
   },
-  save(e, sq, v) { v.savedOn = TODAY_ISO; try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} },
+  save(e, sq, v) { v.savedOn = TODAY_ISO; try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} SHEET.saveScores(e, sq, v); },
   // Only the best N games count (setup "games that count"); lower games beyond N are dropped.
   counted(arr, ng) { const keep = Math.min(CFG.get(SC.event()).count, ng), idx = arr.map((x, i) => i).filter(i => typeof arr[i] === "number").sort((a, b) => arr[b] - arr[a] || a - b), use = idx.slice(0, keep); return { sum: use.reduce((s, i) => s + arr[i], 0), drop: idx.length > keep ? idx.slice(keep) : [], n: use.length }; }
 };
@@ -2950,8 +3002,8 @@ const FIN = {
       bio: [`${f} finished on top of ${entries} entries with ${w.hd} (${w.scr} scratch plus ${w.hc} handicap and ${w.bo} bonus pins${cnt < ng ? `, best ${cnt} of ${ng} games` : ""}).`],
       rows: out, final: true, auto: !!auto, finalizedAt: new Date().toISOString() };
   },
-  finalize(e, auto) { const r = FIN.build(e, auto); if (!r) return null; const a = FIN.all(); a[e.date] = r; FIN.put(a); FIN.sync(); return r; },
-  reopen(e) { const a = FIN.all(); delete a[e.date]; FIN.put(a); FIN.sync(); },
+  finalize(e, auto) { const r = FIN.build(e, auto); if (!r) return null; const a = FIN.all(); a[e.date] = r; FIN.put(a); FIN.sync(); SHEET.finalize(e, r); return r; },
+  reopen(e) { const a = FIN.all(); delete a[e.date]; FIN.put(a); FIN.sync(); SHEET.reopen(e); },
   // Keep HIST (Results year / month / tournament browser) in step with the finalized days on this device.
   sync() {
     for (let i = HIST.list.length - 1; i >= 0; i--) if (HIST.list[i].final) HIST.list.splice(i, 1);
@@ -2975,6 +3027,8 @@ function wireScores() {
   const e = SC.event(), ng = SC.games(e), sq = SC.squad;
   const roster = SC.roster(e, sq), state = SC.load(e, sq);
   const pairs = []; roster.forEach(b => { const p = Math.floor((b.lane - 1) / 2); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [p * 2 + 1, p * 2 + 2], items: [] }); g.items.push(b); });
+  if (!roster.length) { $("#sc-lane-row").hidden = true; $("#sc-body").innerHTML = `<div class="panel"><h3>No bowlers checked in for this squad yet</h3><p class="meta">Scores can be entered once bowlers check in on the Desk or on their phones.</p></div>`;
+    document.querySelectorAll("#sc-squads [data-squad]").forEach(x => x.addEventListener("click", () => { SC.squad = +x.dataset.squad; SC.game = null; SC.lanes = null; route(); })); return; }
   const got = (b, g) => typeof (state.scores[b.id] || [])[g] === "number";
   const doneCount = g => roster.filter(b => got(b, g)).length;
   if (SC.game === null || (SC.game !== "board" && SC.game >= ng)) { SC.game = 0; for (let g = 0; g < ng; g++) { SC.game = g; if (doneCount(g) < roster.length) break; } }
@@ -3077,6 +3131,7 @@ const CK = {
       CK._m = out;
     }
     const ed = CK.get("9tap-member-edits", {});
+    if (SHEET.ready()) return SHEET.members().concat(CK.newMembers().filter(n => !SHEET.members().some(m => m.member === n.member))).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
     return CK._m.concat(CK.newMembers()).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
   },
   // Handicap: a staff-set handicap wins; otherwise 90% of (220 - average). Bonus pins are added on top.
@@ -3097,7 +3152,7 @@ const CK = {
   hcp(avg) { return avg ? Math.trunc((220 - Math.max(125, avg)) * 0.9) : 0; },
   key(e) { return `9tap-checkins:${e.date}`; },
   list(e) { return CK.get(CK.key(e), []); },
-  save(e, l) { CK.letters(e, l); CK.put(CK.key(e), l); },
+  save(e, l) { const old = CK.list(e); CK.letters(e, l); CK.put(CK.key(e), l); SHEET.saveCheckins(e, l, old); },
   mine(e) { return CK.get(`9tap-mycheckin:${e.date}`, []); },
   find(q) {
     q = q.trim().toLowerCase(); if (!q) return [];
@@ -3830,7 +3885,7 @@ if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" +
 FIN.auto(); FIN.sync();
 STAFF.load().finally(route);
 // Fresh data from the Google Sheet: redraw public pages when it changed (staff pages keep what's being typed).
-SHEET.flush(); SHEET.refresh().then(changed => { POTS.load(); const v = (location.hash || "#home").slice(1).split("/")[0];
+SHEET.flush(); SHEET.refresh().then(changed => { SHEET.startDay(); POTS.load(); const v = (location.hash || "#home").slice(1).split("/")[0];
   if (changed && !STAFF.views.includes(v)) route(); const b = document.getElementById("su-sheet"); if (b && SHEET.drawBox) SHEET.drawBox(); });
 </script>
 
