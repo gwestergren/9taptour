@@ -239,7 +239,7 @@ p { margin: 0; }
 .nl-frame iframe { display: block; border: 0; transform-origin: 0 0; pointer-events: auto; }
 .nl-frame.clipped::after { content: ""; position: absolute; inset: auto 0 0; height: 70px; background: linear-gradient(to bottom, transparent, var(--surface)); pointer-events: none; }
 .nl-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); }
-.nl-more { font: 600 .88rem var(--font-body); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.nl-more { display: block; line-height: 1.3; flex: 1; text-align: center; text-decoration: none; font: 600 .88rem var(--font-body); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
 .nl-more:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .nl-frame { transition: none; } }
 .email-dlg { width: min(640px, calc(100vw - 24px)); height: calc(100vh - 48px); max-height: none; border: 0; border-radius: 12px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); overflow: hidden; }
@@ -2258,7 +2258,7 @@ function newsletterCard(c) {
   if (n.html) return `<aside class="nl nl-mail" aria-label="Tour newsletter">
     <div class="nl-top"><span>${n.preview ? "Tour email · preview" : "Tour newsletter"}</span><span>${esc(sent)}</span></div>
     <div class="nl-frame"><iframe src="${n.html}" title="${esc(n.subject)} (email from the Tour)" scrolling="no" tabindex="-1"></iframe></div>
-    <div class="nl-actions"><button type="button" class="nl-more" aria-haspopup="dialog">Show the whole email</button><a class="link-more" href="${n.html}" target="_blank" rel="noopener">Open full size ↗</a></div>
+    <div class="nl-actions"><button type="button" class="nl-more" aria-haspopup="dialog">Pop-up window</button><a class="nl-more" href="${n.html}" target="_blank" rel="noopener">New tab ↗</a></div>
     <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
   </aside>`;
   return `<aside class="nl" aria-label="Tour newsletter">
@@ -2288,7 +2288,7 @@ function fitNewsletter() {
   const box = $(".nl-frame"); if (!box) return;
   const size = scaleEmail(box, 560);
   window.removeEventListener("resize", fitNewsletter.r || (() => {})); fitNewsletter.r = size; window.addEventListener("resize", size);
-  $(".nl-more").addEventListener("click", () => openEmail(box.querySelector("iframe").getAttribute("src"), box.querySelector("iframe").title));
+  $("button.nl-more").addEventListener("click", () => openEmail(box.querySelector("iframe").getAttribute("src"), box.querySelector("iframe").title));
 }
 function openEmail(src, title) {
   let d = $("#email-dlg");
