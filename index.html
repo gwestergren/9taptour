@@ -3228,7 +3228,7 @@ const CK = {
 
 /* ---- Squad check-in control (Desk): open the first squad, close each squad when bowling starts ---- */
 const CKCTL = {
-  html() { return `<div class="panel dk-ctl-ck" id="ckc"><div class="su-state" id="ckc-state"></div><div class="ckc-btns"><button type="button" class="ck-back su-stop" id="ckc-stop" hidden></button><button type="button" class="btn btn-primary" id="ckc-btn"></button></div></div>`; },
+  html() { return `<div class="panel dk-ctl-ck" id="ckc"><div class="su-state" id="ckc-state"></div><div class="ckc-btns"><button type="button" class="ck-back su-stop" id="ckc-undo" hidden></button><button type="button" class="ck-back su-stop" id="ckc-stop" hidden></button><button type="button" class="btn btn-primary" id="ckc-btn"></button></div></div>`; },
   wire(e, say) {
     const draw = () => {
       if (!$("#ckc")) return false;
@@ -3240,6 +3240,8 @@ const CKCTL = {
       const b = $("#ckc-btn");
       b.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
       b.dataset.act = st.state; b.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
+      const cl = c.closed || [], last = cl[cl.length - 1], undo = $("#ckc-undo"); // reopen the squad closed most recently (by mistake, or for a late bowler)
+      undo.hidden = !c.open || !cl.length || st.state === "done"; if (!undo.hidden) undo.textContent = `Reopen ${c.squads[last]} squad`;
       const stop = $("#ckc-stop"); stop.hidden = !c.open; stop.textContent = st.state === "done" ? "Start over" : "Turn off check-in";
       return true;
     };
@@ -3254,6 +3256,8 @@ const CKCTL = {
       const now = CFG.status(c), nm = i => c.squads[i];
       say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(st.k)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(now.k)} squad.`);
     });
+    $("#ckc-undo").addEventListener("click", () => { const c = CFG.get(e), cl = (c.closed || []).slice(), j = cl.pop(); if (j == null) return;
+      c.closed = cl; c.forced = (c.forced || []).filter(x => x <= j).concat(j); CFG.put(e, c); draw(); say(`Check-in is open again for the ${c.squads[j]} squad.`); });
     $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; CFG.put(e, c); draw(); say("Check-in is off. Press Open check-in to start again with the first squad."); });
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
