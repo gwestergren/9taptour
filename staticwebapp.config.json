@@ -29,7 +29,8 @@
     "exclude": [
       "/staff",
       "/img/*",
-      "/docs/*"
+      "/docs/*",
+      "/newsletters/*"
     ]
   },
   "globalHeaders": {

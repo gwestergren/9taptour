@@ -232,6 +232,13 @@ p { margin: 0; }
 .nl-pots b { font: 800 1.35rem var(--font-display); }
 .nl-foot { padding: 10px 16px; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); }
 @media (max-width: 900px) { .r-top { grid-template-columns: 1fr; gap: 22px; } }
+.nl-frame { position: relative; overflow: hidden; background: #bacfdd; transition: height .25s; }
+.nl-frame iframe { display: block; border: 0; transform-origin: 0 0; pointer-events: auto; }
+.nl-frame.clipped::after { content: ""; position: absolute; inset: auto 0 0; height: 70px; background: linear-gradient(to bottom, transparent, var(--surface)); pointer-events: none; }
+.nl-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line); }
+.nl-more { font: 600 .88rem var(--font-body); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.nl-more:hover { border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .nl-frame { transition: none; } }
 .rh-opts a, .rh-opts span { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; text-align: center; white-space: nowrap; }
 .rh-opts a:hover { border-color: var(--accent); color: var(--accent); }
 .rh-opts a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -2151,14 +2158,14 @@ const NEWS_REAL = {
       "Shooting his highest series to date, Brian Lascala took 2nd place shooting an impressive 800, just ONE MARK short of his first Title. Joining the Tour two years ago, his highest previous finish was 8th. He has consistently worked on his craft to reach the top rung only to miss it by 11 pins this weekend. With the top spot now in sight, everyone should be watching Brian in future events. He will be taking home a nice $1,150.00 this week!",
       "We had a tie for 3rd with Mary Bridgman and Kris Koepke, both shooting a sweet 798. Both finished only 22 pins away from the top. They found the shot and they each put together 3 strong games, just not quite enough to earn what would have been Mary's first Win and Kris's 2nd Title. They each took $444.00 for their strong showing.",
       "Next week we will be at Bowlero-Acme for our Tour favorite 'Best 3 out of 4' format. Sunday, July 19th, Bowlero-Acme (South Center), 10:00am, 12:30pm & 3:00pm."],
-    jackpot: 11502, progressive: 2681, real: true },
+    jackpot: 11502, progressive: 2681, real: true, html: "newsletters/2026-07-13.html" },
   // Preview email sent before the Nov 22, 2026 Angel of the Winds event; it shows on that event's Results page once the day is posted.
   "2026-11-22": { date: "2026-11-18", subject: "5 Golden Shots & 7-Middle in Last 7",
     kick: ["5 BIG Jackpot $$ @ A.O.W.", "3 'Golden Shots' + 2 Middle-7", "5th yearly record in a row", "Sunday · 11:00 & 1:30 & 4:00"],
     paras: ["Angel of the Winds has become so popular with our bowlers, it's earned a spot on our regular Tour schedule for several years now. It's also been a very 'Hot House' for BIG Jackpot payouts with FIVE big payouts in our last SEVEN visits. THREE of those were 'Golden Shots' giving Earl Kleist & Walt Dalrymple (twice) one more ball to take down the Jackpot. While Will Twyman & Steve Ryan each hit 7-Middle Taps for BIG paydays.",
       "Some of our bowlers think it's a long trip, but according to Google Maps, it's only 1 hr. 15 min. drive from Tacoma (no traffic). If you've been there before, you're aware of what a beautiful facility it is. We've been hearing from many of our Members that have been looking forward to Angel of the Winds this weekend.",
       "FIVE years in-a-row the Tour has broken its record for 'Total Payouts'. That amazing streak started in our first full year back from Covid in 2022. We first raised the bar to $413,858 in 2022, then 2023 it climbed to $422,708, it was shattered in 2024 with $561,697, last year it EXPLODED again to $642,139 and we didn't think that record could be touched... last weekend's huge Vet's Day Tourney pushed our 2026 total to an amazing $599,742 with 4 events still on the schedule. Looks like we could do the unexpected and top $650K this year!"],
-    jackpot: 12234, progressive: 3255, real: true, preview: true }
+    jackpot: 12234, progressive: 3255, real: true, preview: true, html: "newsletters/2026-11-18.html" }
 };
 function newsFor(c) {
   if (NEWS_REAL[c.date]) return NEWS_REAL[c.date];
@@ -2177,6 +2184,13 @@ function newsFor(c) {
 }
 function newsletterCard(c) {
   const n = newsFor(c), sent = new Date(n.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  // A real email is shown as the email itself (its own layout and pictures), scaled to fit; tracking and the unsubscribe footer were removed from the saved copy.
+  if (n.html) return `<aside class="nl nl-mail" aria-label="Tour newsletter">
+    <div class="nl-top"><span>${n.preview ? "Tour email · preview" : "Tour newsletter"}</span><span>${esc(sent)}</span></div>
+    <div class="nl-frame"><iframe src="${n.html}" title="${esc(n.subject)} (email from the Tour)" scrolling="no" tabindex="-1"></iframe></div>
+    <div class="nl-actions"><button type="button" class="nl-more" aria-expanded="false">Show the whole email</button><a class="link-more" href="${n.html}" target="_blank" rel="noopener">Open full size ↗</a></div>
+    <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
+  </aside>`;
   return `<aside class="nl" aria-label="Tour newsletter">
     <div class="nl-top"><span>Tour newsletter</span><span>${esc(sent)}</span></div>
     <div class="nl-body">
@@ -2189,6 +2203,19 @@ function newsletterCard(c) {
     <div class="nl-pots"><div><span>9-Tap Jackpot</span><b>${money(n.jackpot)}</b></div><div><span>Progressive Pot</span><b>${money(n.progressive)}</b></div></div>
     <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
   </aside>`;
+}
+/* Scale a real newsletter email (600px wide) to the side panel; show the top until "Show the whole email". */
+function fitNewsletter() {
+  const box = $(".nl-frame"); if (!box) return;
+  const f = box.querySelector("iframe"), btn = $(".nl-more"), W = 600;
+  const size = () => { let doc; try { doc = f.contentDocument; } catch (_) {} if (!doc || !doc.body) return;
+    const k = Math.min(1, box.clientWidth / W), h = doc.documentElement.scrollHeight;
+    f.style.width = W + "px"; f.style.height = h + "px"; f.style.transform = `scale(${k})`;
+    const full = Math.ceil(h * k), open = btn.getAttribute("aria-expanded") === "true";
+    box.style.height = (open ? full : Math.min(full, 560)) + "px"; box.classList.toggle("clipped", !open && full > 560); btn.hidden = full <= 560; };
+  f.addEventListener("load", size); if (f.contentDocument && f.contentDocument.readyState === "complete") size();
+  btn.addEventListener("click", () => { const o = btn.getAttribute("aria-expanded") !== "true"; btn.setAttribute("aria-expanded", String(o)); btn.textContent = o ? "Show less" : "Show the whole email"; size(); if (!o) box.scrollIntoView({ block: "nearest" }); });
+  window.removeEventListener("resize", fitNewsletter.r || (() => {})); fitNewsletter.r = size; window.addEventListener("resize", size);
 }
 let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
@@ -3158,7 +3185,7 @@ function wire(view) {
     btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
     if (btns[0]) renderChamps(btns[0].dataset.month);
   }
-  if (view === "results") { renderResults(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
+  if (view === "results") { renderResults(); fitNewsletter(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
   if (view === "rules") {
     $("#rule-find").addEventListener("input", e => {
       const q = e.target.value.trim().toLowerCase(); let any = false;
