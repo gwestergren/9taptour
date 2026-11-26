@@ -239,6 +239,16 @@ p { margin: 0; }
 .nl-more { font: 600 .88rem var(--font-body); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 .nl-more:hover { border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .nl-frame { transition: none; } }
+.email-dlg { width: min(640px, calc(100vw - 24px)); height: calc(100vh - 48px); max-height: none; border: 0; border-radius: 12px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); overflow: hidden; }
+.email-dlg[open] { display: flex; flex-direction: column; }
+.email-dlg::backdrop { background: rgba(10,24,28,.6); }
+.email-dlg-bar { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 60px 12px 18px; border-bottom: 1px solid var(--line); }
+.email-dlg-bar b { flex: 1; min-width: 0; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.email-dlg-bar a { white-space: nowrap; font-size: .88rem; }
+.email-dlg-bar .dlg-x { top: 50%; transform: translateY(-50%); }
+.email-dlg-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: #bacfdd; }
+.email-dlg-frame { transition: none; }
+@media (max-width: 480px) { .email-dlg { width: 100vw; height: 100dvh; max-width: none; border-radius: 0; } .email-dlg-bar a { display: none; } }
 .rh-opts a, .rh-opts span { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; text-align: center; white-space: nowrap; }
 .rh-opts a:hover { border-color: var(--accent); color: var(--accent); }
 .rh-opts a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -2188,7 +2198,7 @@ function newsletterCard(c) {
   if (n.html) return `<aside class="nl nl-mail" aria-label="Tour newsletter">
     <div class="nl-top"><span>${n.preview ? "Tour email · preview" : "Tour newsletter"}</span><span>${esc(sent)}</span></div>
     <div class="nl-frame"><iframe src="${n.html}" title="${esc(n.subject)} (email from the Tour)" scrolling="no" tabindex="-1"></iframe></div>
-    <div class="nl-actions"><button type="button" class="nl-more" aria-expanded="false">Show the whole email</button><a class="link-more" href="${n.html}" target="_blank" rel="noopener">Open full size ↗</a></div>
+    <div class="nl-actions"><button type="button" class="nl-more" aria-haspopup="dialog">Show the whole email</button><a class="link-more" href="${n.html}" target="_blank" rel="noopener">Open full size ↗</a></div>
     <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
   </aside>`;
   return `<aside class="nl" aria-label="Tour newsletter">
@@ -2204,18 +2214,32 @@ function newsletterCard(c) {
     <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
   </aside>`;
 }
-/* Scale a real newsletter email (600px wide) to the side panel; show the top until "Show the whole email". */
+/* Scale a real newsletter email (600px wide) to its box. The side panel shows the top; "Show the whole email" opens it in a pop-up. */
+function scaleEmail(box, clip) {
+  const f = box.querySelector("iframe"), W = 600;
+  const size = () => { let doc; try { doc = f.contentDocument; } catch (_) {} if (!doc || !doc.body || !box.isConnected) return;
+    const k = Math.min(1, box.clientWidth / W), h = doc.documentElement.scrollHeight, full = Math.ceil(h * k);
+    f.style.width = W + "px"; f.style.height = h + "px"; f.style.transform = `scale(${k})`;
+    box.style.height = (clip ? Math.min(full, clip) : full) + "px"; box.classList.toggle("clipped", !!clip && full > clip); };
+  f.addEventListener("load", size); if (f.contentDocument && f.contentDocument.readyState === "complete") size();
+  return size;
+}
 function fitNewsletter() {
   const box = $(".nl-frame"); if (!box) return;
-  const f = box.querySelector("iframe"), btn = $(".nl-more"), W = 600;
-  const size = () => { let doc; try { doc = f.contentDocument; } catch (_) {} if (!doc || !doc.body) return;
-    const k = Math.min(1, box.clientWidth / W), h = doc.documentElement.scrollHeight;
-    f.style.width = W + "px"; f.style.height = h + "px"; f.style.transform = `scale(${k})`;
-    const full = Math.ceil(h * k), open = btn.getAttribute("aria-expanded") === "true";
-    box.style.height = (open ? full : Math.min(full, 560)) + "px"; box.classList.toggle("clipped", !open && full > 560); btn.hidden = full <= 560; };
-  f.addEventListener("load", size); if (f.contentDocument && f.contentDocument.readyState === "complete") size();
-  btn.addEventListener("click", () => { const o = btn.getAttribute("aria-expanded") !== "true"; btn.setAttribute("aria-expanded", String(o)); btn.textContent = o ? "Show less" : "Show the whole email"; size(); if (!o) box.scrollIntoView({ block: "nearest" }); });
+  const size = scaleEmail(box, 560);
   window.removeEventListener("resize", fitNewsletter.r || (() => {})); fitNewsletter.r = size; window.addEventListener("resize", size);
+  $(".nl-more").addEventListener("click", () => openEmail(box.querySelector("iframe").getAttribute("src"), box.querySelector("iframe").title));
+}
+function openEmail(src, title) {
+  let d = $("#email-dlg");
+  if (!d) { d = document.createElement("dialog"); d.id = "email-dlg"; d.className = "email-dlg"; document.body.appendChild(d);
+    d.addEventListener("click", e => { if (e.target === d) d.close(); }); }
+  d.innerHTML = `<div class="email-dlg-bar"><b>${esc(title.replace(/ \(email from the Tour\)$/, ""))}</b><a class="link-more" href="${src}" target="_blank" rel="noopener">Open in new tab ↗</a><button type="button" class="dlg-x" aria-label="Close">×</button></div>
+    <div class="email-dlg-scroll"><div class="nl-frame email-dlg-frame"><iframe src="${src}" title="${esc(title)}" scrolling="no"></iframe></div></div>`;
+  d.querySelector(".dlg-x").addEventListener("click", () => d.close());
+  d.showModal();
+  const size = scaleEmail(d.querySelector(".email-dlg-frame"), 0);
+  const onR = () => size(); window.addEventListener("resize", onR); d.addEventListener("close", () => window.removeEventListener("resize", onR), { once: true });
 }
 let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
