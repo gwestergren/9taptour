@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 5 · Minimal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Public+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--ink:#161616;--muted:#666;--line:#e4e4e4;--red:#c7362b}
+*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:19px/1.65 "Public Sans",sans-serif}
+.wrap{max-width:1020px;margin:0 auto;padding:0 24px}a{color:inherit}
+h1,h2,h3{font-family:Fraunces,serif;font-weight:800;margin:0;letter-spacing:-.015em}
+header{display:flex;align-items:center;gap:14px;padding:26px 0}header img{width:46px}header b{font:800 22px Fraunces;white-space:nowrap}
+nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px 22px;font-size:17px}nav a{text-decoration:none;color:var(--muted)}nav a.on{color:var(--ink);font-weight:700}nav a.join{color:var(--red);font-weight:700}
+.k{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+.hero{padding:70px 0 50px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(54px,9vw,112px);line-height:.95;margin:16px 0 22px}
+.hero p.lead{font-size:24px;line-height:1.5;color:#333;max-width:680px;margin:0 0 24px}
+.facts{display:flex;flex-wrap:wrap;gap:12px 36px;font-size:18px;color:var(--muted)}.facts b{color:var(--ink);font-size:22px;margin-right:4px}
+.more{display:inline-block;margin-top:28px;font-weight:700;text-decoration:none;border-bottom:2px solid var(--red);padding-bottom:2px}
+.row{display:grid;grid-template-columns:200px 1fr;gap:30px;padding:40px 0;border-bottom:1px solid var(--line)}
+.row h2{font-size:22px;font-family:"Public Sans";font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding-top:8px}
+.next h3{font-size:44px;line-height:1.05}.next p{margin:6px 0 0;color:var(--muted)}
+.pots{display:grid;grid-template-columns:1fr 1fr;gap:30px}.pots b{display:block;font:800 60px/1 Fraunces}.pots span{font-weight:700}.pots p{margin:6px 0 0;color:var(--muted);font-size:17px}
+.toggle{display:flex;gap:22px;margin-bottom:18px;font-weight:700}.toggle a{text-decoration:none;color:var(--muted)}.toggle a.on{color:var(--ink);border-bottom:2px solid var(--red)}
+.sum{color:var(--muted);margin:0 0 20px}.sum b{color:var(--ink)}
+.pick{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:17px;color:var(--muted);margin-bottom:12px}.pick b{color:var(--red)}
+ol{list-style:none;padding:0;margin:0}ol li{display:grid;grid-template-columns:80px 1fr auto;gap:16px;padding:14px 0;border-top:1px solid var(--line);align-items:baseline}
+ol .d{color:var(--muted);font-size:16px}ol .n{font:600 24px Fraunces}ol .n small{display:block;font:400 16px "Public Sans";color:var(--muted)}ol .w{font-weight:700}
+.sp{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:center}.sp img{height:30px;filter:grayscale(1);opacity:.7}.txt{font:700 15px Georgia;line-height:1;color:#555}.txt small{display:block;font:700 8px "Public Sans";letter-spacing:.24em;text-transform:uppercase}.fq{font:italic 800 16px "Public Sans";color:#555}
+footer{padding:36px 0 60px;color:var(--muted);font-size:16px}
+@media(max-width:760px){header{flex-wrap:wrap}nav{margin:0;gap:4px 16px}.row{grid-template-columns:1fr;gap:10px}.pots{grid-template-columns:1fr}ol li{grid-template-columns:62px 1fr auto}.hero{padding:30px 0 40px}.hero p.lead{font-size:21px}}
+</style></head><body><div class="wrap" id="app"></div>
+<script src="data.js"></script><script>
+const c=D.champ,n=D.next;document.getElementById('app').innerHTML=`
+<header><img src="../img/tour-logo.png" alt=""><b>9-Tap Tour</b><nav>${D.nav.map((x,i)=>`<a href="#" class="${i?'':'on'}">${x}</a>`).join('')}<a href="#" class="join">Join</a></nav></header>
+<section class="hero"><div class="k">Latest champion · ${c.where} · ${c.date}</div><h1>${c.name}</h1>
+<p class="lead">He left Vancouver Island at 3 AM on one hour of sleep, then strung three great games for an 841 series and his first Tour title.</p>
+<div class="facts"><span><b>${c.series}</b>series</span><span><b>${c.won}</b>won</span><span><b>${c.entries}</b>entries</span><span><b>${c.paid}</b>paid out</span></div>
+<a class="more" href="#">Read the story and full results</a></section>
+<section class="row next"><h2>Next up</h2><div><div class="k">${n.dow}, ${n.mon} ${n.day} · ${n.rel}</div><h3>${n.center}, ${n.city.replace(', WA','')}</h3><p>Squads at ${n.squads.join(', ')}. New members arrive an hour early to sign up.</p><a class="more" href="#">Full schedule</a></div></section>
+<section class="row"><h2>The pots</h2><div class="pots"><div><span>9-Tap Jackpot</span><b>${D.jackpot}</b><p>${D.jpNote} Record ${D.record}.</p></div><div><span>Progressive Pot</span><b>${D.progressive}</b><p>${D.progNote}</p></div></div></section>
+<section class="row"><h2>Champions</h2><div><div class="toggle"><a href="#" class="on">Wall of Champions</a><a href="#">Jackpot Winners</a></div>
+<p class="sum"><b>70</b> tournaments since January 2025, <b>$170,857</b> won by champions. Biggest check: <b>$3,782</b>, Ty Richardson.</p>
+<div class="pick"><b>2026</b><span>2025</span><span>·</span>${D.months.map(m=>m=='Nov'?`<b>${m}</b>`:`<span>${m}</span>`).join('')}</div>
+<ol>${D.wall.slice(0,6).map(w=>`<li><span class="d">${w[0]}</span><span class="n">${w[1]}<small>${w[2]}</small></span><span class="w">${w[3]}</span></li>`).join('')}</ol></div></section>
+<section class="row"><h2>Sponsors</h2><div class="sp">${SP()}</div></section>
+<footer>9-Tap Tour Inc. · PO Box 931, Sumner, WA 98390 · (253) 987-7975</footer>`;
+</script></body></html>

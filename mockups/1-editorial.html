@@ -1,0 +1,80 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 1 · Editorial</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Libre+Franklin:wght@500;700;800&display=swap">
+<style>
+:root{--paper:#f7f2e7;--ink:#1d1a16;--muted:#5e564a;--rule:#1d1a16;--red:#b3261e;}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;font-size:18px;line-height:1.6}
+a{color:inherit}.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.sans{font-family:"Libre Franklin",sans-serif}
+.top{display:flex;justify-content:space-between;align-items:center;font:600 13px "Libre Franklin";padding:10px 0;border-bottom:1px solid #cfc6b5;color:var(--muted)}
+.mast{text-align:center;padding:22px 0 14px;border-bottom:4px double var(--rule)}
+.mast .row{display:flex;align-items:center;justify-content:center;gap:22px}
+.mast img{width:84px}
+.mast h1{font:900 clamp(44px,7vw,92px)/1 "Playfair Display",serif;margin:0;letter-spacing:-.01em}
+.mast p{margin:6px 0 0;font:600 13px "Libre Franklin";letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 26px;padding:12px 0;border-bottom:1px solid var(--rule);font:700 15px "Libre Franklin";text-transform:uppercase;letter-spacing:.06em}
+nav a{text-decoration:none}nav a.on{color:var(--red)}nav .join{background:var(--red);color:#fff;padding:2px 12px}
+.front{display:grid;grid-template-columns:1fr 330px;gap:36px;padding:30px 0;border-bottom:1px solid var(--rule)}
+.kicker{font:800 13px "Libre Franklin";letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin:0 0 8px}
+.front h2{font:900 clamp(40px,5.4vw,70px)/1.02 "Playfair Display";margin:0 0 10px}
+.dek{font-size:22px;font-style:italic;color:var(--muted);margin:0 0 18px}
+.byline{font:600 14px "Libre Franklin";color:var(--muted);border-top:1px solid #cfc6b5;border-bottom:1px solid #cfc6b5;padding:8px 0;margin-bottom:18px}
+.lead{display:grid;grid-template-columns:260px 1fr;gap:24px}
+.photo{aspect-ratio:4/5;border:1px solid var(--rule)}.cap{font:500 13px "Libre Franklin";color:var(--muted);margin-top:6px}
+.cols{columns:2;column-gap:26px;column-rule:1px solid #cfc6b5}.cols p{margin:0 0 12px}
+.cols p:first-child::first-letter{float:left;font:900 64px/0.85 "Playfair Display";padding:6px 8px 0 0;color:var(--red)}
+.box{border:2px solid var(--rule);padding:18px 20px;margin-bottom:20px;background:#fffdf7}
+.box h3{font:800 13px "Libre Franklin";letter-spacing:.16em;text-transform:uppercase;margin:0 0 8px;border-bottom:1px solid var(--rule);padding-bottom:8px}
+.when{font:900 54px/1 "Playfair Display"}.when small{font:600 18px "Libre Franklin";color:var(--muted);margin-left:8px}
+.where{font:700 24px "Playfair Display";margin:4px 0 0}.squads{font:600 16px "Libre Franklin";margin:10px 0}
+.box .btn{display:inline-block;font:700 15px "Libre Franklin";background:var(--ink);color:var(--paper);padding:10px 16px;text-decoration:none}
+table{width:100%;border-collapse:collapse;font-family:"Libre Franklin";font-size:16px}td{padding:7px 0;border-bottom:1px dotted #9a907f}td.r{text-align:right;font-weight:700}
+.later li{margin-bottom:6px}
+.pots{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.pot{padding:26px 24px;text-align:center}.pot+.pot{border-left:1px solid var(--rule)}
+.pot .k{font:800 14px "Libre Franklin";letter-spacing:.18em;text-transform:uppercase;color:var(--red)}
+.pot .a{font:900 clamp(48px,6vw,76px)/1.05 "Playfair Display"}.pot p{margin:4px 0 0;color:var(--muted);font-size:16px}
+.sec{padding:30px 0;border-bottom:1px solid var(--rule)}
+.sechead{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.sechead h2{font:900 44px/1 "Playfair Display";margin:0}
+.tabs{font:700 15px "Libre Franklin"}.tabs a{margin-left:16px;text-decoration:none;padding-bottom:3px}.tabs a.on{border-bottom:3px solid var(--red)}
+.picker{font:600 15px "Libre Franklin";display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 18px;color:var(--muted)}.picker b{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-decoration-thickness:3px}
+.picker .sep{color:#cfc6b5}
+.statline{display:grid;grid-template-columns:repeat(4,1fr);border-top:2px solid var(--rule);border-bottom:2px solid var(--rule);margin-bottom:20px}
+.statline div{padding:14px 10px;text-align:center}.statline div+div{border-left:1px solid #cfc6b5}
+.statline b{display:block;font:900 32px "Playfair Display"}.statline span{font:700 12px "Libre Franklin";letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.list{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.item .ph{aspect-ratio:1;border:1px solid var(--rule);margin-bottom:8px}
+.item .d{font:700 12px "Libre Franklin";letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+.item h4{font:700 22px/1.15 "Playfair Display";margin:2px 0}.item p{margin:0;font-size:16px;color:var(--muted)}
+.spons{padding:24px 0;text-align:center}.spons h3{font:800 13px "Libre Franklin";letter-spacing:.2em;text-transform:uppercase;margin:0 0 14px}
+.sp{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:18px 34px}.sp img{height:34px;filter:grayscale(1);opacity:.85}
+.txt{font:700 16px Georgia;text-align:center;line-height:1}.txt small{display:block;font:700 9px "Libre Franklin";letter-spacing:.24em;text-transform:uppercase}.fq{font:italic 800 17px "Libre Franklin"}
+footer{border-top:4px double var(--rule);padding:22px 0 40px;font:500 15px "Libre Franklin";color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+@media(max-width:860px){.front{grid-template-columns:1fr}.lead{grid-template-columns:1fr}.photo{max-width:320px}.cols{columns:1}.list{grid-template-columns:1fr 1fr}.statline{grid-template-columns:1fr 1fr}.statline div:nth-child(3){border-left:0}.pots{grid-template-columns:1fr}.pot+.pot{border-left:0;border-top:1px solid var(--rule)}.top span:last-child{display:none}nav{gap:4px 16px;font-size:14px}.mast img{display:none}.photo{max-width:240px}}
+</style></head><body><div class="wrap" id="app"></div>
+<script src="data.js"></script><script>
+const c=D.champ,n=D.next;document.getElementById('app').innerHTML=`
+<div class="top"><span>Wednesday, November 26, 2026</span><span>PO Box 931, Sumner, WA · (253) 987-7975</span></div>
+<header class="mast"><div class="row"><img src="../img/tour-logo.png" alt="9-Tap Tour logo"><div><h1>The 9-Tap Tour</h1><p>Handicap singles bowling · Puget Sound · Since 2002</p></div><img src="../img/tour-logo.png" alt=""></div></header>
+<nav class="sans">${D.nav.map((x,i)=>`<a href="#" class="${i?'':'on'}">${x}</a>`).join('')}<a href="#" class="join">Join</a></nav>
+<section class="front"><article>
+<p class="kicker">Latest champion · ${c.where} · ${c.date}</p><h2>${c.name}, the Tour's international first-time champion</h2>
+<p class="dek">An 841 series after a 3:00 AM drive from Vancouver Island and one hour of sleep.</p>
+<div class="byline">${c.series} series · ${c.won} won · ${c.entries} entries · ${c.paid} paid out · cut ${c.cut}</div>
+<div class="lead"><div><div class="photo">${PIC('#9c3b2e')}</div><div class="cap">${c.name} with the champion's check. Sample photo.</div></div>
+<div class="cols">${c.story.map(p=>`<p>${p}</p>`).join('')}<p><a href="#"><b>Read the full results →</b></a></p></div></div>
+</article><aside>
+<div class="box"><h3>Next tournament · ${n.rel}</h3><div class="when">${n.mon} ${n.day}<small>${n.dow}</small></div><p class="where">${n.center}</p><div class="sans" style="color:var(--muted)">${n.city}</div>
+<div class="squads">Squads: ${n.squads.join(' · ')}</div><a class="btn" href="#">Full schedule</a><p class="sans" style="font-size:14px;color:var(--muted);margin:10px 0 0">New members: arrive an hour early to sign up.</p></div>
+<div class="box"><h3>Top three, ${c.short}</h3><table>${c.top.map((t,i)=>`<tr><td>${i+1}. ${t[0]}</td><td class="r">${t[1]}</td><td class="r">${t[2]}</td></tr>`).join('')}</table></div>
+</aside></section>
+<section class="pots"><div class="pot"><div class="k">9-Tap Jackpot</div><div class="a">${D.jackpot}</div><p>${D.jpNote} Record pot ${D.record}.</p></div>
+<div class="pot"><div class="k">Progressive Pot</div><div class="a">${D.progressive}</div><p>${D.progNote}</p></div></section>
+<section class="sec"><div class="sechead"><h2>Wall of Champions</h2><div class="tabs"><a href="#" class="on">Wall of Champions</a><a href="#">Jackpot Winners</a></div></div>
+<div class="statline">${D.stats.map(s=>`<div><b>${s[0]}</b><span>${s[1]}${s[2]?' · '+s[2]:''}</span></div>`).join('')}</div>
+<div class="picker">${D.years.map((y,i)=>i?`<span>${y}</span>`:`<b>${y}</b>`).join('')}<span class="sep">|</span>${D.months.map(m=>m=='Nov'?`<b>${m}</b>`:`<span>${m}</span>`).join('')}</div>
+<div class="list">${D.wall.slice(0,4).map((w,i)=>`<div class="item"><div class="ph">${PIC(['#9c3b2e','#3b5b7a','#6b5a3a','#355e4a'][i])}</div><div class="d">${w[0]}</div><h4>${w[1]}</h4><p>${w[2]} · ${w[3]}</p></div>`).join('')}</div></section>
+<section class="spons"><h3>Our sponsors</h3><div class="sp">${SP()}</div></section>
+<footer><span><b style="color:var(--ink)">9-Tap Tour Inc.</b> · PO Box 931, Sumner, WA 98390 · (253) 987-7975</span><span>Schedule · Results · Rules · Join · Staff login</span></footer>`;
+</script></body></html>

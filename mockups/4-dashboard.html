@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 4 · Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Archivo:wght@700;800;900&display=swap">
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#14202a;--muted:#5b6875;--red:#c7362b;--navy:#12303b;--gold:#b8892f;--line:#dde3e9}
+*{box-sizing:border-box}html{overflow-x:clip}body{margin:0;background:var(--bg);color:var(--ink);font:19px/1.55 "Atkinson Hyperlegible",sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}h1,h2,h3{font-family:Archivo;margin:0;letter-spacing:-.01em}
+header{background:#fff;border-bottom:1px solid var(--line)}.hd{display:flex;align-items:center;gap:14px;padding:12px 0}.hd img{width:52px}.hd h1{font-size:24px}.hd h1 small{display:block;font:400 14px "Atkinson Hyperlegible";color:var(--muted)}
+nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px}nav a{font-weight:700;font-size:17px;color:var(--ink);text-decoration:none;padding:9px 12px;border-radius:10px}nav a.on{background:var(--navy);color:#fff}nav a.join{background:var(--red);color:#fff}
+.hi{padding:22px 0 6px;display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:8px}.hi h2{font-size:30px}.hi p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;padding:12px 0 18px}
+.c{background:var(--card);border-radius:18px;padding:22px;border:1px solid var(--line)}
+.lbl{font:800 13px Archivo;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pill{background:#fde8e6;color:var(--red);border-radius:20px;padding:3px 10px;letter-spacing:.06em}
+.champ{grid-column:span 7;display:grid;grid-template-columns:200px 1fr;gap:20px;background:var(--navy);color:#fff;border:0}.champ .lbl{color:#9fc0cc}
+.champ .ph{border-radius:14px;overflow:hidden;aspect-ratio:4/5}.champ h3{font-size:44px;line-height:1}.champ p{color:#d6e3e8;margin:8px 0 14px;font-size:18px}
+.mini{display:flex;gap:22px;flex-wrap:wrap}.mini b{display:block;font:900 28px Archivo;color:#e3c286}.mini span{font-size:14px;color:#9fc0cc;text-transform:uppercase;letter-spacing:.08em}
+.btn{display:inline-block;font:800 17px Archivo;background:var(--red);color:#fff;border-radius:12px;padding:11px 18px;text-decoration:none;margin-top:14px}.btn.alt{background:transparent;border:2px solid var(--line);color:var(--ink)}
+.next{grid-column:span 5}.nd{display:flex;gap:16px;align-items:center}.cal{border:2px solid var(--red);border-radius:14px;text-align:center;width:96px;overflow:hidden;flex:none}.cal span{display:block;background:var(--red);color:#fff;font:800 15px Archivo;letter-spacing:.1em;padding:3px}.cal b{font:900 46px/1.2 Archivo}
+.next h3{font-size:30px}.next .m{color:var(--muted)}.sq{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.sq span{background:var(--bg);border-radius:10px;text-align:center;padding:8px;font-weight:700;font-size:20px}.sq small{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.up{list-style:none;padding:0;margin:14px 0 0;border-top:1px solid var(--line)}.up li{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:17px}.up b{width:64px;flex:none}
+.pot{grid-column:span 4}.pot .a{font:900 54px/1.05 Archivo}.pot p{margin:6px 0 0;color:var(--muted);font-size:17px}.pot.j .a{color:var(--red)}.pot.p .a{color:var(--navy)}
+.bar{height:10px;border-radius:6px;background:var(--bg);margin-top:12px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#e3c286,var(--red))}
+.top3{grid-column:span 4}.top3 table{width:100%;border-collapse:collapse}.top3 td{padding:8px 0;border-bottom:1px solid var(--line);font-size:18px}.top3 td.r{text-align:right;font-weight:700}.medal{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-weight:700;font-size:15px;margin-right:8px;background:#e3c286}
+.stat{grid-column:span 4;text-align:left}.stat b{display:block;font:900 34px Archivo}.stat span{color:var(--muted);font-size:16px}
+.wall{grid-column:span 12}.wh{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px}.wh h2{font-size:32px}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:4px}.seg a{padding:8px 14px;border-radius:9px;font-weight:700;text-decoration:none;color:var(--muted);font-size:17px}.seg a.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.pick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}select{font:700 17px "Atkinson Hyperlegible";padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:#fff}
+.chips a{display:inline-block;padding:6px 12px;border-radius:9px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:700;font-size:16px;margin:2px}.chips a.on{background:var(--navy);color:#fff}.chips a.off{opacity:.4}
+.wg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.wc{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:10px}.wc .ph{width:72px;height:72px;border-radius:10px;overflow:hidden;flex:none}.wc b{display:block;font-size:18px;line-height:1.2}.wc span{font-size:15px;color:var(--muted)}.wc em{font-style:normal;color:var(--red);font-weight:700}
+.spons{grid-column:span 12}.sp{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.sp img,.sp .txt{height:64px;width:100%;object-fit:contain;border:1px solid var(--line);border-radius:12px;padding:10px}
+.txt{display:flex;flex-direction:column;justify-content:center;align-items:center;font:700 17px Georgia;line-height:1}.txt small{font:700 9px Archivo;letter-spacing:.24em;text-transform:uppercase;color:#8a6d2f}.fq{flex-direction:row;font:italic 800 17px Archivo}.fq i{color:var(--red)}
+footer{padding:10px 0 40px;color:var(--muted);font-size:16px}
+@media(max-width:960px){nav{flex-wrap:nowrap!important;overflow-x:auto;width:100%;margin:0!important;scrollbar-width:none}nav a{white-space:nowrap}.grid>*{grid-column:1/-1!important}.champ{grid-template-columns:minmax(0,1fr)}.champ .ph{max-width:150px}.wg{grid-template-columns:1fr}.sp{grid-template-columns:repeat(2,1fr)}.hd{flex-wrap:wrap}nav{margin:0}.stat{grid-column:span 6!important}.grid .stat{grid-column:auto}}
+@media(max-width:960px){nav{flex-wrap:nowrap!important;overflow-x:auto;width:100%;margin:0!important;scrollbar-width:none}nav a{white-space:nowrap}.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.grid>*:not(.stat){grid-column:1/-1!important}.stat{grid-column:auto!important}}
+</style></head><body><div id="app"></div>
+<script src="data.js"></script><script>
+const c=D.champ,n=D.next;document.getElementById('app').innerHTML=`
+<header><div class="wrap hd"><img src="../img/tour-logo.png" alt=""><h1>9-Tap Tour<small>Handicap singles bowling · Puget Sound</small></h1><nav>${D.nav.map((x,i)=>`<a href="#" class="${i?'':'on'}">${x}</a>`).join('')}<a href="#" class="join">Join</a></nav></div></header>
+<div class="wrap"><div class="hi"><h2>Welcome back, bowlers</h2><p>Wednesday, November 26 · Next tournament ${n.rel.toLowerCase()}</p></div>
+<div class="grid">
+<div class="c champ"><div class="ph">${PIC('#8e3a2f','#111')}</div><div><div class="lbl">Latest champion · ${c.short} · ${c.where}</div><h3>${c.name}</h3><p>${c.head} An 841 series after a 3:00 AM drive from Vancouver Island.</p>
+<div class="mini"><div><b>${c.series}</b><span>Series</span></div><div><b>${c.won}</b><span>Won</span></div><div><b>${c.entries}</b><span>Entries</span></div><div><b>${c.paid}</b><span>Paid out</span></div></div><p style="font-size:17px;margin-top:16px">${c.story[1]}</p><a class="btn" href="#">Read story & results</a></div></div>
+<div class="c next"><div class="lbl">Next tournament <span class="pill">${n.rel}</span></div><div class="nd"><div class="cal"><span>${n.mon.toUpperCase()}</span><b>${n.day}</b></div><div><h3>${n.center}</h3><div class="m">${n.dow} · ${n.city}</div></div></div>
+<div class="sq">${n.squads.map(s=>`<span>${s}<small>squad</small></span>`).join('')}</div>
+<ul class="up">${D.later.map(l=>`<li><b>${l[0]}</b><div>${l[1]}<br><span style="color:var(--muted);font-size:15px">${l[3]||l[2]}</span></div></li>`).join('')}</ul><a class="btn alt" href="#">Full schedule</a></div>
+<div class="c pot j"><div class="lbl">9-Tap Jackpot</div><div class="a">${D.jackpot}</div><div class="bar"><i style="width:95%"></i></div><p>95% of the record pot (${D.record}). ${D.jpNote}</p></div>
+<div class="c pot p"><div class="lbl">Progressive Pot</div><div class="a">${D.progressive}</div><p>${D.progNote}</p></div>
+<div class="c top3"><div class="lbl">Top 3 · ${c.short}</div><table>${c.top.map((t,i)=>`<tr><td><span class="medal" style="background:${['#e3c286','#d5dbe1','#e0b48c'][i]}">${i+1}</span>${t[0]}</td><td class="r">${t[1]}</td><td class="r">${t[2]}</td></tr>`).join('')}</table></div>
+${D.stats.slice(0,3).map(s=>`<div class="c stat"><div class="lbl">${s[1]}</div><b>${s[0]}</b><span>${s[2]||'&nbsp;'}</span></div>`).join('')}
+<div class="c wall"><div class="wh"><h2>Wall of Champions</h2><div class="seg"><a href="#" class="on">Wall of Champions</a><a href="#">Jackpot Winners</a></div></div>
+<div class="pick"><select aria-label="Year"><option>2026</option><option>2025</option></select><div class="chips">${D.months.map(m=>`<a href="#" class="${m=='Nov'?'on':m=='Dec'?'off':''}">${m}</a>`).join('')}</div></div>
+<div class="wg">${D.wall.map((w,i)=>`<div class="wc"><div class="ph">${PIC(['#8e3a2f','#3f6079','#6f5d3b','#3f6b53'][i%4],'#111',false)}</div><div><b>${w[1]}</b><span>${w[0]} · ${w[2]}</span><br><em>${w[3]}</em></div></div>`).join('')}</div></div>
+<div class="c spons"><div class="lbl">Our sponsors</div><div class="sp">${SP()}</div></div>
+</div><footer>9-Tap Tour Inc. · PO Box 931, Sumner, WA 98390 · Message line (253) 987-7975 · USBC certified</footer></div>`;
+</script></body></html>

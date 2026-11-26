@@ -1,0 +1,80 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 2 · Scoreboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+:root{--bg:#0b1220;--panel:#121c30;--line:#24324f;--ink:#e9eef7;--muted:#9fb0cc;--amber:#ffb627;--cyan:#38d6ff;--red:#ff4d4d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.55 Barlow,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.02em;margin:0}
+.mono{font-family:"Share Tech Mono",monospace}
+header{background:#060b15;border-bottom:3px solid var(--amber)}
+.hd{display:flex;align-items:center;gap:16px;padding:12px 0}.hd img{width:58px;background:#fff;border-radius:6px;padding:3px}
+.hd h1{font-size:34px;line-height:1}.hd small{display:block;font:600 13px Barlow;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px}nav a{font:700 16px "Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:4px}
+nav a.on{background:var(--amber);color:#111}nav a.join{border:2px solid var(--red);color:#fff}
+.ticker{background:var(--amber);color:#111;font:700 16px "Barlow Condensed";letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;padding:7px 0}
+.ticker span{margin-right:40px}
+.hero{display:grid;grid-template-columns:1.6fr 1fr;gap:22px;padding:26px 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
+.tag{font:700 14px "Barlow Condensed";letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+.champ h2{font-size:clamp(52px,7vw,88px);line-height:.95;margin:6px 0 4px}
+.champ .sub{color:var(--muted);font-size:19px;margin:0 0 16px}
+.frames{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--muted);border-radius:4px;margin:16px 0}
+.frame{border-right:2px solid var(--muted);position:relative;padding:22px 10px 10px;text-align:center;min-height:96px}.frame:last-child{border-right:0}
+.frame .box{position:absolute;top:0;right:0;width:40%;height:24px;border-left:2px solid var(--muted);border-bottom:2px solid var(--muted);font:600 13px Barlow;color:var(--muted);line-height:22px}
+.frame b{display:block;font:32px "Share Tech Mono";color:var(--amber)}.frame span{font:600 13px Barlow;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.champ p.story{color:#cfd9ea;margin:0 0 14px}
+.btn{display:inline-block;font:700 18px "Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;background:var(--amber);color:#111;padding:10px 18px;border-radius:6px;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);margin-left:8px}
+.lb{width:100%;border-collapse:collapse;margin-top:10px}.lb td{padding:10px 6px;border-top:1px solid var(--line);font-size:18px}.lb td.n{font:24px "Share Tech Mono";color:var(--amber);width:36px}.lb td.r{text-align:right;font-family:"Share Tech Mono";font-size:20px}
+.lane{text-align:center}.lane .big{font:800 82px/1 "Barlow Condensed";color:var(--cyan)}.lane .big small{font-size:30px;color:var(--ink);margin-right:8px}
+.lane h3{font-size:34px;margin-top:4px}.lane .city{color:var(--muted)}
+.sq{display:flex;gap:8px;justify-content:center;margin:16px 0}.sq span{border:2px solid var(--cyan);border-radius:6px;padding:8px 12px;font:22px "Share Tech Mono"}
+.countdown{display:inline-block;background:var(--red);color:#fff;font:700 15px "Barlow Condensed";letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.pots{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding-bottom:26px}
+.led{background:#05080f;border:2px solid #2c2207;border-radius:10px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.led .digits{font:clamp(44px,5.6vw,68px)/1 "Share Tech Mono";color:var(--amber);text-shadow:0 0 14px rgba(255,182,39,.55)}
+.led.prog .digits{color:var(--cyan);text-shadow:0 0 14px rgba(56,214,255,.5)}
+.led h3{font-size:26px}.led p{margin:4px 0 0;color:var(--muted);font-size:15px;max-width:260px}
+.sec{border-top:1px solid var(--line);padding:30px 0}
+.sechead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px}.sechead h2{font-size:46px}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px}.seg a{font:700 17px "Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border-radius:5px;color:var(--muted);text-decoration:none}.seg a.on{background:var(--cyan);color:#06121f}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.stats div{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:8px;padding:14px 16px}
+.stats b{display:block;font:34px "Share Tech Mono";color:var(--amber)}.stats span{font:600 14px Barlow;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}.pick a{font:700 17px "Barlow Condensed";padding:6px 12px;border:1px solid var(--line);border-radius:5px;color:var(--muted);text-decoration:none}.pick a.on{background:var(--amber);color:#111;border-color:var(--amber)}.pick a.off{opacity:.35}
+.board{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden}
+.board th{font:700 14px "Barlow Condensed";letter-spacing:.14em;text-transform:uppercase;color:#06121f;background:var(--cyan);text-align:left;padding:10px 14px}
+.board td{padding:13px 14px;border-top:1px solid var(--line);font-size:19px}.board td.m{font-family:"Share Tech Mono";color:var(--amber);text-align:right}.board td.d{font-family:"Share Tech Mono";color:var(--muted)}.board tr:first-child td{background:#1a2742}
+.board .nm{font-weight:700}
+.spons{background:#f4f6fa;padding:22px 0;text-align:center}.spons h3{color:#4a5874;font-size:16px;letter-spacing:.2em;margin-bottom:12px}
+.sp{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:14px}.sp img,.sp .txt{height:52px;background:#fff;border:1px solid #d7deea;border-radius:8px;padding:8px 14px;object-fit:contain;width:150px}
+.txt{display:flex;flex-direction:column;justify-content:center;font:700 15px Georgia;color:#222;line-height:1}.txt small{font:700 9px Barlow;letter-spacing:.24em;text-transform:uppercase;color:#8a6d2f}.fq{flex-direction:row;align-items:center;font:italic 800 16px Barlow}.fq i{color:#c7362b}
+footer{padding:24px 0 40px;color:var(--muted);font-size:15px}
+@media(max-width:900px){nav{flex-wrap:nowrap!important;overflow-x:auto;width:100%;margin:0!important;scrollbar-width:none}nav a{white-space:nowrap}:root{--mob:block}.hero,.pots{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.hd{flex-wrap:wrap}nav{margin:0}.frames{grid-template-columns:1fr 1fr}.frame:nth-child(2){border-right:0}.frame:nth-child(-n+2){border-bottom:2px solid var(--muted)}.board .hide{display:none}.led{flex-direction:column;align-items:flex-start}}
+</style></head><body><div id="app"></div>
+<script src="data.js"></script><script>
+const c=D.champ,n=D.next;document.getElementById('app').innerHTML=`
+<header><div class="wrap hd"><img src="../img/tour-logo.png" alt="9-Tap Tour"><h1>9-Tap Tour<small>Handicap singles · Puget Sound</small></h1>
+<nav>${D.nav.map((x,i)=>`<a href="#" class="${i?'':'on'}">${x}</a>`).join('')}<a href="#" class="join">Join</a></nav></div></header>
+<div class="ticker"><div class="wrap"><span>● Latest: ${c.name} 841 at ${c.where}</span><span>● Jackpot ${D.jackpot}</span><span>● Progressive ${D.progressive}</span><span>● Next: ${n.center}, ${n.mon} ${n.day}</span></div></div>
+<div class="wrap"><section class="hero">
+<div class="panel champ"><div class="tag">Latest champion · ${c.where} · ${c.date}</div><h2>${c.name}</h2><p class="sub">${c.head}</p>
+<div class="frames">${[["Series",c.series,"1st"],["Won",c.won,"$"],["Entries",c.entries,"#"],["Cut",c.cut,"✓"]].map(f=>`<div class="frame"><div class="box">${f[2]}</div><b>${f[1]}</b><span>${f[0]}</span></div>`).join('')}</div>
+<p class="story">${c.story[0]}</p><a class="btn" href="#">Read story</a><a class="btn ghost" href="#">Full results</a>
+<table class="lb">${c.top.map((t,i)=>`<tr><td class="n">${i+1}</td><td>${t[0]}</td><td class="r">${t[1]}</td><td class="r" style="color:var(--amber)">${t[2]}</td></tr>`).join('')}</table></div>
+<div class="panel lane"><div class="tag">Next tournament</div><p style="margin:8px 0"><span class="countdown">${n.rel}</span></p>
+<div class="big"><small>${n.mon.toUpperCase()}</small>${n.day}</div><div style="color:var(--muted)">${n.dow}</div><h3>${n.center}</h3><div class="city">${n.city}</div>
+<div class="sq">${n.squads.map(s=>`<span>${s}</span>`).join('')}</div><a class="btn" href="#">Full schedule</a>
+<p style="color:var(--muted);font-size:15px;margin:14px 0 0">New members: arrive an hour early to sign up.</p>
+<table class="lb" style="text-align:left;margin-top:16px">${D.later.map(l=>`<tr><td class="mono" style="color:var(--cyan)">${l[0]}</td><td>${l[1]}<div style="font-size:14px;color:var(--muted)">${l[3]||l[2]}</div></td></tr>`).join('')}</table></div>
+</section>
+<section class="pots"><div class="led"><div><h3>9-Tap Jackpot</h3><p>${D.jpNote} Record ${D.record}.</p></div><div class="digits">${D.jackpot}</div></div>
+<div class="led prog"><div><h3>Progressive Pot</h3><p>${D.progNote}</p></div><div class="digits">${D.progressive}</div></div></section>
+<section class="sec"><div class="sechead"><h2>Wall of Champions</h2><div class="seg"><a href="#" class="on">Wall of Champions</a><a href="#">Jackpot Winners</a></div></div>
+<div class="stats">${D.stats.map(s=>`<div><b>${s[0]}</b><span>${s[1]}${s[2]?' · '+s[2]:''}</span></div>`).join('')}</div>
+<div class="pick">${D.years.map((y,i)=>`<a href="#" class="${i?'':'on'}">${y}</a>`).join('')}<span style="width:14px"></span>${D.months.map(m=>`<a href="#" class="${m=='Nov'?'on':m=='Dec'?'off':''}">${m}</a>`).join('')}</div>
+<table class="board"><tr><th>Date</th><th>Champion</th><th class="hide">Center</th><th style="text-align:right">Won</th></tr>
+${D.wall.slice(0,7).map(w=>`<tr><td class="d">${w[0]}</td><td class="nm">${w[1]}<div class="mob" style="display:var(--mob,none);font-weight:400;font-size:15px;color:var(--muted)">${w[2]}</div></td><td class="hide">${w[2]}</td><td class="m">${w[3]}</td></tr>`).join('')}</table></section></div>
+<section class="spons"><h3>Support our sponsors</h3><div class="wrap sp">${SP()}</div></section>
+<footer class="wrap">9-Tap Tour Inc. · PO Box 931, Sumner, WA 98390 · Message line (253) 987-7975 · USBC certified</footer>`;
+</script></body></html>

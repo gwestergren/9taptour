@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup 6 · Retro alley</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap">
+<style>
+:root{--teal:#16787a;--teal2:#0f5658;--cream:#fff4dd;--coral:#e4573d;--mustard:#f2b134;--brown:#3a2a1f;--ink:#2b211a}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:19px/1.6 "Nunito Sans",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}h1,h2,h3{font-family:"Bowlby One",sans-serif;font-weight:400;margin:0;letter-spacing:.01em}
+.check{height:18px;background:repeating-conic-gradient(var(--brown) 0 25%,var(--cream) 0 50%) 0 0/18px 18px}
+header{background:var(--teal);color:var(--cream);position:relative;overflow:hidden}
+header:before{display:none;content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;background:radial-gradient(circle,var(--mustard) 0 18%,transparent 19%),conic-gradient(from 0deg,transparent 0 8deg,rgba(242,177,52,.35) 8deg 12deg,transparent 12deg 30deg);border-radius:50%;background-size:auto,auto}
+.hd{display:flex;align-items:center;justify-content:center;gap:18px;padding:18px 0 6px;position:relative}.hd img.logo{width:78px;background:var(--cream);border-radius:12px;padding:4px}
+.hd h1{font-size:clamp(40px,6vw,66px);color:var(--mustard);text-shadow:4px 4px 0 var(--brown);line-height:1}.hd p{margin:0;text-align:center;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:14px}
+nav{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;padding:14px 0 18px;position:relative}
+nav a{width:112px;height:40px;background:url(../img/pin.png) center/contain no-repeat;display:grid;place-items:center;padding-right:30px;color:var(--brown);font:800 11px "Nunito Sans";letter-spacing:.03em;text-transform:uppercase;text-decoration:none}
+nav a.on{color:var(--coral)}nav a.join{background:var(--coral);color:#fff;border-radius:22px;width:auto;padding:0 18px}
+.marquee{margin:34px auto;background:var(--brown);border-radius:28px;padding:14px;position:relative;box-shadow:8px 8px 0 var(--mustard)}
+.bulbs{border-radius:20px;padding:30px;background:var(--coral);color:var(--cream);background-image:radial-gradient(circle,#ffe9a8 0 4px,transparent 5px);background-size:28px 28px;background-position:0 0}
+.inner{background:var(--coral);margin:0;border-radius:14px;display:grid;grid-template-columns:240px 1fr 300px;gap:26px;align-items:center;padding:10px}
+.inner .ph{border-radius:22px;overflow:hidden;border:6px solid var(--cream);aspect-ratio:4/5}
+.ey{font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:14px;color:#ffe9a8}
+.inner h2{font-size:clamp(44px,5.5vw,70px);line-height:.95;color:var(--cream);text-shadow:4px 4px 0 var(--brown);margin:8px 0}
+.inner p{margin:0 0 14px;font-size:18px}
+.badges{display:flex;gap:10px;flex-wrap:wrap}.badges span{background:var(--cream);color:var(--brown);border-radius:30px;padding:6px 14px;font-weight:800;font-size:17px}
+.ticket{background:var(--cream);color:var(--ink);border-radius:16px;padding:20px;text-align:center;position:relative;border:3px dashed var(--brown)}
+.ticket .t{font-family:"Bowlby One";color:var(--teal);font-size:18px}.ticket .day{font:400 50px/1.1 "Bowlby One";color:var(--coral)}.ticket h3{font-size:26px;margin-top:4px}
+.ticket .sq{display:flex;gap:6px;justify-content:center;margin:10px 0;flex-wrap:wrap}.ticket .sq span{background:var(--teal);color:var(--cream);border-radius:8px;padding:4px 10px;font-weight:800}
+.btn{display:inline-block;font:400 17px "Bowlby One";background:var(--mustard);color:var(--brown);border-radius:30px;padding:10px 20px;text-decoration:none;box-shadow:3px 3px 0 var(--brown)}
+.pots{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin:10px 0 40px}
+.pot{display:flex;align-items:center;gap:22px;background:#fff;border:3px solid var(--brown);border-radius:24px;padding:22px;box-shadow:6px 6px 0 var(--teal)}
+.star{flex:none;width:150px;height:150px;display:grid;place-items:center;text-align:center;color:var(--brown);clip-path:polygon(50% 0,61% 18%,82% 9%,80% 31%,100% 38%,85% 54%,97% 73%,75% 76%,70% 98%,50% 86%,30% 98%,25% 76%,3% 73%,15% 54%,0 38%,20% 31%,18% 9%,39% 18%);background:var(--mustard);font:400 25px/1 "Bowlby One"}
+.pot.p .star{background:#8fd3c9}.pot h3{font-size:26px;color:var(--teal)}.pot p{margin:4px 0 0;font-size:17px}
+.wall{background:var(--teal);color:var(--cream);padding:46px 0;border-top:6px solid var(--brown);border-bottom:6px solid var(--brown)}
+.wh{text-align:center}.wh h2{font-size:clamp(38px,5vw,56px);color:var(--mustard);text-shadow:4px 4px 0 var(--brown)}
+.tog{display:inline-flex;background:var(--teal2);border-radius:30px;padding:5px;margin:14px 0 22px}.tog a{padding:8px 18px;border-radius:30px;font-weight:800;color:var(--cream);text-decoration:none}.tog a.on{background:var(--cream);color:var(--brown)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}.stats div{background:var(--brown);border-radius:18px;padding:16px;text-align:center}.stats b{display:block;font:400 30px "Bowlby One";color:var(--mustard)}.stats span{font-weight:800;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
+.pick{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:22px}.pick a{background:var(--teal2);color:var(--cream);text-decoration:none;font-weight:800;padding:6px 12px;border-radius:20px;font-size:16px}.pick a.on{background:var(--mustard);color:var(--brown)}.pick a.off{opacity:.4}
+.pol{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}.pc{background:#fff;color:var(--ink);padding:12px 12px 16px;border-radius:6px;box-shadow:5px 5px 0 var(--brown)}.pc:nth-child(odd){transform:rotate(-1.6deg)}.pc:nth-child(even){transform:rotate(1.4deg)}
+.pc .ph{aspect-ratio:1}.pc h3{font-size:20px;margin-top:10px;color:var(--teal)}.pc p{margin:0;font-size:16px}.pc b{color:var(--coral)}
+.spons{padding:36px 0;text-align:center}.spons h3{color:var(--teal);font-size:24px;margin-bottom:16px}.sp{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}.sp img,.sp .txt{height:60px;width:150px;object-fit:contain;background:#fff;border:3px solid var(--brown);border-radius:14px;padding:8px}
+.txt{display:flex;flex-direction:column;justify-content:center;align-items:center;font:700 16px Georgia;line-height:1}.txt small{font:800 9px "Nunito Sans";letter-spacing:.24em;text-transform:uppercase;color:#8a6d2f}.fq{flex-direction:row;font:italic 800 17px "Nunito Sans"}.fq i{color:var(--coral)}
+footer{background:var(--brown);color:var(--cream);padding:26px 0 40px;font-size:16px;text-align:center}
+@media(max-width:960px){.inner{grid-template-columns:1fr}.inner .ph{max-width:200px}.pots{grid-template-columns:1fr}.stats,.pol{grid-template-columns:1fr 1fr}.bulbs{padding:16px}.hd img.logo{width:52px}.pot{flex-direction:column;text-align:center}nav{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:10px 12px 14px}nav a{flex:none}}
+</style></head><body><div id="app"></div>
+<script src="data.js"></script><script>
+const c=D.champ,n=D.next;document.getElementById('app').innerHTML=`
+<header><div class="wrap"><div class="hd"><img class="logo" src="../img/tour-logo.png" alt=""><div><h1>9-Tap Tour</h1><p>Handicap singles · Puget Sound</p></div></div>
+<nav>${D.nav.map((x,i)=>`<a href="#" class="${i?'':'on'}">${x}</a>`).join('')}<a href="#" class="join">Join</a></nav></div></header><div class="check"></div>
+<div class="wrap"><section class="marquee"><div class="bulbs"><div class="inner"><div class="ph">${PIC('#f2b134','#3a2a1f')}</div>
+<div><div class="ey">Latest champion · ${c.where} · ${c.date}</div><h2>${c.name}</h2><p>${c.head} He drove down from Vancouver Island at 3 AM and strung three great games for an 841.</p>
+<div class="badges"><span>${c.series} series</span><span>${c.won} won</span><span>${c.entries} entries</span></div><p style="margin-top:16px"><a class="btn" href="#">Read his story</a></p></div>
+<div class="ticket"><div class="t">Next tournament · ${n.rel}</div><div class="day">${n.mon} ${n.day}</div><div>${n.dow}</div><h3>${n.center}</h3><div>${n.city}</div><div class="sq">${n.squads.map(s=>`<span>${s}</span>`).join('')}</div><a class="btn" href="#">Schedule</a></div>
+</div></div></section>
+<section class="pots"><div class="pot"><div class="star">${D.jackpot}</div><div><h3>9-Tap Jackpot</h3><p>${D.jpNote} Record pot ${D.record}.</p></div></div>
+<div class="pot p"><div class="star">${D.progressive}</div><div><h3>Progressive Pot</h3><p>${D.progNote}</p></div></div></section></div>
+<section class="wall"><div class="wrap"><div class="wh"><h2>Wall of Champions</h2><div class="tog"><a href="#" class="on">Wall of Champions</a><a href="#">Jackpot Winners</a></div></div>
+<div class="stats">${D.stats.map(s=>`<div><b>${s[0]}</b><span>${s[1]}${s[2]?'<br>'+s[2]:''}</span></div>`).join('')}</div>
+<div class="pick">${D.years.map((y,i)=>`<a href="#" class="${i?'':'on'}">${y}</a>`).join('')}</div><div class="pick">${D.months.map(m=>`<a href="#" class="${m=='Nov'?'on':m=='Dec'?'off':''}">${m}</a>`).join('')}</div>
+<div class="pol">${D.wall.slice(0,4).map((w,i)=>`<div class="pc"><div class="ph">${PIC(['#e4573d','#f2b134','#8fd3c9','#e4573d'][i],'#3a2a1f')}</div><h3>${w[1]}</h3><p>${w[0]} · ${w[2]}<br><b>${w[3]}</b></p></div>`).join('')}</div></div></section>
+<section class="spons"><div class="wrap"><h3>Thanks to our sponsors</h3><div class="sp">${SP()}</div></div></section><div class="check"></div>
+<footer>9-Tap Tour Inc. · PO Box 931, Sumner, WA 98390 · Message line (253) 987-7975</footer>`;
+</script></body></html>
