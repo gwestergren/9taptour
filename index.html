@@ -145,6 +145,11 @@ p { margin: 0; }
 .spot-bio { display: grid; gap: 10px; margin-top: 18px; max-width: 60ch; color: var(--on-deep-muted); }
 .spot-bio p:first-child { color: var(--on-deep); }
 .spot-bio p { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+span.mock-pic.mock-pic { position: relative; display: block; overflow: hidden; aspect-ratio: 126 / 112; background: linear-gradient(160deg, var(--m1), var(--m2)); padding: 0 !important; }
+.mock-pic svg { display: block; width: 100%; height: 100%; }
+.mock-pic .mf { fill: rgba(255,255,255,.12); } .mock-pic .mp-pins { fill: rgba(255,255,255,.3); }
+.mock-pic .ms { fill: rgba(8,22,26,.82); } .mock-pic .ms .mb { fill: #e3c286; }
+.mock-tag { position: absolute; left: 6px; top: 6px; font: 700 .62rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; }
 .spot-init { display: grid; place-items: center; background: linear-gradient(160deg, #c7362b, #8e1f17); color: #fff; font: 800 3.6rem var(--font-display); letter-spacing: .02em; }
 .spot-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 12px 32px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--deep-2); }
 .spot-stats b { display: block; font-size: 1.6rem; font-weight: 600; color: var(--maple); line-height: 1.1; }
@@ -1095,7 +1100,7 @@ const VIEWS = {
         return `<div class="spotlight">
         <p class="eyebrow" style="color:var(--maple)">Latest champion · ${esc(c.where)} · ${esc(parse(c.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p>
         <div class="spot-row">
-          ${c.champ ? `<img class="spot-photo" src="img/champ-${c.photo}.jpg" width="126" height="112" alt="${esc(c.name)}">` : `<span class="spot-photo spot-init" aria-hidden="true">${esc(c.name.split(/\s+/).filter(x => /^[A-Za-z]/.test(x)).slice(0, 2).map(x => x[0]).join(""))}</span>`}
+          ${c.champ ? `<img class="spot-photo" src="img/champ-${c.photo}.jpg" width="126" height="112" alt="${esc(c.name)}">` : mockPic(c, "spot-photo")}
           <div class="spot-text">
             <h1>${esc(first)}${last ? `<br>${esc(last)}` : ""}</h1>
             ${c.head ? `<p class="spot-sub">${esc(c.head)}</p>` : ""}
@@ -1144,22 +1149,6 @@ const VIEWS = {
         <span class="note">Shared by the top three finishers who paid in. Unclaimed money rolls over.</span>
       </div>
     </div></section>
-
-    ${(() => { const c = HIST.latest(), t = (c.top || []).slice(1), r = RECAP[c.date], jp = JACKPOTS.filter(j => j.d === c.date);
-      const lede = t.length ? t.map((x, i) => `${x[3] && /T/.test(x[3]) ? "Tied for 3rd" : i === 0 ? "In 2nd place" : "In 3rd place"}, <b>${esc(x[0])}</b>${x[1] ? ` shot ${x[1]}` : ""}${x[2] ? ` and took home ${money(x[2])}` : ""}.`).join(" ") + (c.lowCash ? ` It took ${c.lowCash} to cash.` : "") : "";
-      if (!lede && !jp.length) return "";
-      return `<section class="wrap section">
-      <header class="story-head" style="margin-bottom:18px"><div><p class="eyebrow">Latest results · ${esc(c.where)} · ${esc(parse(c.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p><h2 class="story-title">How the rest of the field finished</h2></div></header>
-      <div class="latest">
-        ${lede ? `<p class="lede" style="margin:0">${lede}</p>` : ""}
-        <ul class="side-pots">
-          ${jp.map(j => `<li><b>${esc(j.n.join(", ").replace(/, ([^,]*)$/, " & $1"))}</b> hit the ${esc(j.h)}${j.k === "jackpot" ? " and won the 9-Tap Jackpot" : j.k === "golden" ? " for a Golden Shot" : ""}, worth ${money(j.a)}${j.n.length > 1 ? " each" : ""}.</li>`).join("")}
-          <li>The 9-Tap Jackpot is now ${money(DATA.jackpot)}${DATA.jackpotRecord > DATA.jackpot ? `, closing in on the ${money(DATA.jackpotRecord)} record` : ""}. The Progressive Pot is ${money(DATA.progressive)}.</li>
-          ${r ? `<li><a href="newsletters/${r.sent}.html" target="_blank" rel="noopener">Read the Tour's full email recap ↗</a></li>` : ""}
-        </ul>
-      </div>
-    </section>`; })()}
-
     <section class="champs-band" aria-label="Wall of Champions and Jackpot Winners"><div class="wrap">
       <div class="cb-switch" role="tablist" aria-label="Show">
         <button type="button" role="tab" class="cb-tab" data-cbv="wall" aria-selected="true">Wall of Champions</button>
@@ -1262,7 +1251,7 @@ const VIEWS = {
     <section class="wrap section">
       <div class="r-top">
       <article class="story-body">
-        <header class="story-head">${c.champ ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : `<span class="champ-initials" aria-hidden="true">${esc(initials)}</span>`}<div><p class="eyebrow">Champion${c.recap && !c.top[0][2] ? "" : ` · Won ${money(c.won)}`}</p><h3 class="story-title">${c.recap && c.champ ? `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}` : c.recap ? `${esc(c.name)}<span class="story-sub">${esc(c.head)}</span>` : `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}`}</h3></div></header>
+        <header class="story-head">${c.champ ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : mockPic(c, "champ-initials")}<div><p class="eyebrow">Champion${c.recap && !c.top[0][2] ? "" : ` · Won ${money(c.won)}`}</p><h3 class="story-title">${c.recap && c.champ ? `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}` : c.recap ? `${esc(c.name)}<span class="story-sub">${esc(c.head)}</span>` : `${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}`}</h3></div></header>
         ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
       </article>
       ${newsletterCard(c)}
@@ -2471,8 +2460,19 @@ function renderResults(q = "") {
 function WALL() { return HIST.list.filter(c => c.champ || c.recap || c.winnerOnly || c.real || c.final); }
 const wallMonth = c => HIST.MON[+c.date.slice(5, 7) - 1] + " " + c.date.slice(0, 4);
 const wallWon = c => c.recap && !c.top[0][2] || c.winnerOnly ? 0 : c.won;
+/* Placeholder art for champions without a photo yet: an illustrated bowler (no real faces), varied by name, tagged "Sample photo". */
+const MOCK_BG = [["#c7362b", "#8e1f17"], ["#1f7480", "#0f3d44"], ["#2f55a8", "#172b5e"], ["#c98a2c", "#7d4b10"], ["#6b3f8f", "#35204b"]];
+const MOCK_POSE = [
+  `<path d="M42 112c0-30 8-52 21-52s21 22 21 52z"/><circle cx="63" cy="40" r="12"/><circle cx="76" cy="78" r="11" class="mb"/>`,
+  `<path d="M30 112c4-26 14-46 28-50 8-2 14 6 16 16l18 14-4 6-20-10c-2 10-4 18-4 24z"/><circle cx="56" cy="38" r="11"/><circle cx="96" cy="96" r="10" class="mb"/>`,
+  `<path d="M44 112c0-28 8-46 19-46s19 18 19 46z"/><path d="M50 74 38 28h7l12 46zM76 74l12-46h-7L69 74z"/><circle cx="63" cy="54" r="10"/><path d="M44 10h38v5c0 9-8 15-19 15s-19-6-19-15zM60 30h6v4h6v4H54v-4h6z" class="mb"/>`
+];
+function mockPic(c, cls = "") {
+  const h = [...c.name].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7), [c1, c2] = MOCK_BG[h % MOCK_BG.length], pose = MOCK_POSE[(h >>> 3) % MOCK_POSE.length];
+  return `<span class="mock-pic ${cls}" style="--m1:${c1};--m2:${c2}" role="img" aria-label="Sample photo for ${esc(c.name)}"><svg viewBox="0 0 126 112" aria-hidden="true"><path d="M0 84 126 70v42H0z" class="mf"/><g class="mp-pins"><path d="M14 58c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/><path d="M24 56c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/><path d="M106 54c-2-6 2-9 0-14 0-3 4-3 4 0-2 5 2 8 0 14z"/></g><g class="ms">${pose}</g></svg><span class="mock-tag">Sample photo</span></span>`;
+}
 const wallPic = (c, w, h) => c.champ ? `<img src="img/champ-${c.photo}.jpg" width="${w}" height="${h}" alt="">`
-  : `<span class="cc-initials" aria-hidden="true">${esc(c.name.split(/\s+/).filter(x => /^[A-Za-z]/.test(x)).slice(0, 2).map(x => x[0]).join(""))}</span>`;
+  : mockPic(c, "cc-initials");
 const JP_LABEL = { jackpot: "9-Tap Jackpot", golden: "Golden Shot", middle: "Middle string", front: "Consolation" };
 function renderJackpots(year) {
   const g = $("#jp-list"); if (!g) return;
