@@ -214,6 +214,24 @@ p { margin: 0; }
 .rh-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
 .rh-lab { font: 700 .72rem var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .rh-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.r-top { display: grid; grid-template-columns: minmax(0, 64ch) minmax(300px, 1fr); gap: 32px; align-items: start; margin-bottom: 26px; }
+.nl { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; box-shadow: 0 10px 24px -20px rgba(0,0,0,.5); }
+.nl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 16px; background: var(--deep); color: var(--on-deep); font: 600 .72rem var(--font-body); letter-spacing: .1em; text-transform: uppercase; }
+.nl-top span:last-child { letter-spacing: .04em; opacity: .8; }
+.nl-body { padding: 16px 18px 6px; display: grid; gap: 10px; }
+.nl-body .eyebrow { margin: 0; }
+.nl-body h3 { font-size: 1.55rem; text-transform: uppercase; line-height: 1.02; }
+.nl-kick { display: grid; gap: 2px; font: 700 .86rem var(--font-body); color: var(--accent); }
+.nl-body p { margin: 0; color: var(--muted); font-size: .94rem; }
+.nl details summary { cursor: pointer; font: 600 .88rem var(--font-body); color: var(--accent); padding: 2px 0 6px; }
+.nl details[open] summary { margin-bottom: 8px; }
+.nl details p + p { margin-top: 10px; }
+.nl-pots { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); margin-top: 10px; }
+.nl-pots div { background: var(--surface); padding: 10px 14px; display: grid; gap: 2px; }
+.nl-pots span { font: 700 .66rem var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.nl-pots b { font: 800 1.35rem var(--font-display); }
+.nl-foot { padding: 10px 16px; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .r-top { grid-template-columns: 1fr; gap: 22px; } }
 .rh-opts a, .rh-opts span { font: 600 .85rem var(--font-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; text-align: center; white-space: nowrap; }
 .rh-opts a:hover { border-color: var(--accent); color: var(--accent); }
 .rh-opts a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -927,7 +945,7 @@ const DATA = {
     ["33T","Bill Sprinkle",36,0,693,75],["33T","Earl Kleist",8,1,693,75],["33T","Walt Dalrymple",38,0,693,75],["36","Cory Pagdilao",70,4,686,71],
     ["37T","John Hart",30,2,684,68],["37T","Aron Golden",18,0,684,68],["39","Marilyn Mateo",37,0,683,65]
   ],
-  progressivePaid: { "Michael Miller": 1563, "Brian Lascala": 156, "Kris Koepke": 156, "Mary Bridgman": 156 },
+  progressivePaid: { "Michael Miller": 1563, "Brian Lascala": 625, "Kris Koepke": 156, "Mary Bridgman": 156 },
   boy: [
     ["Johnny Seng",633],["Charles Daughery Jr.",588],["Samson Ibale",517],["Paul Kelly",510],["Ruong Sa Tang",508],
     ["Jeffrey Price",470],["Earl Kleist",470],["Walt Dalrymple",451],["Thang Duc Thai",449],["Tong Nguyen",435],
@@ -1158,10 +1176,13 @@ const VIEWS = {
       </nav>
     </section>
     <section class="wrap section">
-      <article class="story-body" style="margin-bottom:26px">
+      <div class="r-top">
+      <article class="story-body">
         <header class="story-head">${c.champ ? `<img class="champ-photo" src="img/champ-${c.photo}.jpg" width="125" height="112" alt="${esc(c.name)}">` : `<span class="champ-initials" aria-hidden="true">${esc(initials)}</span>`}<div><p class="eyebrow">Champion · Won ${money(c.won)}</p><h3 class="story-title">${esc(c.name)}: ${esc(c.head.charAt(0).toLowerCase() + c.head.slice(1))}</h3></div></header>
         ${c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
       </article>
+      ${newsletterCard(c)}
+      </div>
       <div class="podium-cards">${[0,1,2].map(i => { const r = rows[i]; return `
         <div class="panel pc ${i === 0 ? "first" : ""}">
           <div class="p">${place(r, i)}</div><div class="n">${esc(r[1])}</div>
@@ -2118,6 +2139,57 @@ const BOY = {
     return this.cache[y] = order.concat(rest).slice(0, 25).map((n, i) => [n, i ? (pts -= Math.floor(rnd() * 22)) : pts]);
   }
 };
+/* Tour newsletter (sent by email through iContact after each tournament), shown beside the champion story on Results.
+   The Nov 18, 2026 issue is the real email; other issues are sample recaps built from that event's results. */
+// Real emails, keyed by the tournament date they belong to.
+const NEWS_REAL = {
+  "2026-07-12": { date: "2026-07-13", subject: "After the break... another 1st-Time Champion", kick: ["1st Time Champion", "after our two week break!!!"],
+    paras: ["After our two-week break, we had a great turn-out this weekend, back where it all started in 2002, at Bowlero-Paradise. With so many different competing bowling tournaments and sports events this week, we still had an outstanding turnout of 195 entries with a $13K total payout. The Cut-Line of just 683 meant the lanes were fierce but still provided a competitive edge that had everyone fighting for the top spots throughout the day.",
+      "Tour Sponsor Rain City Pro Shop (Karl and Tyler) generously provided shammies to the 'Top Score' from each squad. Ironically, the 1st Squad Top Scorer was Leticia Salazar (Karl's partner), who also ended up finishing in 6th place. She instead gave the shammie to the next highest scorer Steven Nolan. The 2nd Squad top scorer was Michael Miller and the 3rd Squad shammie recipient was Josh Brown.",
+      "The 9-Tap Jackpot continues to show its durability. Kris Koepke was close to cracking its armor with a chance for the Front-7 but was derailed in the 4th frame. Eventually three other bowlers were able to string the Front-3 Taps throughout the day... however, that all changed when Cal Fisher was able to string the highest Consolation of the day with the Front-4 for $150.00. The Jackpot makes another BIG JUMP to $11,502.00, inching closer to the All-Time record of $12,626.00.",
+      "Only joining the 9-Tap Tour a little over a year ago, Michael Miller is now a 1st-Time Champion, earning the coveted blue jersey. He has consistently bowled throughout the year with his previous high of 14th Place, which was also at Bowlero-Paradise. He had no explanation on why he was \"ON FIRE\" this weekend, shooting 3 of his 4 highest games since joining. He commented that he never expected to win a Title... SURPRISE, SURPRISE, SURPRISE... he got his first star by rolling a monster 811 series. He began bowling in the 80's and early 90's but took a hiatus from bowling for about 30 years. After retiring from Law Enforcement (30 years), teaching in the Puyallup School District (14 years), and building his strength from a hip-replacement in 2023, he wanted to try bowling again. Michael said that he appreciates the atmosphere and competitive edge the 9-Tap Tour has to offer. He wants to thank Shawn and Tom Donahue, Troy Fischlin, and Ben Madsen for their support Sunday. He will be sharing his $2,613.00 winnings with his wife and to fund future tournaments.",
+      "Shooting his highest series to date, Brian Lascala took 2nd place shooting an impressive 800, just ONE MARK short of his first Title. Joining the Tour two years ago, his highest previous finish was 8th. He has consistently worked on his craft to reach the top rung only to miss it by 11 pins this weekend. With the top spot now in sight, everyone should be watching Brian in future events. He will be taking home a nice $1,150.00 this week!",
+      "We had a tie for 3rd with Mary Bridgman and Kris Koepke, both shooting a sweet 798. Both finished only 22 pins away from the top. They found the shot and they each put together 3 strong games, just not quite enough to earn what would have been Mary's first Win and Kris's 2nd Title. They each took $444.00 for their strong showing.",
+      "Next week we will be at Bowlero-Acme for our Tour favorite 'Best 3 out of 4' format. Sunday, July 19th, Bowlero-Acme (South Center), 10:00am, 12:30pm & 3:00pm."],
+    jackpot: 11502, progressive: 2681, real: true },
+  // Preview email sent before the Nov 22, 2026 Angel of the Winds event; it shows on that event's Results page once the day is posted.
+  "2026-11-22": { date: "2026-11-18", subject: "5 Golden Shots & 7-Middle in Last 7",
+    kick: ["5 BIG Jackpot $$ @ A.O.W.", "3 'Golden Shots' + 2 Middle-7", "5th yearly record in a row", "Sunday · 11:00 & 1:30 & 4:00"],
+    paras: ["Angel of the Winds has become so popular with our bowlers, it's earned a spot on our regular Tour schedule for several years now. It's also been a very 'Hot House' for BIG Jackpot payouts with FIVE big payouts in our last SEVEN visits. THREE of those were 'Golden Shots' giving Earl Kleist & Walt Dalrymple (twice) one more ball to take down the Jackpot. While Will Twyman & Steve Ryan each hit 7-Middle Taps for BIG paydays.",
+      "Some of our bowlers think it's a long trip, but according to Google Maps, it's only 1 hr. 15 min. drive from Tacoma (no traffic). If you've been there before, you're aware of what a beautiful facility it is. We've been hearing from many of our Members that have been looking forward to Angel of the Winds this weekend.",
+      "FIVE years in-a-row the Tour has broken its record for 'Total Payouts'. That amazing streak started in our first full year back from Covid in 2022. We first raised the bar to $413,858 in 2022, then 2023 it climbed to $422,708, it was shattered in 2024 with $561,697, last year it EXPLODED again to $642,139 and we didn't think that record could be touched... last weekend's huge Vet's Day Tourney pushed our 2026 total to an amazing $599,742 with 4 events still on the schedule. Looks like we could do the unexpected and top $650K this year!"],
+    jackpot: 12234, progressive: 3255, real: true, preview: true }
+};
+function newsFor(c) {
+  if (NEWS_REAL[c.date]) return NEWS_REAL[c.date];
+  let seed = [...c.id].reduce((h, ch) => (h * 33 + ch.charCodeAt(0)) >>> 0, 5);
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const d = new Date(c.date + "T12:00"); d.setDate(d.getDate() + ((10 - d.getDay()) % 7 || 7)); // the Wednesday after
+  const sent = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const i = HIST.list.indexOf(c), next = i > 0 ? HIST.list[i - 1] : null, last = c.name.split(" ").slice(-1)[0];
+  const fmt = (x, o) => new Date(x + "T12:00").toLocaleDateString("en-US", o);
+  const subj = [`${c.name} takes ${c.where}`, `${last} wins it at ${c.where}`, `Big day for ${c.name}`, `${c.entries} bowlers, one champion: ${last}`][Math.floor(rnd() * 4)];
+  const jackpot = Math.round(4000 + rnd() * 8000), progressive = Math.round(900 + rnd() * 2600);
+  const paras = [`Congratulations to ${c.name}, our champion at ${c.where} on ${fmt(c.date, { month: "long", day: "numeric" })}! ${c.total ? `${/^8/.test(c.total) ? "An" : "A"} ${c.total} total` : "A great three games"} was good for first place and a ${money(c.won)} check. ${c.entries} bowlers came out and ${money(c.paid)} went back to the field.`,
+    ["The 9-Tap Jackpot wasn't hit, so the Consolation Bonus went to the longest string of 9-Tap Strikes to start a game, and the Jackpot keeps growing.", "Nobody strung seven 9-counts this time, so the Jackpot rolls over and gets bigger for next week.", "Lots of 9-Tap strings but no Jackpot winner, so the pot is up again. Somebody is going to have a very good Sunday soon."][Math.floor(rnd() * 3)]];
+  if (next) paras.push(`Coming up ${fmt(next.date, { weekday: "long", month: "short", day: "numeric" })}: ${next.where}${next.tag ? ` (${next.tag})` : ""}. Check in early to bowl with your friends. See you there!`);
+  return { date: sent, subject: subj, kick: [], paras, jackpot, progressive, real: false };
+}
+function newsletterCard(c) {
+  const n = newsFor(c), sent = new Date(n.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return `<aside class="nl" aria-label="Tour newsletter">
+    <div class="nl-top"><span>Tour newsletter</span><span>${esc(sent)}</span></div>
+    <div class="nl-body">
+      <p class="eyebrow">${n.real ? `${n.preview ? "Preview email" : "Email"} from Rob, Shellie, Karen &amp; Mark` : "Sample newsletter for this mockup"}</p>
+      <h3>${esc(n.subject)}</h3>
+      ${n.kick.length ? `<div class="nl-kick">${n.kick.map(k => `<span>${esc(k)}</span>`).join("")}</div>` : ""}
+      <p>${esc(n.paras[0])}</p>
+      ${n.paras.length > 1 ? `<details><summary>Read the whole newsletter</summary>${n.paras.slice(1).map(t => `<p>${esc(t)}</p>`).join("")}</details>` : ""}
+    </div>
+    <div class="nl-pots"><div><span>9-Tap Jackpot</span><b>${money(n.jackpot)}</b></div><div><span>Progressive Pot</span><b>${money(n.progressive)}</b></div></div>
+    <p class="nl-foot">Members get this by email after each tournament. Not a member? <a class="link-more" href="#join">Join the Tour</a></p>
+  </aside>`;
+}
 let CUR_RESULTS = DATA.results, RH_KEEP = false;
 function eventResults(c) {
   if (c.photo === "michael-miller") return DATA.results;
