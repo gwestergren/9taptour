@@ -1127,7 +1127,6 @@ function eventRow(e, withMaps) {
 const VIEWS = {
   home() {
     const e = nextEvent, d = parse(e.date);
-    const upcoming = DATA.events.filter(x => eventStatus(x) === "upcoming").slice(0, 4);
     return `
     <section class="hero"><div class="wrap hero-grid">
       ${(() => { const c = HIST.latest(), won = wallWon(c), bio = (c.bio || []).slice(0, 2);
@@ -1218,12 +1217,7 @@ const VIEWS = {
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn jp-yr" data-jpyear="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
       <ol class="jp-list" id="jp-list"></ol>`; })()}
       </div>
-    </div></section>
-
-    <section class="wrap section">
-      <div class="section-head"><h2>Coming up</h2><a class="link-more" href="#schedule">Full schedule →</a></div>
-      <div class="event-rows">${upcoming.map(eventRow).join("")}</div>
-    </section>`;
+    </div></section>`;
   },
 
   schedule() {
