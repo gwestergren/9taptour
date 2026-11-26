@@ -920,6 +920,12 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 <style>
 :root{--d-bg:#eef1f4}
 #dash select{width:auto;min-width:110px}
+#dash .ticket.next{grid-column:span 5;width:auto;justify-self:stretch;max-width:none;border-radius:18px;border:1px solid var(--line);box-shadow:none;background:#f3f6f6;font-family:var(--font-body)}
+#dash .ticket-tear::before,#dash .ticket-tear::after{background:var(--bg)}
+#dash .ticket .ticket-center{font-family:var(--font-display);font-size:2.4rem;letter-spacing:.005em;text-transform:uppercase;margin-top:10px}#dash .champ{align-items:start}
+#dash .ticket .up{font-size:16px;margin-top:16px}#dash .ticket .up li{padding:7px 0}#dash .ticket .up span{color:var(--muted);font-size:14px}
+#dash .ticket .up-h{font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#56686d;padding-top:10px!important}
+#dash .ticket-foot .btn{background:#b23a2a;color:#fff;border-radius:6px;font-weight:800}
 #dash+.site-foot,.site-foot{margin-top:0}
 #dash{background:#eef1f4;--bg:#eef1f4;--card:#fff;--ink:#14202a;--muted:#5b6875;--red:#c7362b;--navy:#12303b;--gold:#b8892f;--line:#dde3e9;color:var(--ink);font:19px/1.55 "Atkinson Hyperlegible",sans-serif;padding-bottom:20px}
 #dash h1,#dash h2,#dash h3{font-family:Archivo;letter-spacing:-.01em;text-transform:none}
@@ -1094,9 +1100,15 @@ const c=D.champ,n=D.next;document.getElementById('dash').innerHTML=`
 <div class="grid">
 <div class="c champ"><div class="ph">${PIC('#8e3a2f','#111')}</div><div><div class="lbl">Latest champion · ${c.short} · ${c.where}</div><h3>${c.name}</h3><p>${c.head} An 841 series after a 3:00 AM drive from Vancouver Island.</p>
 <div class="mini"><div><b>${c.series}</b><span>Series</span></div><div><b>${c.won}</b><span>Won</span></div><div><b>${c.entries}</b><span>Entries</span></div><div><b>${c.paid}</b><span>Paid out</span></div></div><p style="font-size:17px;margin-top:16px">${c.story[1]}</p><a class="btn" href="#">Read story & results</a></div></div>
-<div class="c next"><div class="lbl">Next tournament <span class="pill">${n.rel}</span></div><div class="nd"><div class="cal"><span>${n.mon.toUpperCase()}</span><b>${n.day}</b></div><div><h3>${n.center}</h3><div class="m">${n.dow} · ${n.city}</div></div></div>
-<div class="sq">${n.squads.map(s=>`<span>${s}<small>squad</small></span>`).join('')}</div>
-<ul class="up">${D.later.map(l=>`<li><b>${l[0]}</b><div>${l[1]}<br><span style="color:var(--muted);font-size:15px">${l[3]||l[2]}</span></div></li>`).join('')}</ul><a class="btn alt" href="#">Full schedule</a></div>
+<aside class="ticket next" aria-label="Next tournament">
+<div class="ticket-top"><span class="ticket-label">Next tournament</span><span class="ticket-count">${n.rel}</span></div>
+<div class="ticket-date"><span class="ticket-mon">${n.mon.toUpperCase()}</span><span class="ticket-day">${n.day}</span><span class="ticket-dow">${n.dow}</span></div>
+<h2 class="ticket-center">${n.center}</h2><p class="ticket-city">${n.city}</p>
+<div class="ticket-squads">${n.squads.map(s=>`<span><b>${s}</b>squad</span>`).join('')}</div>
+<ul class="up"><li class="up-h">Coming up</li>${D.later.map(l=>`<li><b>${l[0]}</b><div>${l[1]}<br><span>${l[3]||l[2]}</span></div></li>`).join('')}</ul>
+<div class="ticket-tear" aria-hidden="true"></div>
+<div class="ticket-foot"><span>New members: arrive an hour early to sign up.</span><a class="btn btn-primary" href="#schedule">Full schedule</a></div>
+</aside>
 <div class="c pot j"><div class="lbl">9-Tap Jackpot</div><div class="a">${D.jackpot}</div><div class="bar"><i style="width:95%"></i></div><p>95% of the record pot (${D.record}). ${D.jpNote}</p></div>
 <div class="c pot p"><div class="lbl">Progressive Pot</div><div class="a">${D.progressive}</div><p>${D.progNote}</p></div>
 <div class="c top3"><div class="lbl">Top 3 · ${c.short}</div><table>${c.top.map((t,i)=>`<tr><td><span class="medal" style="background:${['#e3c286','#d5dbe1','#e0b48c'][i]}">${i+1}</span>${t[0]}</td><td class="r">${t[1]}</td><td class="r">${t[2]}</td></tr>`).join('')}</table></div>
