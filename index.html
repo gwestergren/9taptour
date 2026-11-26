@@ -894,6 +894,9 @@ body.tv-mode { background: #0b1f26; }
 .hero-pots .pot .label { color: var(--accent); } .hero-pots .pot .amount { color: var(--ink); } .hero-pots .pot .note { color: var(--muted); }
 .hero { overflow: visible; } .hero::after { display: none; }
 .champs-band { border-top: 6px solid var(--accent); }
+/* Wall of Champions is the last thing on the home page: no gray rule or gap before the footer */
+main > .champs-band:last-child { border-bottom: 0; margin-bottom: 0; }
+main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .champ-card { background: #fff; color: var(--ink); border-color: #e6d3ad; box-shadow: 0 8px 22px rgba(16,36,42,.12); }
 .champ-card b { color: var(--ink); } .cc-body > span { color: var(--muted); }
 .cc-links { border-top-color: var(--line); } .cc-links > * { color: var(--accent); } .cc-links > * + * { border-left-color: var(--line); }
