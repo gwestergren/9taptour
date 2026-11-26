@@ -1172,7 +1172,7 @@ const VIEWS = {
           <p class="cbf-links"><button type="button" class="btn btn-primary" data-photo="${f.id}" aria-haspopup="dialog">Read story</button><a class="btn btn-ghost-light" href="#results/${f.id}">Results →</a></p>
         </div>
       </div>
-      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments won</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
+      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
       <div class="champ-grid" id="champ-grid"></div>`; })()}
       </div>
