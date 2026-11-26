@@ -591,7 +591,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .fl-note { margin: 10px 0 14px; font-size: .78rem; color: #3a4d52; }
 .fl-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fl-champs > div { display: flex; gap: 10px; align-items: center; border: 1px solid #d9dfe0; border-radius: 6px; padding: 8px; }
-.fl-champs img { width: 64px; height: 57px; object-fit: cover; border-radius: 4px; }
+.fl-champs img, .fl-champs .mock-pic { width: 64px; height: 57px; flex: none; object-fit: cover; border-radius: 4px; overflow: hidden; }
+.fl-champs .mock-pic svg { width: 100%; height: 100%; }
+.fl-champs .mock-tag { display: none; }
 .fl-champs p { margin: 0; font-size: .78rem; color: #3a4d52; }
 .fl-champs b { display: block; color: #10242a; font-size: .9rem; }
 .fl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 14px; padding: 8px 12px; background: #10242a; color: #fff; border-radius: 4px; font-size: .8rem; }
@@ -1739,7 +1741,7 @@ const VIEWS = {
       <header class="fl-head">
         <img src="img/tour-logo.png" alt="" class="fl-logo">
         <div class="fl-title"><p class="fl-kicker">Top tournaments for the average bowler</p><h1>9-Tap Tour</h1><p class="fl-season">Fall 2026 Schedule</p></div>
-        <img src="img/storm.png" alt="Storm" class="fl-spon">
+        <img src="img/tour-logo.png" alt="" class="fl-logo">
       </header>
       <ul class="fl-facts"><li>Handicap singles · 125 to 210 averages</li><li>9-Tap Jackpot <b>${money(DATA.jackpot)}</b></li><li>Progressive Pot <b>${money(DATA.progressive)}</b></li><li>1 in 5 cash · USBC certified</li></ul>
       <table class="fl-table">
@@ -1752,11 +1754,10 @@ const VIEWS = {
       </table>
       <p class="fl-note">Byes: Dec 16 and Dec 26. Arrive an hour early to sign up as a new member ($25). You can cash once per tournament. Look for the next schedule on the website.</p>
       <div class="fl-champs">
-        <div><img src="img/champ-michael-miller.jpg" alt=""><p><b>Michael Miller</b>1st, Bowlero Paradise<br>Won ${money(2613)}</p></div>
-        <div><img src="img/champ-ruta-hert.jpg" alt=""><p><b>Ruta Hert</b>1st, Bowlero South Seattle<br>Won ${money(2460)}</p></div>
+        ${WALL().slice().sort((x, y) => y.date.localeCompare(x.date)).slice(0, 2).map(c => `<div>${wallPic(c, 64, 57)}<p><b>${esc(c.name)}</b>1st, ${esc(c.where)} · ${md(c.date)}${wallWon(c) ? `<br>Won ${money(wallWon(c))}` : ""}</p></div>`).join("")}
       </div>
       <footer class="fl-foot"><b>9taptour.com</b><span>Message line (253) 987-7975</span><span>PO Box 931, Sumner, WA 98390</span></footer>
-      <div class="fl-sponsors">${["miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
+      <div class="fl-sponsors">${["storm","miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
     </div></section>`;
   },
 
