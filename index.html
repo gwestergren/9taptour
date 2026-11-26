@@ -9,7 +9,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Archivo:wght@700;800;900&family=Big+Shoulders+Display:wght@600;800;900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: sticky scoreboard header, deep "lane" band hero with next-tournament ticket, then quiet content sections on a cool off-white. */
 :root {
@@ -915,6 +915,114 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .jp-row { background: #fff; border-color: var(--line); } .jp-who b { color: var(--ink); } .jp-hit { color: var(--muted); } .jp-date a { color: var(--muted); }
 .jp-amt { color: var(--accent); } .jp-badge { border-color: var(--line); color: var(--ink); }
 .jp-date { color: var(--ink); } .jp-golden { border-color: var(--maple); } .jp-jackpot { background: linear-gradient(90deg, #f6ecd8, #fff); }
+/* Home dashboard (Nov 26 2026) */
+.dash select{width:auto;min-width:110px}
+.dash .ticket.next{grid-column:span 5;width:auto;justify-self:stretch;max-width:none;border-radius:18px;border:1px solid var(--line);box-shadow:none;background:#f3f6f6;font-family:var(--font-body)}
+.dash .ticket-tear::before,.dash .ticket-tear::after{background:var(--bg)}
+.dash .ticket .ticket-center{font-family:var(--font-display);font-size:2.1rem;letter-spacing:.005em;text-transform:uppercase;margin-top:6px;line-height:1}.dash .ticket.next{padding:18px 22px 16px}.dash .ticket-date{margin-top:8px}.dash .ticket-day{font-size:3.4rem}.dash .ticket-squads{margin-top:14px}.dash .ticket-squads span{padding:8px 4px}.dash .ticket-tear{margin:16px -22px 16px}.dash .ticket-foot{font-size:15px}.dash .champ{align-items:start}.dash .c.champ{display:flow-root}.dash .champ .ph{float:left;width:250px;aspect-ratio:1/1;margin:0 22px 10px 0}.dash .champ .mini{gap:18px;flex-wrap:nowrap}.dash .champ .mini b{font-size:25px}.dash .champ .mini span{font-size:13px}.dash .champ h3{font-size:40px}.dash .champ .btn{margin-top:4px}
+.dash .ticket .up{font-size:16px;margin-top:10px}.dash .ticket .up li{padding:5px 0}.dash .ticket .up span{color:var(--muted);font-size:14px}
+.dash .ticket .up-h{font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#56686d;padding-top:10px!important}
+.dash .ticket-foot .btn{background:#b23a2a;color:#fff;border-radius:6px;font-weight:800}
+#app .dash{background:#eef1f4;--bg:#eef1f4;--card:#fff;--ink:#14202a;--muted:#5b6875;--red:#c7362b;--navy:#12303b;--gold:#b8892f;--line:#dde3e9;color:var(--ink);font:19px/1.55 "Atkinson Hyperlegible",sans-serif;padding-bottom:20px}
+.dash h1,.dash h2,.dash h3{font-family:Archivo;letter-spacing:-.01em;text-transform:none}
+#app .dash{margin:0;background:var(--bg);color:var(--ink);font:19px/1.55 "Atkinson Hyperlegible",sans-serif}
+.dash .wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+.dash h1,.dash h2,.dash h3{font-family:Archivo;margin:0;letter-spacing:-.01em}
+.dash .hi{padding:22px 0 6px;display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:8px}
+.dash .hi h2{font-size:30px}
+.dash .hi p{margin:0;color:var(--muted)}
+.dash .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;padding:12px 0 18px}
+.dash .c{background:var(--card);border-radius:18px;padding:22px;border:1px solid var(--line)}
+.dash .lbl{font:800 13px Archivo;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dash .pill{background:#fde8e6;color:var(--red);border-radius:20px;padding:3px 10px;letter-spacing:.06em}
+.dash .champ{grid-column:span 7;display:grid;grid-template-columns:200px 1fr;gap:20px;background:var(--navy);color:#fff;border:0}
+.dash .champ .lbl{color:#9fc0cc}
+.dash .champ .ph{border-radius:14px;overflow:hidden;aspect-ratio:4/5}
+.dash .champ h3{font-size:44px;line-height:1}
+.dash .champ p{color:#d6e3e8;margin:8px 0 14px;font-size:18px}
+.dash .mini{display:flex;gap:22px;flex-wrap:wrap}
+.dash .mini b{display:block;font:900 28px Archivo;color:#e3c286}
+.dash .mini span{font-size:14px;color:#9fc0cc;text-transform:uppercase;letter-spacing:.08em}
+.dash .btn{display:inline-block;font:800 17px Archivo;background:var(--red);color:#fff;border-radius:12px;padding:11px 18px;text-decoration:none;margin-top:14px}
+.dash .btn.alt{background:transparent;border:2px solid var(--line);color:var(--ink)}
+.dash .next{grid-column:span 5}
+.dash .nd{display:flex;gap:16px;align-items:center}
+.dash .cal{border:2px solid var(--red);border-radius:14px;text-align:center;width:96px;overflow:hidden;flex:none}
+.dash .cal span{display:block;background:var(--red);color:#fff;font:800 15px Archivo;letter-spacing:.1em;padding:3px}
+.dash .cal b{font:900 46px/1.2 Archivo}
+.dash .next h3{font-size:30px}
+.dash .next .m{color:var(--muted)}
+.dash .sq{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.dash .sq span{background:var(--bg);border-radius:10px;text-align:center;padding:8px;font-weight:700;font-size:20px}
+.dash .sq small{display:block;font-size:13px;color:var(--muted);font-weight:400}
+.dash .up{list-style:none;padding:0;margin:14px 0 0;border-top:1px solid var(--line)}
+.dash .up li{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:17px}
+.dash .up b{width:64px;flex:none}
+.dash .pot{grid-column:span 4}
+.dash .pot .a{font:900 54px/1.05 Archivo}
+.dash .pot p{margin:6px 0 0;color:var(--muted);font-size:17px}
+.dash .pot.j .a{color:var(--red)}
+.dash .pot.p .a{color:var(--navy)}
+.dash .bar{height:10px;border-radius:6px;background:var(--bg);margin-top:12px;overflow:hidden}
+.dash .bar i{display:block;height:100%;background:linear-gradient(90deg,#e3c286,var(--red))}
+.dash .top3{grid-column:span 4}
+.dash .top3 table{width:100%;border-collapse:collapse}
+.dash .top3 td{padding:8px 0;border-bottom:1px solid var(--line);font-size:18px}
+.dash .top3 td.r{text-align:right;font-weight:700}
+.dash .medal{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-weight:700;font-size:15px;margin-right:8px;background:#e3c286}
+.dash .stat{grid-column:span 4;text-align:left}
+.dash .stat b{display:block;font:900 34px Archivo}
+.dash .stat span{color:var(--muted);font-size:16px}
+.dash .wall{grid-column:span 12}
+.dash .wh{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+.dash .wh h2{font-size:32px}
+.dash .seg{display:flex;background:var(--bg);border-radius:12px;padding:4px}
+.dash .seg a{padding:8px 14px;border-radius:9px;font-weight:700;text-decoration:none;color:var(--muted);font-size:17px}
+.dash .seg a.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.dash .pick{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.dash select{font:700 17px "Atkinson Hyperlegible";padding:9px 12px;border-radius:10px;border:2px solid var(--line);background:#fff}
+.dash .chips a{display:inline-block;padding:6px 12px;border-radius:9px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:700;font-size:16px;margin:2px}
+.dash .chips a.on{background:var(--navy);color:#fff}
+.dash .chips a.off{opacity:.4}
+.dash .wg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.dash .wc{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:10px}
+.dash .wc .ph{width:72px;height:72px;border-radius:10px;overflow:hidden;flex:none}
+.dash .wc b{display:block;font-size:18px;line-height:1.2}
+.dash .wc span{font-size:15px;color:var(--muted)}
+.dash .wc em{font-style:normal;color:var(--red);font-weight:700}
+@media(max-width:960px){.dash .grid>*{grid-column:1/-1!important}
+.dash .champ{grid-template-columns:minmax(0,1fr)}
+.dash .champ .ph{max-width:none;width:100%;float:none;aspect-ratio:16/10;margin:0 0 14px}.dash .champ .mini{flex-wrap:wrap!important;gap:10px 18px}.dash .champ h3{font-size:36px}
+.dash .wg{grid-template-columns:1fr}
+.dash .stat{grid-column:span 6!important}
+.dash .grid .stat{grid-column:auto}}
+@media(max-width:960px){.dash .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.dash .grid>*:not(.stat){grid-column:1/-1!important}
+.dash .stat{grid-column:auto!important}}
+.dash .champ .ph{padding:0;border:0;cursor:pointer;background:none;display:block}
+.dash .champ .ph img,.dash .champ .ph .mock-pic{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.dash .champ .head{color:#e3ecef;margin:8px 0 12px}
+.dash .champ .story{margin:12px 0 4px}
+.dash .more{display:inline-block;margin-top:12px;font-weight:700;color:var(--red);text-decoration:none}
+.dash .medal.m1{background:#d5dbe1}.dash .medal.m2{background:#e0b48c}
+.dash .seg .cb-tab{padding:8px 14px;border-radius:9px;font:700 17px "Atkinson Hyperlegible",sans-serif;color:var(--muted);background:none;border:0;cursor:pointer}
+.dash .seg .cb-tab[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.dash .chips{display:flex;flex-wrap:wrap;gap:4px}
+.dash .mp-mon{padding:6px 12px;border-radius:9px;background:var(--bg);border:0;color:var(--ink);font:700 16px "Atkinson Hyperlegible",sans-serif;cursor:pointer}
+.dash .mp-mon[aria-pressed="true"]{background:var(--navy);color:#fff}.dash .mp-mon:disabled{opacity:.4;cursor:default}
+.dash button.wc{background:#fff;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}
+.dash button.wc:hover{border-color:var(--navy)}
+.dash .wc .ph img,.dash .wc .ph .mock-pic{display:block;width:100%;height:100%;object-fit:cover}
+.dash .wc em{display:block}
+.dash .wg:empty::after{content:"No champions posted for this month yet.";color:var(--muted)}
+.dash .jp-how{color:var(--muted);font-size:17px;margin:0 0 12px;max-width:none}
+.dash .jp-list{max-width:none}
+.dash .wc .mock-tag{display:none}
+.dash .wc b{color:var(--ink)}
+main:has(> .dash) + .site-foot{margin-top:0}
+@media(max-width:960px){.dash .grid .stat{grid-column:1/-1!important}.dash .jp-how{text-align:left}}
+#app .dash{padding-bottom:36px}
+
 </style>
 
 </head>
@@ -1141,97 +1249,57 @@ function eventRow(e, withMaps) {
 
 const VIEWS = {
   home() {
-    const e = nextEvent, d = parse(e.date);
-    return `
-    <section class="hero"><div class="wrap hero-grid">
-      ${(() => { const c = HIST.latest(), won = wallWon(c), bio = (c.bio || []).slice(0, 2);
-        const first = c.name.split(/\s+/)[0], last = c.name.split(/\s+/).slice(1).join(" ");
-        return `<div class="spotlight">
-        <p class="eyebrow" style="color:var(--maple)">Latest champion · ${esc(c.where)} · ${esc(parse(c.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p>
-        <div class="spot-row">
-          ${c.photo ? `<img class="spot-photo" src="img/champ-${c.photo}.jpg" width="126" height="112" alt="${esc(c.name)}">` : mockPic(c, "spot-photo")}
-          <div class="spot-text">
-            <h1>${esc(first)}${last ? `<br>${esc(last)}` : ""}</h1>
-            ${c.head ? `<p class="spot-sub">${esc(c.head)}</p>` : ""}
-          </div>
-        </div>
-        ${bio.length ? `<div class="spot-bio">${bio.map(p => `<p>${esc(p)}</p>`).join("")}</div>` : ""}
-        <div class="spot-stats">
-          ${c.total ? `<div><b class="num">${c.total}</b><span>Series</span></div>` : ""}
-          ${won ? `<div><b class="num">${money(won)}</b><span>Won</span></div>` : ""}
-          ${c.entries ? `<div><b class="num">${c.entries}</b><span>Entries</span></div>` : ""}
-          ${c.paid ? `<div><b class="num">${money(c.paid)}</b><span>Paid out</span></div>` : ""}
-        </div>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#results/${c.id}">Full results</a>
-        </div>
-      </div>`; })()}
-      <aside class="ticket" aria-label="Next tournament">
-        <div class="ticket-top">
-          <span class="ticket-label">Next tournament</span>
-          <span class="ticket-count">${relDays(e)}</span>
-        </div>
-        <div class="ticket-date">
-          <span class="ticket-mon">${MON[d.getMonth()]}</span><span class="ticket-day">${d.getDate()}</span>
-          <span class="ticket-dow">${parse(e.date).toLocaleDateString("en-US", { weekday: "long" })}</span>
-        </div>
-        <h2 class="ticket-center">${esc(e.center)}</h2>
-        <p class="ticket-city">${esc(e.city)}, WA${e.tag ? ` · <b>${esc(e.tag)}</b>` : ""}</p>
+    const e = nextEvent, d = parse(e.date), c = HIST.latest(), won = wallWon(c);
+    const fmtD = x => parse(x).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const bio = (c.bio || []).join(" "), cut = bio;
+    const later = DATA.events.filter(x => x.date > e.date).slice(0, 2);
+    const all = WALL(), tot = all.reduce((a, x) => a + wallWon(x), 0), big = all.reduce((a, x) => wallWon(x) > wallWon(a) ? x : a), first = all[all.length - 1];
+    const yrs = [...new Set(all.map(x => x.date.slice(0, 4)))];
+    const J = JACKPOTS, jyrs = [...new Set(J.map(j => j.d.slice(0, 4)))], cnt = k => J.filter(j => j.k === k).reduce((a, j) => a + j.n.length, 0);
+    const pct = DATA.jackpotRecord ? Math.min(100, Math.round(DATA.jackpot / DATA.jackpotRecord * 100)) : 0;
+    const top = (c.top || []).filter(t => t[0]).slice(0, 3);
+    return `<div class="dash"><div class="wrap">
+    <div class="hi"><h2>Welcome, bowlers</h2><p>${esc(today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))} · Next tournament ${esc(relDays(e).toLowerCase())}</p></div>
+    <div class="grid">
+      <div class="c champ">
+        <button type="button" class="ph" data-photo="${c.id}" aria-haspopup="dialog" aria-label="Read ${esc(c.name)}'s story">${c.photo ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : mockPic(c, "cc-initials")}</button>
+        <div class="lbl">Latest champion · ${esc(fmtD(c.date))} · ${esc(c.where)}</div>
+        <h3>${esc(c.name)}</h3>
+        ${c.head ? `<p class="head">${esc(c.head)}</p>` : ""}
+        <div class="mini">${c.total ? `<div><b>${c.total}</b><span>Series</span></div>` : ""}${won ? `<div><b>${money(won)}</b><span>Won</span></div>` : ""}${c.entries ? `<div><b>${c.entries}</b><span>Entries</span></div>` : ""}${c.paid ? `<div><b>${money(c.paid)}</b><span>Paid out</span></div>` : ""}</div>
+        ${cut ? `<p class="story">${esc(cut)}</p>` : ""}
+        <a class="btn" href="#results/${c.id}">Read story &amp; results</a>
+      </div>
+      <aside class="ticket next" aria-label="Next tournament">
+        <div class="ticket-top"><span class="ticket-label">Next tournament</span><span class="ticket-count">${relDays(e)}</span></div>
+        <div class="ticket-date"><span class="ticket-mon">${MON[d.getMonth()]}</span><span class="ticket-day">${d.getDate()}</span><span class="ticket-dow">${d.toLocaleDateString("en-US", { weekday: "long" })}</span></div>
+        <h2 class="ticket-center">${esc(e.center)}</h2><p class="ticket-city">${esc(e.city)}, WA${e.tag ? ` · <b>${esc(e.tag)}</b>` : ""}</p>
         <div class="ticket-squads">${e.squads.map(s => `<span><b>${s}</b>squad</span>`).join("")}</div>
+        ${later.length ? `<ul class="up">${later.map(x => `<li><b>${esc(fmtD(x.date))}</b><div>${esc(x.center)} <span>· ${x.tag ? esc(/Year End/.test(x.tag) ? "Year End" + (x.invite ? " (invite)" : "") : x.tag) : esc(x.city)}</span></div></li>`).join("")}</ul>` : ""}
         <div class="ticket-tear" aria-hidden="true"></div>
-        <div class="ticket-foot">
-          <span>New members: arrive an hour early to sign up.</span>
-          <a class="btn btn-primary" href="#schedule">Full schedule</a>
-        </div>
+        <div class="ticket-foot"><span>New members: arrive an hour early.</span><a class="btn btn-primary" href="#schedule">Full schedule</a></div>
       </aside>
-    </div>
-    <div class="wrap hero-pots" aria-label="Current pots"><div class="strip-grid">
-      <div class="panel pot">
-        <span class="label">9-Tap Jackpot</span>
-        <span class="amount">${money(DATA.jackpot)}</span>
-        <span class="note">Start a game with seven straight strikes to win 80%. Record pot: ${money(DATA.jackpotRecord)}.</span>
-      </div>
-      <div class="panel pot">
-        <span class="label">Progressive Pot</span>
-        <span class="amount">${money(DATA.progressive)}</span>
-        <span class="note">Shared by the top three finishers who paid in. Unclaimed money rolls over.</span>
-      </div>
-    </div></div></section>
-    <section class="champs-band" aria-label="Wall of Champions and Jackpot Winners"><div class="wrap">
-      <div class="cb-switch" role="tablist" aria-label="Show">
-        <button type="button" role="tab" class="cb-tab" data-cbv="wall" aria-selected="true">Wall of Champions</button>
-        <button type="button" role="tab" class="cb-tab" data-cbv="jp" aria-selected="false">Jackpot Winners</button>
-      </div>
-      <div id="cb-wall">
-      ${(() => { const all = WALL(), f = HIST.latest(), yrs = [...new Set(all.map(c => c.date.slice(0, 4)))], first = all[all.length - 1];
-        const tot = all.reduce((a, c) => a + wallWon(c), 0), big = all.reduce((a, c) => wallWon(c) > wallWon(a) ? c : a); return `
-      <div class="cb-head"><p class="eyebrow">Every Tour champion since ${esc(HIST.MON[+first.date.slice(5, 7) - 1])} ${first.date.slice(0, 4)}</p><h2>Wall of Champions</h2></div>
-      <div class="cb-feature">
-        <button type="button" class="cbf-pic" data-photo="${f.id}" aria-haspopup="dialog" aria-label="Read ${esc(f.name)}'s story">${wallPic(f, 320, 284)}</button>
-        <div class="cbf-body">
-          <p class="eyebrow">Latest champion · ${esc(new Date(f.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p>
-          <h3>${esc(f.name)}</h3>
-          <p class="cbf-where">${esc(f.where)}${wallWon(f) ? ` · won <b>${money(wallWon(f))}</b>` : ""}</p>
-          <p class="cbf-head">${esc(f.head)}</p>
-          <p class="cbf-links"><button type="button" class="btn btn-primary" data-photo="${f.id}" aria-haspopup="dialog">Read story</button><a class="btn btn-ghost-light" href="#results/${f.id}">Results →</a></p>
+      <div class="c pot j"><div class="lbl">9-Tap Jackpot</div><div class="a num">${money(DATA.jackpot)}</div>${pct ? `<div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>` : ""}<p>${pct ? `${pct}% of the record pot (${money(DATA.jackpotRecord)}). ` : ""}Start a game with seven straight strikes to win 80%.</p></div>
+      <div class="c pot p"><div class="lbl">Progressive Pot</div><div class="a num">${money(DATA.progressive)}</div><p>Shared by the top three finishers who paid in. Unclaimed money rolls over.</p></div>
+      <div class="c top3"><div class="lbl">Top ${top.length || 3} · ${esc(fmtD(c.date))}</div>${top.length ? `<table>${top.map((t, i) => `<tr><td><span class="medal m${i}">${i + 1}</span>${esc(t[0])}</td><td class="r">${t[1] || ""}</td><td class="r">${t[2] ? money(t[2]) : ""}</td></tr>`).join("")}</table>` : `<p>${esc(c.name)} won${won ? ` ${money(won)}` : ""}.</p>`}<a class="more" href="#results/${c.id}">Full results →</a></div>
+      <div class="c stat"><div class="lbl">Tournaments</div><b>${all.length}</b><span>since ${esc(HIST.MON[+first.date.slice(5, 7) - 1])} ${first.date.slice(0, 4)}</span></div>
+      <div class="c stat"><div class="lbl">Won by champions</div><b>${money(tot)}</b><span>&nbsp;</span></div>
+      <div class="c stat"><div class="lbl">Biggest check</div><b>${money(wallWon(big))}</b><span>${esc(big.name)}</span></div>
+      <section class="c wall" aria-label="Wall of Champions and Jackpot Winners">
+        <div class="wh"><h2 id="cb-title">Wall of Champions</h2><div class="seg" role="tablist" aria-label="Show">
+          <button type="button" role="tab" class="cb-tab" data-cbv="wall" aria-selected="true">Wall of Champions</button>
+          <button type="button" role="tab" class="cb-tab" data-cbv="jp" aria-selected="false">Jackpot Winners</button></div></div>
+        <div id="cb-wall">
+          <div class="pick"><select id="cb-year" aria-label="Season">${yrs.map(y => `<option>${y}</option>`).join("")}</select><div class="chips" id="cb-months" role="group" aria-label="Choose a month"></div></div>
+          <div class="wg" id="champ-grid"></div>
         </div>
-      </div>
-      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
-      <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
-      <div class="cb-months month-pick" id="cb-months" role="group" aria-label="Choose a month"></div>
-      <div class="champ-grid" id="champ-grid"></div>`; })()}
-      </div>
-      <div id="cb-jp" hidden>
-      ${(() => { const J = JACKPOTS, yrs = [...new Set(J.map(j => j.d.slice(0, 4)))], first = J[J.length - 1];
-        const paid = J.reduce((a, j) => a + j.a * j.n.length, 0), cnt = k => J.filter(j => j.k === k).reduce((a, j) => a + j.n.length, 0);
-        const big = J.reduce((a, j) => j.a > a.a ? j : a); return `
-      <div class="cb-head"><p class="eyebrow">Every 9-Tap Jackpot payout in the Tour's emails since ${esc(HIST.MON[+first.d.slice(5, 7) - 1])} ${first.d.slice(0, 4)}</p><h2>Jackpot Winners</h2></div>
-      <p class="jp-how">String 9-counts (9 pins on the first ball) from the start of a game. Seven in a row wins the 9-Tap Jackpot. Shorter strings, and seven in the middle of a game, pay consolation money from the pot. Six to start earns a Golden Shot: one ball for the whole Jackpot.</p>
-      <div class="cb-stats"><div><b>${cnt("jackpot")}</b><span>Jackpots hit</span></div><div><b>${cnt("golden")}</b><span>Golden Shots</span></div><div><b>${cnt("middle")}</b><span>Middle-7 strings</span></div><div><b>${money(paid)}</b><span>Paid to these bowlers</span></div></div>
-      <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn jp-yr" data-jpyear="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
-      <ol class="jp-list" id="jp-list"></ol>`; })()}
-      </div>
-    </div></section>`;
+        <div id="cb-jp" hidden>
+          <p class="jp-how">String 9-counts from the start of a game. Seven in a row wins the 9-Tap Jackpot; six earns a Golden Shot; shorter strings and seven in the middle pay consolation money. <b>${cnt("jackpot")}</b> jackpots, <b>${cnt("golden")}</b> Golden Shots and <b>${cnt("middle")}</b> Middle-7 strings since ${esc(HIST.MON[+J[J.length - 1].d.slice(5, 7) - 1])} ${J[J.length - 1].d.slice(0, 4)}.</p>
+          <div class="pick"><select id="jp-year" aria-label="Season">${jyrs.map(y => `<option>${y}</option>`).join("")}</select></div>
+          <ol class="jp-list" id="jp-list"></ol>
+        </div>
+      </section>
+    </div></div></div>`;
   },
 
   schedule() {
@@ -2535,24 +2603,33 @@ function renderJackpots(year) {
       <span class="jp-amt">${money(j.a)}${j.n.length > 1 ? "<small>each</small>" : ""}</span>
     </li>`; }).join("");
 }
+/* Home champion card: fill it with as much of the story as fits beside the ticket card (no empty space, no taller than the ticket). */
+function fitChampStory() {
+  const card = $(".dash .champ"), st = card && card.querySelector(".story"), tk = $(".dash .ticket.next"); if (!st || !tk) return;
+  const full = st.dataset.full || (st.dataset.full = st.textContent); st.textContent = full;
+  if (innerWidth <= 960) { if (full.length > 430) st.textContent = full.slice(0, full.lastIndexOf(" ", 430)) + "…"; return; }
+  card.style.alignSelf = "start"; tk.style.alignSelf = "start";
+  const target = tk.offsetHeight; let words = full.split(" "), lo = 0, hi = words.length;
+  if (card.offsetHeight > target) {
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; st.textContent = words.slice(0, mid).join(" ") + (mid < words.length ? "…" : ""); if (card.offsetHeight <= target) lo = mid; else hi = mid - 1; }
+    st.textContent = words.slice(0, lo).join(" ") + (lo < words.length ? "…" : "");
+  }
+  card.style.alignSelf = ""; tk.style.alignSelf = "";
+}
 function renderChamps(year, month) {
   const g = $("#champ-grid"); if (!g) return;
-  const all = WALL();
-  const f = HIST.latest(), inYr = all.filter(c => c !== f && c.date.startsWith(year));
+  const inYr = WALL().filter(c => c.date.startsWith(year));
   const has = m => inYr.some(c => +c.date.slice(5, 7) - 1 === m);
   if (month == null || !has(month)) month = inYr.length ? +inYr[0].date.slice(5, 7) - 1 : 0;
   const mb = $("#cb-months");
-  if (mb) { mb.innerHTML = HIST.MON.map((n, i) => `<button type="button" class="mp-btn mp-mon" data-month="${i}" aria-pressed="${i === month}"${has(i) ? "" : " disabled"}>${n.slice(0, 3)}</button>`).join("");
+  if (mb) { mb.innerHTML = HIST.MON.map((n, i) => `<button type="button" class="mp-mon" data-month="${i}" aria-pressed="${i === month}"${has(i) ? "" : " disabled"}>${n.slice(0, 3)}</button>`).join("");
     mb.querySelectorAll("[data-month]").forEach(b => b.addEventListener("click", () => renderChamps(year, +b.dataset.month))); }
   const list = inYr.filter(c => +c.date.slice(5, 7) - 1 === month);
   g.innerHTML = list.map(c => `
-    <div class="champ-card">
-      <button type="button" class="cc-open" data-photo="${c.id}" aria-haspopup="dialog">
-        <span class="cc-photo">${wallPic(c, 252, 224)}<span class="cc-ribbon">${wallWon(c) ? money(wallWon(c)) : "Champion"}</span></span>
-        <span class="cc-body"><b>${esc(c.name)}</b><span>${esc(c.where)}</span><span>${esc(new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }))}${c.tag ? ` · ${esc(c.tag)}` : ""}</span></span>
-      </button>
-      <div class="cc-links"><button type="button" data-photo="${c.id}" aria-haspopup="dialog">Read story</button><a href="#results/${c.id}">Results →</a></div>
-    </div>`).join("");
+    <button type="button" class="wc" data-photo="${c.id}" aria-haspopup="dialog">
+      <span class="ph">${wallPic(c, 72, 72)}</span>
+      <span><b>${esc(c.name)}</b><span>${esc(new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }))} · ${esc(c.where)}${c.tag ? ` · ${esc(c.tag)}` : ""}</span>${wallWon(c) ? `<em>${money(wallWon(c))}</em>` : ""}</span>
+    </button>`).join("");
   g.querySelectorAll("button[data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
 }
 function openChamp(photo) {
@@ -3481,16 +3558,13 @@ function wire(view) {
   if (view === "desk") wireDesk();
   if (view === "setup") wireSetup();
   if (view === "home") {
-    const btns = document.querySelectorAll(".mp-btn[data-year]");
-    btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.year); }));
-    if (btns[0]) renderChamps(btns[0].dataset.year);
-    const jb = document.querySelectorAll(".jp-yr");
-    jb.forEach(b => b.addEventListener("click", () => { jb.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderJackpots(b.dataset.jpyear); }));
-    if (jb[0]) renderJackpots(jb[0].dataset.jpyear);
+    const ys = $("#cb-year"); if (ys) { ys.addEventListener("change", () => renderChamps(ys.value)); renderChamps(ys.value); }
+    const jy = $("#jp-year"); if (jy) { jy.addEventListener("change", () => renderJackpots(jy.value)); renderJackpots(jy.value); }
     const tabs = document.querySelectorAll(".cb-tab");
     tabs.forEach(t => t.addEventListener("click", () => { tabs.forEach(x => x.setAttribute("aria-selected", String(x === t)));
-      $("#cb-wall").hidden = t.dataset.cbv !== "wall"; $("#cb-jp").hidden = t.dataset.cbv !== "jp"; }));
-    document.querySelectorAll(".cb-feature [data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
+      $("#cb-wall").hidden = t.dataset.cbv !== "wall"; $("#cb-jp").hidden = t.dataset.cbv !== "jp"; $("#cb-title").textContent = t.dataset.cbv === "jp" ? "Jackpot Winners" : "Wall of Champions"; }));
+    document.querySelectorAll(".dash .champ [data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
+    fitChampStory(); window.addEventListener("resize", fitChampStory);
   }
   if (view === "results") { renderResults(); fitNewsletter(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
   if (view === "rules") {
