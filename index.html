@@ -486,9 +486,19 @@ summary::after { content: "+"; font-family: var(--font-num); color: var(--accent
 details[open] summary::after { content: "–"; }
 details > div { padding-bottom: 16px; color: var(--muted); display: grid; gap: 8px; max-width: 72ch; }
 details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
-.calc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.calc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
 .calc output { font-family: var(--font-num); font-weight: 600; font-size: 2rem; color: var(--accent); line-height: 1.1; }
 @media (max-width: 560px) { .calc { grid-template-columns: 1fr 1fr; } .calc .res { grid-column: 1 / -1; } }
+.hc-steps { margin: 16px 0 0; display: grid; gap: 0; }
+.hc-steps > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.hc-steps dt { font-weight: 600; }
+.hc-steps dt span { display: block; font-weight: 400; font-size: .85rem; color: var(--muted); }
+.hc-steps dd { margin: 0; font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; white-space: nowrap; }
+.hc-steps .hc-total { border-top: 2px solid var(--ink); }
+.hc-steps .hc-total dt { font-size: 1.05rem; }
+.hc-steps .hc-total dd, .hc-steps .hc-total output { font-size: 2rem; color: var(--accent); line-height: 1.1; }
+.hc-steps .hc-series dt { font-weight: 400; color: var(--muted); }
+.hc-steps .hc-series dd { font-size: 1rem; }
 
 /* Rules */
 .rule-groups { display: grid; gap: 28px; }
@@ -581,7 +591,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .fl-note { margin: 10px 0 14px; font-size: .78rem; color: #3a4d52; }
 .fl-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fl-champs > div { display: flex; gap: 10px; align-items: center; border: 1px solid #d9dfe0; border-radius: 6px; padding: 8px; }
-.fl-champs img { width: 64px; height: 57px; object-fit: cover; border-radius: 4px; }
+.fl-champs img, .fl-champs .mock-pic { width: 64px; height: 57px; flex: none; object-fit: cover; border-radius: 4px; overflow: hidden; }
+.fl-champs .mock-pic svg { width: 100%; height: 100%; }
+.fl-champs .mock-tag { display: none; }
 .fl-champs p { margin: 0; font-size: .78rem; color: #3a4d52; }
 .fl-champs b { display: block; color: #10242a; font-size: .9rem; }
 .fl-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 14px; padding: 8px 12px; background: #10242a; color: #fff; border-radius: 4px; font-size: .8rem; }
@@ -894,6 +906,9 @@ body.tv-mode { background: #0b1f26; }
 .hero-pots .pot .label { color: var(--accent); } .hero-pots .pot .amount { color: var(--ink); } .hero-pots .pot .note { color: var(--muted); }
 .hero { overflow: visible; } .hero::after { display: none; }
 .champs-band { border-top: 6px solid var(--accent); }
+/* Wall of Champions is the last thing on the home page: no gray rule or gap before the footer */
+main > .champs-band:last-child { border-bottom: 0; margin-bottom: 0; }
+main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .champ-card { background: #fff; color: var(--ink); border-color: #e6d3ad; box-shadow: 0 8px 22px rgba(16,36,42,.12); }
 .champ-card b { color: var(--ink); } .cc-body > span { color: var(--muted); }
 .cc-links { border-top-color: var(--line); } .cc-links > * { color: var(--accent); } .cc-links > * + * { border-left-color: var(--line); }
@@ -1127,7 +1142,6 @@ function eventRow(e, withMaps) {
 const VIEWS = {
   home() {
     const e = nextEvent, d = parse(e.date);
-    const upcoming = DATA.events.filter(x => eventStatus(x) === "upcoming").slice(0, 4);
     return `
     <section class="hero"><div class="wrap hero-grid">
       ${(() => { const c = HIST.latest(), won = wallWon(c), bio = (c.bio || []).slice(0, 2);
@@ -1217,12 +1231,7 @@ const VIEWS = {
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn jp-yr" data-jpyear="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
       <ol class="jp-list" id="jp-list"></ol>`; })()}
       </div>
-    </div></section>
-
-    <section class="wrap section">
-      <div class="section-head"><h2>Coming up</h2><a class="link-more" href="#schedule">Full schedule →</a></div>
-      <div class="event-rows">${upcoming.map(eventRow).join("")}</div>
-    </section>`;
+    </div></section>`;
   },
 
   schedule() {
@@ -1573,7 +1582,7 @@ const VIEWS = {
       <div class="rule-group" data-group>
         <h3 class="rule-group-title">${esc(name)}</h3>
         ${ns.map(n => byN[n]).filter(Boolean).map(r => `
-          <details class="rule" data-text="${esc((r.title + " " + r.paras.join(" ")).toLowerCase())}">
+          <details class="rule" id="rule-${r.n}" data-text="${esc((r.title + " " + r.paras.join(" ")).toLowerCase())}">
             <summary><span class="rule-n num">${r.n}</span><span class="rule-t">${esc(r.title)}</span></summary>
             <div>${r.bul ? `<p>${esc(r.paras[0])}</p><ul>${r.paras.slice(1).map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : r.paras.map(x => `<p>${esc(x)}</p>`).join("")}</div>
           </details>`).join("")}
@@ -1600,10 +1609,16 @@ const VIEWS = {
         <div class="panel" style="margin-top:18px">
           <div class="calc">
             <div class="field"><label for="avg">9-Tap average</label><input id="avg" type="number" inputmode="numeric" min="100" max="260" value="185"></div>
-            <div class="field"><label for="bonus">Bonus pins</label><input id="bonus" type="number" inputmode="numeric" min="0" max="5" value="1"></div>
-            <div class="res"><div class="meta" style="font-size:.82rem">Per game</div><output id="hdcp-out">32</output></div>
+            <div class="field"><label for="bonus">Your bonus pins (0 to 5)</label><input id="bonus" type="number" inputmode="numeric" min="0" max="5" value="1"></div>
           </div>
-          <p class="foot-note" id="hdcp-note">Over three games that's 96 handicap pins.</p>
+          <p class="foot-note" style="margin-top:8px">Bonus pins: you earn 1 for every 3 tournaments you bowl without cashing, up to 5. They're added to your handicap every game and come off when you cash (<a class="link-more" href="#rules" data-rule="14">Rule 14</a>).</p>
+          <dl class="hc-steps" aria-live="polite">
+            <div><dt>Handicap <span id="hc-why">90% of (220 − 185)</span></dt><dd id="hc-base">31</dd></div>
+            <div><dt>Bonus pins</dt><dd id="hc-bonus">+ 1</dd></div>
+            <div class="hc-total"><dt>Total per game</dt><dd><output id="hdcp-out">32</output></dd></div>
+            <div class="hc-series"><dt>Series when best 3 count</dt><dd id="hc-s3">96</dd></div>
+            <div class="hc-series"><dt>Series when all 4 count</dt><dd id="hc-s4">128</dd></div>
+          </dl>
         </div>
       </div>
       <div>
@@ -1725,7 +1740,7 @@ const VIEWS = {
       <header class="fl-head">
         <img src="img/tour-logo.png" alt="" class="fl-logo">
         <div class="fl-title"><p class="fl-kicker">Top tournaments for the average bowler</p><h1>9-Tap Tour</h1><p class="fl-season">Fall 2026 Schedule</p></div>
-        <img src="img/storm.png" alt="Storm" class="fl-spon">
+        <img src="img/tour-logo.png" alt="" class="fl-logo">
       </header>
       <ul class="fl-facts"><li>Handicap singles · 125 to 210 averages</li><li>9-Tap Jackpot <b>${money(DATA.jackpot)}</b></li><li>Progressive Pot <b>${money(DATA.progressive)}</b></li><li>1 in 5 cash · USBC certified</li></ul>
       <table class="fl-table">
@@ -1738,11 +1753,10 @@ const VIEWS = {
       </table>
       <p class="fl-note">Byes: Dec 16 and Dec 26. Arrive an hour early to sign up as a new member ($25). You can cash once per tournament. Look for the next schedule on the website.</p>
       <div class="fl-champs">
-        <div><img src="img/champ-michael-miller.jpg" alt=""><p><b>Michael Miller</b>1st, Bowlero Paradise<br>Won ${money(2613)}</p></div>
-        <div><img src="img/champ-ruta-hert.jpg" alt=""><p><b>Ruta Hert</b>1st, Bowlero South Seattle<br>Won ${money(2460)}</p></div>
+        ${WALL().slice().sort((x, y) => y.date.localeCompare(x.date)).slice(0, 2).map(c => `<div>${wallPic(c, 64, 57)}<p><b>${esc(c.name)}</b>1st, ${esc(c.where)} · ${md(c.date)}${wallWon(c) ? `<br>Won ${money(wallWon(c))}` : ""}</p></div>`).join("")}
       </div>
       <footer class="fl-foot"><b>9taptour.com</b><span>Message line (253) 987-7975</span><span>PO Box 931, Sumner, WA 98390</span></footer>
-      <div class="fl-sponsors">${["miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
+      <div class="fl-sponsors">${["storm","miller-lite","dexter","rain-city","heritage","carstar","command","south-tacoma-honda"].map(n => `<img src="img/${n}.png" alt="">`).join("")}</div>
     </div></section>`;
   },
 
@@ -3502,11 +3516,16 @@ function wire(view) {
   if (view === "rules") {
     const calc = () => {
       const a = Math.max(125, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
-      const h = Math.trunc((220 - a) * 0.9) + b;
-      $("#hdcp-out").textContent = h;
-      $("#hdcp-note").textContent = `Over three games that's ${h * 3} handicap pins.`;
+      const base = Math.trunc((220 - a) * 0.9), h = base + b, sg = n => (n < 0 ? "−" + -n : String(n));
+      $("#hc-why").textContent = `90% of (220 − ${a})${a > 220 ? ", negative over 220" : ""}`;
+      $("#hc-base").textContent = sg(base);
+      $("#hc-bonus").textContent = "+ " + b;
+      $("#hdcp-out").textContent = sg(h);
+      $("#hc-s3").textContent = `3 × ${sg(h)} = ${sg(h * 3)}`;
+      $("#hc-s4").textContent = `4 × ${sg(h)} = ${sg(h * 4)}`;
     };
     $("#avg").addEventListener("input", calc); $("#bonus").addEventListener("input", calc); calc();
+    document.querySelectorAll("[data-rule]").forEach(l => l.addEventListener("click", ev => { const d = document.getElementById("rule-" + l.dataset.rule); if (!d) return; ev.preventDefault(); d.open = true; d.scrollIntoView({ behavior: "smooth", block: "start" }); }));
   }
   if (view === "join") {
     document.querySelectorAll('input[name="f-10"]').forEach(r => r.addEventListener("change", () => { $("#f-10-more").hidden = !document.querySelector('input[name="f-10"][value="Y"]').checked; }));
