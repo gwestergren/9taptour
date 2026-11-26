@@ -1288,29 +1288,30 @@ const SHEET = {
       avg: +r.Average || 0, bonus: +r["Bonus pins"] || 0, hcp: r["Handicap override"] === "" || r["Handicap override"] == null ? null : +r["Handicap override"], nick: r["Nickname / other names"] || "" })); },
   ready() { return SHEET.members().length >= 1; },
   yes: v => v ? "Yes" : "",
-  ckOut(r) { return { "Squad": r.squad, "Member #": r.member, "First name": r.first, "Last name": r.last, "City": r.city, "Average": r.avg, "Handicap": r.hcp == null ? "" : r.hcp,
-    "Bonus pins": r.bonus, "New member": SHEET.yes(r.isNew), "Lane": r.lane || "", "9-Tap Jackpot": SHEET.yes(r.jackpot), "Progressive": r.prog || "", "Bowl with": r.friend || "",
+  sqTime(e, i) { const c = CFG.get(e); return CFG.normT((c.squads || [])[i] || (e.squads || [])[i] || ""); },
+  ckOut(r, e) { return { "Squad": r.squad + 1, "Squad time": e ? SHEET.sqTime(e, r.squad) : "", "Member #": r.member, "First name": r.first, "Last name": r.last, "City": r.city, "Average": r.avg || "", "Handicap": r.hcp == null ? "" : r.hcp,
+    "Bonus pins": r.bonus || "", "New member": SHEET.yes(r.isNew), "Lane": r.lane || "", "9-Tap Jackpot": SHEET.yes(r.jackpot), "Progressive": r.prog || "", "Bowl with": r.friend || "",
     "Checked in by": r.via || "", "Paid": SHEET.yes(r.paid), "Checked in at": r.at ? new Date(r.at).toISOString() : "" }; },
   ckIn(x) { return { member: String(x["Member #"]), first: x["First name"], last: x["Last name"], city: x.City, avg: +x.Average || 0, bonus: +x["Bonus pins"] || 0,
-    hcp: x.Handicap === "" || x.Handicap == null ? null : +x.Handicap, isNew: !!x["New member"], squad: +x.Squad || 0, lane: +x.Lane || null, pos: "",
+    hcp: x.Handicap === "" || x.Handicap == null ? null : +x.Handicap, isNew: !!x["New member"], squad: Math.max(0, (+x.Squad || 1) - 1), lane: +x.Lane || null, pos: "",
     jackpot: !!x["9-Tap Jackpot"], prog: x.Progressive === "" ? 0 : (isNaN(+x.Progressive) ? x.Progressive : +x.Progressive), friend: x["Bowl with"] || "",
     via: x["Checked in by"] || "", paid: !!x.Paid, at: Date.parse(x["Checked in at"]) || Date.now() }; },
   // Check-in list saved on this device: staff send the whole day; a bowler's phone sends just its own new check-in.
   saveCheckins(e, l, old) {
     if (!SHEET.ready()) return;
     // Staff send only what changed, so a bowler's phone check-in that just reached the sheet is never wiped out.
-    if (SHEET.key()) { const was = new Map((old || []).map(r => [r.member + ":" + r.squad, JSON.stringify(SHEET.ckOut(r))]));
-      const rows = l.filter(r => was.get(r.member + ":" + r.squad) !== JSON.stringify(SHEET.ckOut(r))).map(SHEET.ckOut);
-      const removed = (old || []).filter(o => !l.some(r => r.member === o.member && r.squad === o.squad)).map(o => ({ "Member #": o.member, "Squad": o.squad }));
+    if (SHEET.key()) { const out = r => SHEET.ckOut(r, e), was = new Map((old || []).map(r => [r.member + ":" + r.squad, JSON.stringify(out(r))]));
+      const rows = l.filter(r => was.get(r.member + ":" + r.squad) !== JSON.stringify(out(r))).map(out);
+      const removed = (old || []).filter(o => !l.some(r => r.member === o.member && r.squad === o.squad)).map(o => ({ "Member #": o.member, "Squad": o.squad + 1 }));
       if (rows.length || removed.length) SHEET.send({ action: "saveCheckins", date: e.date, rows, removed }); return; }
     l.filter(r => r.via === "phone" && !r._sent).forEach(r => { r._sent = 1;
-      fetch(SHEET.URL, { method: "POST", body: JSON.stringify({ action: "checkin", row: Object.assign({ "Date": e.date }, SHEET.ckOut(r)) }) }).catch(() => {}); });
+      fetch(SHEET.URL, { method: "POST", body: JSON.stringify({ action: "checkin", row: Object.assign({ "Date": e.date }, SHEET.ckOut(r, e)) }) }).catch(() => {}); });
   },
   saveScores(e, sq, v) {
     if (!SHEET.ready()) return;
     const ros = SC.roster(e, sq), rows = Object.entries(v.scores || {}).map(([id, g]) => { const b = ros.find(x => x.id === id); if (!b) return null;
       return { "Lane": b.lane, "Member #": b.member || "", "Bowler": b.name, "Entry id": id, "Game 1": g[0] ?? "", "Game 2": g[1] ?? "", "Game 3": g[2] ?? "", "Game 4": g[3] ?? "" }; }).filter(Boolean);
-    SHEET.send({ action: "saveScores", id: "sc" + e.date + ":" + sq, date: e.date, squad: sq, rows, by: (STAFF.me && STAFF.me.userDetails) || "staff" });
+    SHEET.send({ action: "saveScores", id: "sc" + e.date + ":" + sq, date: e.date, squad: sq + 1, squadTime: SHEET.sqTime(e, sq), rows, by: (STAFF.me && STAFF.me.userDetails) || "staff" });
   },
   finalize(e, r) { if (SHEET.ready()) SHEET.send({ action: "finalize", id: "fin" + e.date, date: e.date, result: { where: r.where, city: r.city, name: r.name, total: r.total, won: r.won, entries: r.entries, paid: r.paid, lowCash: r.lowCash, rows: r.rows } }); },
   reopen(e) { if (SHEET.ready()) SHEET.send({ action: "reopen", id: "fin" + e.date, date: e.date }); },
@@ -1321,8 +1322,8 @@ const SHEET = {
       if (!j || !j.ok) return; const q = SHEET.get(SHEET.QUEUE, []), changed = [];
       if (!q.some(x => x.action === "saveCheckins" && x.date === e.date)) { const k = CK.key(e), v = JSON.stringify((j.data["Check-ins"] || []).map(SHEET.ckIn));
         if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } }
-      const by = {}; (j.data.Scores || []).forEach(x => { const sq = +x.Squad || 0; (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null)); });
-      Object.keys(by).forEach(sq => { if (q.some(x => x.action === "saveScores" && x.date === e.date && String(x.squad) === sq)) return; const k = SC.key(e, +sq), v = JSON.stringify(by[sq]);
+      const by = {}; (j.data.Scores || []).forEach(x => { const sq = Math.max(0, (+x.Squad || 1) - 1); (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null)); });
+      Object.keys(by).forEach(sq => { if (q.some(x => x.action === "saveScores" && x.date === e.date && String(x.squad - 1) === sq)) return; const k = SC.key(e, +sq), v = JSON.stringify(by[sq]);
         if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } });
       changed.forEach(key => window.dispatchEvent(new StorageEvent("storage", { key })));
     }).catch(() => {});
@@ -2861,7 +2862,7 @@ const CFG = {
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, saved: false }; },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
-  put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: e.center, city: e.city, setup: v }); },
+  put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} const ven = v && v.venue && VEN.find(v.venue); SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
   // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
@@ -3139,6 +3140,7 @@ const CK = {
   // Save a member's details (staff Bowlers page). Sample members get an override; added members are edited in place.
   // Today's check-ins (and the last tournament's) pick up the change so the Desk, scores and standings agree.
   saveMember(m) {
+    if (SHEET.ready()) SHEET.send({ action: "saveMember", id: "m" + m.member, member: { "Member #": m.member, "First name": m.first, "Last name": m.last, "City": m.city || "", "Average": m.avg || "", "Handicap override": m.hcp == null ? "" : m.hcp, "Bonus pins": m.bonus || "" } });
     const nm = CK.newMembers(), i = nm.findIndex(x => x.member === m.member), keep = { first: m.first, last: m.last, city: m.city, avg: m.avg, bonus: m.bonus, hcp: m.hcp };
     if (i >= 0) { Object.assign(nm[i], keep); CK.put("9tap-newmembers", nm); }
     else if (CK._m.some(x => x.member === m.member)) { const ed = CK.get("9tap-member-edits", {}); ed[m.member] = keep; CK.put("9tap-member-edits", ed); }
@@ -3197,7 +3199,7 @@ const CK = {
     const f = CK.friendOf(l, sq, r.friend, r);
     l.push(r); r.lane = CK.pick(e, sq, l, r, f); CK.save(e, l);
     const repeat = f && f.lane && CK.usedPairs(l, r).has(CK.pair(f.lane)) ? CK.pairName(CK.pair(f.lane)) : null;
-    if (!opts.desk) { const mine = CK.mine(e); mine.push(m.member + ":" + sq); CK.put(`9tap-mycheckin:${e.date}`, mine); }
+    if (!opts.desk) { const mine = CK.mine(e); if (!mine.includes(m.member + ":" + sq)) mine.push(m.member + ":" + sq); CK.put(`9tap-mycheckin:${e.date}`, mine); }
     return { r, f: f && r.lane && CK.pair(r.lane) === CK.pair(f.lane) ? f : null, repeat };
   },
   rows(e, sq) {
@@ -3428,7 +3430,7 @@ function wireCheckin() {
   const go = (step, extra = {}) => { Object.assign(U, { step }, extra); draw(); window.scrollTo(0, $(".ck-head").offsetTop); };
   const draw = () => {
     if (U.step === "find") {
-      const mine = CK.mine(e).map(k => { const [mem, sq] = k.split(":"); return { m: CK.members().find(x => x.member === mem), sq: +sq }; }).filter(x => x.m);
+      const mine = [...new Set(CK.mine(e))].map(k => { const [mem, sq] = k.split(":"); return { m: CK.members().find(x => x.member === mem), sq: +sq }; }).filter(x => x.m && CK.list(e).some(r => r.member === x.m.member && r.squad === x.sq)); // only check-ins that still exist
       app.innerHTML = `
         ${mine.length ? `<div class="ck-mine"><span class="sc-lbl">Checked in on this phone</span>${mine.map(x => `<button type="button" class="ck-hit" data-mine="${esc(x.m.member)}:${x.sq}"><b>${esc(x.m.first)} ${esc(x.m.last)}</b><span>${esc(e.squads[x.sq])} squad · see your lane</span></button>`).join("")}</div>` : ""}
         <div class="panel ck-find">

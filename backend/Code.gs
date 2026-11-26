@@ -103,7 +103,7 @@ const ACTIONS = {
   saveScores(b) {
     const sq = String(b.squad);
     replaceWhere('Scores', x => x['Date'] === b.date && String(x['Squad']) === sq,
-      rowsFor(b.rows, b.date).map(r => Object.assign(r, { 'Squad': b.squad, 'Updated at': new Date().toISOString(), 'Entered by': b.by || r['Entered by'] || 'staff' })));
+      rowsFor(b.rows, b.date).map(r => Object.assign(r, { 'Squad': b.squad, 'Squad time': b.squadTime || '', 'Updated at': new Date().toISOString(), 'Entered by': b.by || r['Entered by'] || 'staff' })));
     return {};
   },
   // Staff Setup for one tournament day. b.setup is the site's Setup object.
