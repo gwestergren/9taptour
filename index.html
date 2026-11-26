@@ -1247,7 +1247,7 @@ const SHEET = {
     const V = (data.Venues || []).filter(r => r["Format (site data)"] && typeof r["Format (site data)"] === "object");
     if (V.length && !SHEET.get(SHEET.QUEUE, []).some(x => x.action === "saveVenues")) { const old = SHEET.get("9tap-venues", []); SHEET.set("9tap-venues", V.map((r, i) => ({ id: (old.find(o => o.name === r.Venue) || {}).id || "s" + i, name: r.Venue, city: r.City || "", fmt: r["Format (site data)"] }))); }
     const waiting = SHEET.get(SHEET.QUEUE, []); // a save that hasn't reached the sheet yet wins over the sheet's older copy
-    (data.Tournaments || []).forEach(r => { const s = r["Setup (site data)"], d = SHEET.iso(r.Date); if (s && typeof s === "object" && d && !waiting.some(x => x.action === "saveSetup" && x.date === d)) SHEET.set("9tap-setup:" + d, s); });
+    (data.Tournaments || []).forEach(r => { const s = r["Setup (site data)"], d = SHEET.iso(r.Date); if (s && typeof s === "object" && d && !waiting.some(x => x.action === "saveSetup" && x.date === d)) SHEET.set("9tap-setup:" + d, Object.assign({}, s, r.Center ? { venueName: r.Center } : {})); });
   },
   // Load the last good copy right away (before the page draws), then ask the sheet for a fresh one.
   boot() { const c = SHEET.get(SHEET.CACHE, null); if (c && c.data) { SHEET.apply(c.data, true); SHEET.at = c.at; } },
@@ -1258,6 +1258,9 @@ const SHEET = {
         const before = JSON.stringify(SHEET.get(SHEET.CACHE, {}).data || null);
         SHEET.set(SHEET.CACHE, { at: new Date().toISOString(), data: j.data }); SHEET.apply(j.data, false);
         SHEET.status = "ok"; SHEET.at = new Date().toISOString(); SHEET.err = "";
+        // The schedule is read once when the page opens; if the sheet's schedule changed, open the page again (once) to show it.
+        const ev = SHEET.events(j.data); if (ev && JSON.stringify(ev) !== JSON.stringify(DATA.events)) { let n = 0; try { n = +sessionStorage.getItem("9tap-sheet-reload") || 0; } catch (_) {}
+          const v = (location.hash || "#home").slice(1).split("/")[0]; if (n < 2 && !["setup", "bowlers"].includes(v)) { try { sessionStorage.setItem("9tap-sheet-reload", n + 1); } catch (_) {} location.reload(); } }
         return before !== JSON.stringify(j.data);
       }).catch(e => { SHEET.status = "offline"; SHEET.err = String(e && e.message || e); return false; });
   },
@@ -2862,7 +2865,7 @@ const CFG = {
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, saved: false }; },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
-  put(e, v) { try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} const ven = v && v.venue && VEN.find(v.venue); SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
+  put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
   // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
@@ -3118,7 +3121,9 @@ const CK = {
   CITIES: ["Tacoma","Puyallup","Lakewood","Olympia","Port Orchard","Federal Way","Kent","Auburn","Gig Harbor","Bremerton","Everett","Lynnwood","Spanaway","Renton","Sumner","Bonney Lake","Lacey","Kenmore","Arlington","Shelton"],
   // The next tournament on the schedule (date moves on by itself), with the venue and squads saved on Setup.
   event() { return CK.eventFor(nextEvent); },
-  eventFor(base) { const c = CFG.get(base), v = c.venue && VEN.find(c.venue); return Object.assign({}, base, { squads: c.squads }, v ? { center: v.name, city: v.city || base.city } : {}); },
+  // The venue is matched by name first (venue ids differ from device to device), then by this device's id.
+  eventFor(base) { const c = CFG.get(base), v = (c.venueName && VEN.byName(c.venueName)) || (!c.venueName && c.venue && VEN.find(c.venue));
+    return Object.assign({}, base, { squads: c.squads }, v ? { center: v.name, city: v.city || base.city } : c.venueName ? { center: c.venueName } : {}); },
   members() {
     if (!CK._m) {
       let s = 29547; const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
@@ -3258,6 +3263,7 @@ function wireSetup() {
   clearInterval(setup_tick);
   const e = nextEvent, c = CFG.get(e);
   // Venue: the tournament remembers its venue; a new setup starts from the venue's saved format.
+  if (c.venueName && (!VEN.find(c.venue) || VEN.find(c.venue).name !== c.venueName)) { const v = VEN.byName(c.venueName); if (v) c.venue = v.id; }
   if (!c.venue || !VEN.find(c.venue)) { const v = VEN.byName(e.center); c.venue = v ? v.id : ""; if (v && !c.saved) Object.assign(c, VEN.fmt(v.fmt)); }
   let mode = null, dirty = false; // mode: "add" | "edit" while the venue box is open; dirty: unsaved setup changes
   const msg = t => { const m = $("#su-msg"); m.hidden = !t; m.innerHTML = t || ""; };
