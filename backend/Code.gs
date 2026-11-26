@@ -181,7 +181,7 @@ function headers(s) { return s.getRange(1, 1, 1, s.getLastColumn()).getValues()[
 
 // Dates come out as yyyy-MM-dd; everything else as the cell shows it (numbers stay numbers).
 function cellOut(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, tz(), 'yyyy-MM-dd');
+  if (v instanceof Date) return v.getFullYear() < 1901 ? Utilities.formatDate(v, tz(), 'h:mm a') : Utilities.formatDate(v, tz(), 'yyyy-MM-dd'); // a time-only cell (squad time) has no real date
   return v;
 }
 function readTab(name) {
