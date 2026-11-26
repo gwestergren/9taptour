@@ -1634,7 +1634,7 @@ const VIEWS = {
   },
 
   "bowler-of-the-year"() {
-    const years = HIST.years(), y = years.includes(+location.hash.split("/")[1]) ? +location.hash.split("/")[1] : 2025;
+    const years = HIST.years(), y = years.includes(+location.hash.split("/")[1]) ? +location.hash.split("/")[1] : Math.max(...years);
     const boy = BOY.get(y), max = boy[0][1];
     let prev = null, rank = 0;
     const rows = boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
