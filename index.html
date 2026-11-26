@@ -1017,6 +1017,11 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .dash .wg:empty::after{content:"No champions posted for this month yet.";color:var(--muted)}
 .dash .jp-how{color:var(--muted);font-size:17px;margin:0 0 12px;max-width:none}
 .dash .jp-list{max-width:none}
+.dash .find{font:400 18px "Atkinson Hyperlegible",sans-serif;padding:9px 14px;border:2px solid var(--line);border-radius:10px;min-width:240px;flex:0 1 300px;background:#fff}
+.dash .find:focus{outline:none;border-color:var(--navy)}
+.dash .find-none{color:var(--muted);grid-column:1/-1;list-style:none;margin:6px 0}
+.dash .jp-list mark{background:#fde8a8;color:inherit;border-radius:3px;padding:0 2px}
+@media(max-width:960px){.dash .find{flex:1 1 100%;min-width:0}}
 .dash .wc .mock-tag{display:none}
 .dash .wc b{color:var(--ink)}
 main:has(> .dash) + .site-foot{margin-top:0}
@@ -1290,12 +1295,12 @@ const VIEWS = {
           <button type="button" role="tab" class="cb-tab" data-cbv="wall" aria-selected="true">Wall of Champions</button>
           <button type="button" role="tab" class="cb-tab" data-cbv="jp" aria-selected="false">Jackpot Winners</button></div></div>
         <div id="cb-wall">
-          <div class="pick"><select id="cb-year" aria-label="Season">${yrs.map(y => `<option>${y}</option>`).join("")}</select><div class="chips" id="cb-months" role="group" aria-label="Choose a month"></div></div>
+          <div class="pick"><input type="search" id="cb-find" class="find" placeholder="Search a name" aria-label="Search champions by name" autocomplete="off"><select id="cb-year" aria-label="Season">${yrs.map(y => `<option>${y}</option>`).join("")}</select><div class="chips" id="cb-months" role="group" aria-label="Choose a month"></div></div>
           <div class="wg" id="champ-grid"></div>
         </div>
         <div id="cb-jp" hidden>
           <p class="jp-how">String 9-counts from the start of a game. Seven in a row wins the 9-Tap Jackpot; six earns a Golden Shot; shorter strings and seven in the middle pay consolation money. <b>${cnt("jackpot")}</b> jackpots, <b>${cnt("golden")}</b> Golden Shots and <b>${cnt("middle")}</b> Middle-7 strings since ${esc(HIST.MON[+J[J.length - 1].d.slice(5, 7) - 1])} ${J[J.length - 1].d.slice(0, 4)}.</p>
-          <div class="pick"><select id="jp-year" aria-label="Season">${jyrs.map(y => `<option>${y}</option>`).join("")}</select></div>
+          <div class="pick"><input type="search" id="jp-find" class="find" placeholder="Search a name" aria-label="Search jackpot winners by name" autocomplete="off"><select id="jp-year" aria-label="Season">${jyrs.map(y => `<option>${y}</option>`).join("")}</select></div>
           <ol class="jp-list" id="jp-list"></ol>
         </div>
       </section>
@@ -1344,7 +1349,7 @@ const VIEWS = {
       : c.recap ? `<b>From the Tour's email recap:</b> ${(() => { const t = c.top, got = [`the top ${t.length === 2 ? "two" : t.length > 3 ? "finishers" : "three"}`];
           if (t.some(x => x[1])) got.push("their totals"); if (t.some(x => x[2])) got.push("prize money"); if (c.recap && RECAP[c.date].entries) got.push("entries");
           if (RECAP[c.date].paid) got.push("total paid out"); if (c.lowCash) got.push("the cut line"); return got.join(", ").replace(/, ([^,]*)$/, " and $1"); })()}. Everything else in this list is sample data for the mockup.`
-      : c.winnerOnly ? "<b>The date, bowling center and winner are real</b> (from the Tour's Apr 26 email). Scores and the rest of the list are sample data for the mockup."
+      : c.winnerOnly ? "<b>The date, bowling center and winner are real</b> (from " + (c.winnerSrc === "photo" ? "the Tour's champion photo" : "the Tour's Apr 26 email") + "). Scores and the rest of the list are sample data for the mockup."
       : c.real ? "<b>Winner, total, first-place check and entries are from the old site.</b> The rest of this list is sample data for the mockup."
       : c.realDate ? `<b>The date and bowling center are real (from the ${c.date > "2025-11-30" || NEWS_REAL[c.date] ? "Tour's emails" : "old site"}).</b> The winner and the results list are sample data for the mockup.`
       : "<b>Sample results for this mockup.</b> The real list would be posted after the tournament.";
@@ -2424,7 +2429,10 @@ const HIST = (() => {
   DATA.champions.filter(c => !c.mock).forEach(c => { const r = recapFields(RECAP[c.date]);
     list.push(Object.assign({}, c, { id: c.photo, sample: false, champ: true }, r.recap ? { top: r.top, entries: r.entries || c.entries, lowCash: r.lowCash, recap: true } : {})); });
   // Real winner photos for recap champions (file img/champ-<id>.jpg), by tournament date.
-  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown" };
+  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown", "2026-05-02": "rene-malicdan", "2025-10-26": "montana-xaysana", "2025-05-10": "eric-arkoncel", "2026-08-22": "william-poole" };
+  // Winners known only from champion photos (no recap email or old-site result): the winner's name is real, the rest stays sample.
+  const PHOTO_WINNERS = { "2026-05-02": "Rene Malicdan", "2025-05-10": "Eric Arkoncel" };
+  list.forEach(x => { const w = PHOTO_WINNERS[x.date]; if (w && !x.recap && !x.real) Object.assign(x, { name: w, winnerOnly: true, winnerSrc: "photo" }); });
   list.forEach(x => { if (!x.photo && PHOTOS[x.date]) x.photo = PHOTOS[x.date]; });
   list.sort((a, b) => b.date.localeCompare(a.date));
   const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -2596,10 +2604,13 @@ const wallPic = (c, w, h) => c.photo ? `<img src="img/champ-${c.photo}.jpg" widt
 const JP_LABEL = { jackpot: "9-Tap Jackpot", golden: "Golden Shot", middle: "Middle string", front: "Consolation" };
 function renderJackpots(year) {
   const g = $("#jp-list"); if (!g) return;
-  g.innerHTML = JACKPOTS.filter(j => j.d.startsWith(year)).map(j => { const c = HIST.list.find(x => x.date === j.d);
+  const q = (($("#jp-find") || {}).value || "").trim().toLowerCase(), ys = $("#jp-year"); if (ys) ys.hidden = !!q;
+  const rows = q ? JACKPOTS.filter(j => j.n.some(n => n.toLowerCase().includes(q))) : JACKPOTS.filter(j => j.d.startsWith(year));
+  if (q && !rows.length) { g.innerHTML = `<li class="find-none">No jackpot payouts for “${esc(q)}” yet.</li>`; return; }
+  g.innerHTML = rows.map(j => { const c = HIST.list.find(x => x.date === j.d);
     return `<li class="jp-row jp-${j.k}">
-      <span class="jp-date">${esc(parse(j.d).toLocaleDateString("en-US", { month: "short", day: "numeric" }))}${c ? `<a href="#results/${c.id}">${esc(c.where)}</a>` : ""}</span>
-      <span class="jp-who"><b>${j.n.map(esc).join(", ")}</b><span class="jp-hit"><span class="jp-badge">${JP_LABEL[j.k]}</span> ${esc(j.h)} Taps</span></span>
+      <span class="jp-date">${esc(parse(j.d).toLocaleDateString("en-US", q ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" }))}${c ? `<a href="#results/${c.id}">${esc(c.where)}</a>` : ""}</span>
+      <span class="jp-who"><b>${j.n.map(n => q && n.toLowerCase().includes(q) ? `<mark>${esc(n)}</mark>` : esc(n)).join(", ")}</b><span class="jp-hit"><span class="jp-badge">${JP_LABEL[j.k]}</span> ${esc(j.h)} Taps</span></span>
       <span class="jp-amt">${money(j.a)}${j.n.length > 1 ? "<small>each</small>" : ""}</span>
     </li>`; }).join("");
 }
@@ -2616,8 +2627,18 @@ function fitChampStory() {
   }
   card.style.alignSelf = ""; tk.style.alignSelf = "";
 }
+const wallCard = (c, yr) => `
+    <button type="button" class="wc" data-photo="${c.id}" aria-haspopup="dialog">
+      <span class="ph">${wallPic(c, 72, 72)}</span>
+      <span><b>${esc(c.name)}</b><span>${esc(new Date(c.date + "T12:00").toLocaleDateString("en-US", yr ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" }))} · ${esc(c.where)}${c.tag ? ` · ${esc(c.tag)}` : ""}</span>${wallWon(c) ? `<em>${money(wallWon(c))}</em>` : ""}</span>
+    </button>`;
 function renderChamps(year, month) {
   const g = $("#champ-grid"); if (!g) return;
+  const q = (($("#cb-find") || {}).value || "").trim().toLowerCase(), mb0 = $("#cb-months"), ys = $("#cb-year");
+  if (mb0) mb0.hidden = !!q; if (ys) ys.hidden = !!q;
+  if (q) { const hits = WALL().filter(c => c.name.toLowerCase().includes(q));
+    g.innerHTML = hits.length ? hits.map(c => wallCard(c, true)).join("") : `<p class="find-none">No champion named “${esc(q)}” yet. Keep bowling!</p>`;
+    g.querySelectorAll("button[data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo))); return; }
   const inYr = WALL().filter(c => c.date.startsWith(year));
   const has = m => inYr.some(c => +c.date.slice(5, 7) - 1 === m);
   if (month == null || !has(month)) month = inYr.length ? +inYr[0].date.slice(5, 7) - 1 : 0;
@@ -2625,11 +2646,7 @@ function renderChamps(year, month) {
   if (mb) { mb.innerHTML = HIST.MON.map((n, i) => `<button type="button" class="mp-mon" data-month="${i}" aria-pressed="${i === month}"${has(i) ? "" : " disabled"}>${n.slice(0, 3)}</button>`).join("");
     mb.querySelectorAll("[data-month]").forEach(b => b.addEventListener("click", () => renderChamps(year, +b.dataset.month))); }
   const list = inYr.filter(c => +c.date.slice(5, 7) - 1 === month);
-  g.innerHTML = list.map(c => `
-    <button type="button" class="wc" data-photo="${c.id}" aria-haspopup="dialog">
-      <span class="ph">${wallPic(c, 72, 72)}</span>
-      <span><b>${esc(c.name)}</b><span>${esc(new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }))} · ${esc(c.where)}${c.tag ? ` · ${esc(c.tag)}` : ""}</span>${wallWon(c) ? `<em>${money(wallWon(c))}</em>` : ""}</span>
-    </button>`).join("");
+  g.innerHTML = list.map(c => wallCard(c)).join("");
   g.querySelectorAll("button[data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
 }
 function openChamp(photo) {
@@ -2641,7 +2658,7 @@ function openChamp(photo) {
   d.innerHTML = `<button type="button" class="dlg-x" aria-label="Close">×</button>
     <div class="dlg-head">${c.photo ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : wallPic(c)}<div>
       <p class="eyebrow">Champion · ${esc(c.where)} · ${esc(c.when || new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }))}</p><div class="dlg-name"><h2>${esc(c.name)}</h2>${wallWon(c) ? `<span class="dlg-won">Won <b>${money(wallWon(c))}</b></span>` : ""}</div>${c.real && !c.recap ? "" : `<p class="dlg-sub">${esc(c.head)}</p>`}</div></div>
-    ${c.real && !c.recap ? `<p>${esc(c.name)} won at ${esc(c.where)} with ${/^8/.test(c.total) ? "an" : "a"} ${c.total} total. The winner, total, first-place check and entries come from the old site's 2025 results; there's no write-up for this one.</p>` : c.winnerOnly ? `<p>${esc(c.name)} won at ${esc(c.where)} on April 18. The Tour's April 26 email mentions the win; the recap email for this day isn't in the inbox, so there's no story yet.</p>` : c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
+    ${c.real && !c.recap ? `<p>${esc(c.name)} won at ${esc(c.where)} with ${/^8/.test(c.total) ? "an" : "a"} ${c.total} total. The winner, total, first-place check and entries come from the old site's 2025 results; there's no write-up for this one.</p>` : c.winnerOnly ? (c.winnerSrc === "photo" ? `<p>${esc(c.name)} won at ${esc(c.where)} on ${esc(new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}. We have the champion photo but not the results yet, so there's no story.</p>` : `<p>${esc(c.name)} won at ${esc(c.where)} on April 18. The Tour's April 26 email mentions the win; the recap email for this day isn't in the inbox, so there's no story yet.</p>`) : c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
     ${c.games ? (() => { const keep = c.games.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(x => x[1]);
       const scr = keep.reduce((t, i) => t + c.games[i], 0), hd = c.hdcp * 3, bo = (c.bonus || 0) * 3, tot = scr + hd + bo; return `
     <div class="dlg-scores"><table><thead><tr>${c.games.map((_, i) => `<th>G${i + 1}</th>`).join("")}<th>Scratch</th>${c.avg ? "<th>Avg</th>" : ""}<th>Hdcp</th>${bo ? "<th>Bonus</th>" : ""}<th>Total</th></tr></thead>
@@ -3560,6 +3577,8 @@ function wire(view) {
   if (view === "home") {
     const ys = $("#cb-year"); if (ys) { ys.addEventListener("change", () => renderChamps(ys.value)); renderChamps(ys.value); }
     const jy = $("#jp-year"); if (jy) { jy.addEventListener("change", () => renderJackpots(jy.value)); renderJackpots(jy.value); }
+    const cf = $("#cb-find"); if (cf) cf.addEventListener("input", () => renderChamps(ys.value));
+    const jf = $("#jp-find"); if (jf) jf.addEventListener("input", () => renderJackpots(jy.value));
     const tabs = document.querySelectorAll(".cb-tab");
     tabs.forEach(t => t.addEventListener("click", () => { tabs.forEach(x => x.setAttribute("aria-selected", String(x === t)));
       $("#cb-wall").hidden = t.dataset.cbv !== "wall"; $("#cb-jp").hidden = t.dataset.cbv !== "jp"; $("#cb-title").textContent = t.dataset.cbv === "jp" ? "Jackpot Winners" : "Wall of Champions"; }));
