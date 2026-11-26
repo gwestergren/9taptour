@@ -2441,9 +2441,9 @@ const HIST = (() => {
   DATA.champions.filter(c => !c.mock).forEach(c => { const r = recapFields(RECAP[c.date]);
     list.push(Object.assign({}, c, { id: c.photo, sample: false, champ: true }, r.recap ? { top: r.top, entries: r.entries || c.entries, lowCash: r.lowCash, recap: true } : {})); });
   // Real winner photos for recap champions (file img/champ-<id>.jpg), by tournament date.
-  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown", "2026-05-02": "rene-malicdan", "2025-10-26": "montana-xaysana", "2025-05-10": "eric-arkoncel", "2026-08-22": "william-poole", "2026-02-01": "samson-ibale-2026-02-01", "2026-06-14": "steve-nolan-2026-06-14" };
+  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown", "2026-05-02": "rene-malicdan", "2025-10-26": "montana-xaysana", "2025-05-10": "eric-arkoncel", "2026-08-22": "william-poole", "2026-02-01": "samson-ibale-2026-02-01", "2026-06-14": "steve-nolan-2026-06-14", "2024-10-13": "remi-serrano", "2025-04-20": "joe-fincher-jr-2025-04-20", "2025-01-26": "chandra-martinez" };
   // Winners known only from champion photos (no recap email or old-site result): the winner's name is real, the rest stays sample.
-  const PHOTO_WINNERS = { "2026-05-02": "Rene Malicdan", "2026-06-14": "Steve Nolan", "2025-05-10": "Eric Arkoncel" };
+  const PHOTO_WINNERS = { "2026-05-02": "Rene Malicdan", "2026-06-14": "Steve Nolan", "2024-10-13": "Remi Serrano", "2025-04-20": "Joe Fincher Jr.", "2025-05-10": "Eric Arkoncel" };
   list.forEach(x => { const w = PHOTO_WINNERS[x.date]; if (w && !x.recap && !x.real) Object.assign(x, { name: w, winnerOnly: true, winnerSrc: "photo" }); });
   list.forEach(x => { if (!x.photo && PHOTOS[x.date]) x.photo = PHOTOS[x.date]; });
   list.sort((a, b) => b.date.localeCompare(a.date));
