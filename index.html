@@ -227,7 +227,7 @@ span.mock-pic.mock-pic { position: relative; display: block; overflow: hidden; a
 .cbf-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
 .btn-ghost-light { border: 1px solid rgba(255,255,255,.4); color: #fff; background: transparent; }
 @media (max-width: 760px) { .cb-feature { grid-template-columns: 1fr; gap: 14px; } }
-.cb-months { margin: -8px auto 10px; max-width: 760px; }
+.cb-months { margin: -8px auto 26px; max-width: 760px; }
 .mp-mon { padding: 6px 12px; font-size: .8rem; min-width: 52px; }
 .mp-mon:disabled { opacity: .35; cursor: default; }
 .cb-mcap { text-align: center; margin: 4px 0 22px; font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -1205,7 +1205,6 @@ const VIEWS = {
       <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
       <div class="cb-months month-pick" id="cb-months" role="group" aria-label="Choose a month"></div>
-      <p class="cb-mcap" id="cb-mcap"></p>
       <div class="champ-grid" id="champ-grid"></div>`; })()}
       </div>
       <div id="cb-jp" hidden>
@@ -2529,7 +2528,6 @@ function renderChamps(year, month) {
   if (mb) { mb.innerHTML = HIST.MON.map((n, i) => `<button type="button" class="mp-btn mp-mon" data-month="${i}" aria-pressed="${i === month}"${has(i) ? "" : " disabled"}>${n.slice(0, 3)}</button>`).join("");
     mb.querySelectorAll("[data-month]").forEach(b => b.addEventListener("click", () => renderChamps(year, +b.dataset.month))); }
   const list = inYr.filter(c => +c.date.slice(5, 7) - 1 === month);
-  const cap = $("#cb-mcap"); if (cap) cap.textContent = `${HIST.MON[month]} ${year} · ${list.length} champion${list.length === 1 ? "" : "s"}${f.date.startsWith(year) && +f.date.slice(5, 7) - 1 === month ? ", plus the latest champion above" : ""}`;
   g.innerHTML = list.map(c => `
     <div class="champ-card">
       <button type="button" class="cc-open" data-photo="${c.id}" aria-haspopup="dialog">
