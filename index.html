@@ -2446,6 +2446,12 @@ const HIST = (() => {
   const PHOTO_WINNERS = { "2026-05-02": "Rene Malicdan", "2026-06-14": "Steve Nolan", "2024-10-13": "Remi Serrano", "2025-04-20": "Joe Fincher Jr.", "2025-05-10": "Eric Arkoncel" };
   list.forEach(x => { const w = PHOTO_WINNERS[x.date]; if (w && !x.recap && !x.real) Object.assign(x, { name: w, winnerOnly: true, winnerSrc: "photo" }); });
   list.forEach(x => { if (!x.photo && PHOTOS[x.date]) x.photo = PHOTOS[x.date]; });
+  // A champion with no photo for that day reuses the same bowler's photo from their nearest other win.
+  const pkey = n => n.toLowerCase().replace(/\b(jr|sr|ii|iii)\b|[^a-z ]/g, "").trim().replace(/\s+/g, " ");
+  const wins = list.filter(x => x.photo && (x.recap || x.real || x.champ || x.winnerOnly || x.final));
+  list.forEach(x => { if (x.photo || !(x.recap || x.real || x.champ || x.winnerOnly || x.final)) return;
+    const same = wins.filter(w => pkey(w.name) === pkey(x.name)).sort((a, b) => Math.abs(parse(a.date) - parse(x.date)) - Math.abs(parse(b.date) - parse(x.date)));
+    if (same.length) x.photo = same[0].photo; });
   list.sort((a, b) => b.date.localeCompare(a.date));
   const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return {
