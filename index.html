@@ -60,7 +60,7 @@ p { margin: 0; }
 .wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 :focus-visible { outline: 3px solid var(--maple); outline-offset: 2px; border-radius: 3px; }
 
-/* Banner above the menu: the Tour's own logo art and sponsor logos. Always light so the artwork reads. */
+/* Banner above the menu: the Tour's own logo art. Sponsor logos sit at the top of the footer on light tiles so the artwork reads. */
 .banner { background: #e6e8e7; color: #10242a; border-bottom: 1px solid #cdd3d2; }
 .banner img { display: block; height: auto; max-width: 100%; }
 .banner-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px 6px; }
@@ -70,11 +70,12 @@ p { margin: 0; }
 .b-address { margin: 0; font-weight: 700; font-size: .95rem; color: #10242a; text-align: center; }
 .b-logo { width: 96px; flex: none; }
 .b-pin { flex: none; }
-.banner-sponsors-wrap { border-top: 1px solid #d3d8d7; margin-top: 8px; padding-block: 8px 12px; display: grid; justify-items: center; gap: 6px; }
-.sponsor-tag { margin: 0; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #8a2a21; }
+.banner-sponsors-wrap { display: grid; justify-items: center; gap: 10px; padding-bottom: 28px; margin-bottom: 28px; border-bottom: 1px solid rgba(255,255,255,.14); }
+.sponsor-tag { margin: 0; font-size: .78rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--on-deep); }
 .banner-sponsors { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; max-width: calc(5 * 168px + 4 * 8px); }
-.banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 168px; height: 60px; display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,.55); border: 1px solid #dde2e1; transition: background-color .15s, transform .15s, box-shadow .15s; }
+.banner-sponsors a, .banner-sponsors .no-link { flex: 0 0 168px; height: 60px; display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 8px; background: #f1f3f2; border: 1px solid #dde2e1; transition: background-color .15s, transform .15s, box-shadow .15s; }
 .word-logo { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 1.15rem; color: #10242a; text-decoration: none; line-height: 1.05; text-align: center; flex-direction: column; }
+.site-foot .word-logo, .site-foot .word-logo:hover { color: #10242a; }
 .word-logo small { display: block; margin-top: 2px; font-family: var(--font-body); font-size: .58rem; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: #8a6d2f; }
 .word-logo.fq { font-family: var(--font-body); font-style: italic; font-weight: 800; font-size: 1.15rem; letter-spacing: -.01em; flex-direction: row; }
 .word-logo.fq span { color: #c7362b; }
@@ -787,7 +788,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-btns .btn { min-height: 48px; flex: 1 1 0; max-width: 220px; }
 .su-msg { flex: 1 0 100%; order: -1; padding: 10px 12px; border-radius: var(--radius); font-size: .92rem; background: color-mix(in srgb, var(--good) 14%, transparent); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
-/* Staff area: own menu, no sponsor banner or public footer */
+/* Staff area: own menu, no banner or public footer (sponsors live in the footer) */
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 body.tv-mode .banner, body.tv-mode .site-head, body.tv-mode .site-foot, body.tv-mode .staff-head { display: none !important; }
 body.tv-mode { background: #0b1f26; }
@@ -1054,21 +1055,6 @@ main:has(> .dash) + .site-foot{margin-top:0}
     <img class="b-pin" src="img/pin-right.png" width="34" height="67" alt="">
     <img class="b-logo b-logo-right" src="img/tour-logo.png" width="96" height="79" alt="">
   </div>
-  <div class="wrap banner-sponsors-wrap">
-    <p class="sponsor-tag">Support our sponsors</p>
-    <nav class="banner-sponsors" aria-label="Sponsors">
-      <a href="https://www.carstar.com/locations/wa/puyallup-15166/" target="_blank" rel="noopener"><img src="img/carstar.png" width="112" height="39" alt="CARSTAR Cornforth-Campbell"></a>
-      <a href="https://www.millerlite.com/av" target="_blank" rel="noopener"><img src="img/miller-lite.png" width="124" height="47" alt="Miller Lite"></a>
-      <a href="https://www.stormbowling.com/" target="_blank" rel="noopener"><img src="img/storm.png" width="73" height="38" alt="Storm"></a>
-      <a href="https://www.dexterbowling.com/" target="_blank" rel="noopener"><img src="img/dexter.png" width="106" height="39" alt="Dexter"></a>
-      <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
-      <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
-      <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
-      <a href="https://raincitybowlingsupply.com/" target="_blank" rel="noopener" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></a>
-      <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
-      <a class="word-logo fq" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">Fitness<span>Quest</span></a>
-    </nav>
-  </div>
 </div>
 <header class="site-head">
   <div class="wrap head-row">
@@ -1107,6 +1093,21 @@ main:has(> .dash) + .site-foot{margin-top:0}
 
 <footer class="site-foot">
   <div class="wrap">
+    <div class="banner-sponsors-wrap">
+      <p class="sponsor-tag">Support our sponsors</p>
+      <nav class="banner-sponsors" aria-label="Sponsors">
+        <a href="https://www.carstar.com/locations/wa/puyallup-15166/" target="_blank" rel="noopener"><img src="img/carstar.png" width="112" height="39" alt="CARSTAR Cornforth-Campbell"></a>
+        <a href="https://www.millerlite.com/av" target="_blank" rel="noopener"><img src="img/miller-lite.png" width="124" height="47" alt="Miller Lite"></a>
+        <a href="https://www.stormbowling.com/" target="_blank" rel="noopener"><img src="img/storm.png" width="73" height="38" alt="Storm"></a>
+        <a href="https://www.dexterbowling.com/" target="_blank" rel="noopener"><img src="img/dexter.png" width="106" height="39" alt="Dexter"></a>
+        <a href="https://www.heritagebanknw.com/home/home" target="_blank" rel="noopener"><img src="img/heritage.png" width="138" height="33" alt="Heritage Bank"></a>
+        <a href="https://www.facebook.com/COMMAND.COMputers" target="_blank" rel="noopener"><img src="img/command.png" width="131" height="27" alt="Command Computers"></a>
+        <a href="https://www.southtacomahonda.com/" target="_blank" rel="noopener"><img src="img/south-tacoma-honda.png" width="181" height="29" alt="South Tacoma Honda"></a>
+        <a href="https://raincitybowlingsupply.com/" target="_blank" rel="noopener" title="Rain City Bowling Supply, the Bowlero Paradise pro shop"><img src="img/rain-city.png" width="132" height="39" alt="Rain City Bowling Supply"></a>
+        <a class="word-logo" href="https://www.jdcojewelry.com/" target="_blank" rel="noopener">JD &amp; Co.<small>Jewelry</small></a>
+        <a class="word-logo fq" href="https://www.fitnessquest.com/" target="_blank" rel="noopener">Fitness<span>Quest</span></a>
+      </nav>
+    </div>
     <div class="foot-grid">
       <div>
         <h4>9-Tap Tour Inc.</h4>
