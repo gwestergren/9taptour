@@ -486,9 +486,19 @@ summary::after { content: "+"; font-family: var(--font-num); color: var(--accent
 details[open] summary::after { content: "–"; }
 details > div { padding-bottom: 16px; color: var(--muted); display: grid; gap: 8px; max-width: 72ch; }
 details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
-.calc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.calc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
 .calc output { font-family: var(--font-num); font-weight: 600; font-size: 2rem; color: var(--accent); line-height: 1.1; }
 @media (max-width: 560px) { .calc { grid-template-columns: 1fr 1fr; } .calc .res { grid-column: 1 / -1; } }
+.hc-steps { margin: 16px 0 0; display: grid; gap: 0; }
+.hc-steps > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.hc-steps dt { font-weight: 600; }
+.hc-steps dt span { display: block; font-weight: 400; font-size: .85rem; color: var(--muted); }
+.hc-steps dd { margin: 0; font-family: var(--font-num); font-weight: 600; font-size: 1.15rem; white-space: nowrap; }
+.hc-steps .hc-total { border-top: 2px solid var(--ink); }
+.hc-steps .hc-total dt { font-size: 1.05rem; }
+.hc-steps .hc-total dd, .hc-steps .hc-total output { font-size: 2rem; color: var(--accent); line-height: 1.1; }
+.hc-steps .hc-series dt { font-weight: 400; color: var(--muted); }
+.hc-steps .hc-series dd { font-size: 1rem; }
 
 /* Rules */
 .rule-groups { display: grid; gap: 28px; }
@@ -1571,7 +1581,7 @@ const VIEWS = {
       <div class="rule-group" data-group>
         <h3 class="rule-group-title">${esc(name)}</h3>
         ${ns.map(n => byN[n]).filter(Boolean).map(r => `
-          <details class="rule" data-text="${esc((r.title + " " + r.paras.join(" ")).toLowerCase())}">
+          <details class="rule" id="rule-${r.n}" data-text="${esc((r.title + " " + r.paras.join(" ")).toLowerCase())}">
             <summary><span class="rule-n num">${r.n}</span><span class="rule-t">${esc(r.title)}</span></summary>
             <div>${r.bul ? `<p>${esc(r.paras[0])}</p><ul>${r.paras.slice(1).map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : r.paras.map(x => `<p>${esc(x)}</p>`).join("")}</div>
           </details>`).join("")}
@@ -1598,10 +1608,16 @@ const VIEWS = {
         <div class="panel" style="margin-top:18px">
           <div class="calc">
             <div class="field"><label for="avg">9-Tap average</label><input id="avg" type="number" inputmode="numeric" min="100" max="260" value="185"></div>
-            <div class="field"><label for="bonus">Bonus pins</label><input id="bonus" type="number" inputmode="numeric" min="0" max="5" value="1"></div>
-            <div class="res"><div class="meta" style="font-size:.82rem">Per game</div><output id="hdcp-out">32</output></div>
+            <div class="field"><label for="bonus">Your bonus pins (0 to 5)</label><input id="bonus" type="number" inputmode="numeric" min="0" max="5" value="1"></div>
           </div>
-          <p class="foot-note" id="hdcp-note">Over three games that's 96 handicap pins.</p>
+          <p class="foot-note" style="margin-top:8px">Bonus pins: you earn 1 for every 3 tournaments you bowl without cashing, up to 5. They're added to your handicap every game and come off when you cash (<a class="link-more" href="#rules" data-rule="14">Rule 14</a>).</p>
+          <dl class="hc-steps" aria-live="polite">
+            <div><dt>Handicap <span id="hc-why">90% of (220 − 185)</span></dt><dd id="hc-base">31</dd></div>
+            <div><dt>Bonus pins</dt><dd id="hc-bonus">+ 1</dd></div>
+            <div class="hc-total"><dt>Total per game</dt><dd><output id="hdcp-out">32</output></dd></div>
+            <div class="hc-series"><dt>Series when best 3 count</dt><dd id="hc-s3">96</dd></div>
+            <div class="hc-series"><dt>Series when all 4 count</dt><dd id="hc-s4">128</dd></div>
+          </dl>
         </div>
       </div>
       <div>
@@ -3501,11 +3517,16 @@ function wire(view) {
   if (view === "rules") {
     const calc = () => {
       const a = Math.max(125, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
-      const h = Math.trunc((220 - a) * 0.9) + b;
-      $("#hdcp-out").textContent = h;
-      $("#hdcp-note").textContent = `Over three games that's ${h * 3} handicap pins.`;
+      const base = Math.trunc((220 - a) * 0.9), h = base + b, sg = n => (n < 0 ? "−" + -n : String(n));
+      $("#hc-why").textContent = `90% of (220 − ${a})${a > 220 ? ", negative over 220" : ""}`;
+      $("#hc-base").textContent = sg(base);
+      $("#hc-bonus").textContent = "+ " + b;
+      $("#hdcp-out").textContent = sg(h);
+      $("#hc-s3").textContent = `3 × ${sg(h)} = ${sg(h * 3)}`;
+      $("#hc-s4").textContent = `4 × ${sg(h)} = ${sg(h * 4)}`;
     };
     $("#avg").addEventListener("input", calc); $("#bonus").addEventListener("input", calc); calc();
+    document.querySelectorAll("[data-rule]").forEach(l => l.addEventListener("click", ev => { const d = document.getElementById("rule-" + l.dataset.rule); if (!d) return; ev.preventDefault(); d.open = true; d.scrollIntoView({ behavior: "smooth", block: "start" }); }));
   }
   if (view === "join") {
     document.querySelectorAll('input[name="f-10"]').forEach(r => r.addEventListener("change", () => { $("#f-10-more").hidden = !document.querySelector('input[name="f-10"][value="Y"]').checked; }));
