@@ -1019,6 +1019,12 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .dash .wg:empty::after{content:"No champions posted for this month yet.";color:var(--muted)}
 .dash .jp-how{color:var(--muted);font-size:17px;margin:0 0 12px;max-width:none}
 .dash .jp-list{max-width:none}
+.jp-key{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.jp-key li{display:grid;gap:2px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);border-left-width:5px;background:#fff}
+.jp-key b{font-size:.95rem;color:var(--ink)}
+.jp-key span{font-size:.86rem;color:var(--muted);line-height:1.35}
+.jp-key .k-jp{border-left-color:#c7362b}.jp-key .k-gs{border-left-color:var(--maple)}.jp-key .k-cn{border-left-color:#8a9a9e}
+@media(max-width:640px){.jp-key{grid-template-columns:1fr;gap:6px}.jp-key li{grid-template-columns:auto 1fr;gap:10px;align-items:baseline;padding:8px 12px}}
 #app .dash .grid{padding-top:22px}
 .rh-find{display:grid;gap:8px}
 .rh-row:has(.rh-find){align-items:start}.rh-row:has(.rh-find) .rh-lab{padding-top:14px}
@@ -1310,7 +1316,7 @@ const VIEWS = {
           <div class="wg" id="champ-grid"></div>
         </div>
         <div id="cb-jp" hidden>
-          <p class="jp-how">String 9-counts from the start of a game. Seven in a row wins the 9-Tap Jackpot; six earns a Golden Shot; shorter strings and seven in the middle pay consolation money.</p>
+          <ul class="jp-key" aria-label="How 9-count strings pay"><li class="k-jp"><b>9-Tap Jackpot</b><span>7 in a row from the start of a game</span></li><li class="k-gs"><b>Golden Shot</b><span>6 in a row from the start</span></li><li class="k-cn"><b>Consolation</b><span>Shorter strings, or 7 in the middle</span></li></ul>
           <div class="pick"><input type="search" id="jp-find" class="find" placeholder="Search a name" aria-label="Search jackpot winners by name" autocomplete="off"><select id="jp-year" aria-label="Season">${jyrs.map(y => `<option>${y}</option>`).join("")}</select></div>
           <ol class="jp-list" id="jp-list"></ol>
         </div>
