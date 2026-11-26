@@ -917,10 +917,10 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .dash select{width:auto;min-width:110px}
 .dash .ticket.next{grid-column:span 5;width:auto;justify-self:stretch;max-width:none;border-radius:18px;border:0;box-shadow:0 18px 40px rgba(0,0,0,.28);background:#faf1de;font-family:var(--font-body)}
 .dash .ticket-tear{border-top-color:#d8c8a8}.dash .ticket-squads span{border-color:#dccdb0}.dash .ticket .up li{border-color:#e6d9bf}
-/* Ticket-stub notches cut into the card edge (inlets, not bumps) */
-.dash .ticket-tear::before,.dash .ticket-tear::after{background:var(--bg);width:12px;height:24px;top:-13px}
-.dash .ticket-tear::before{left:0;border-radius:0 12px 12px 0;box-shadow:inset -3px 0 4px -2px rgba(0,0,0,.18)}
-.dash .ticket-tear::after{right:0;left:auto;border-radius:12px 0 0 12px;box-shadow:inset 3px 0 4px -2px rgba(0,0,0,.18)}
+/* Ticket-stub notches: real see-through cutouts. Cream is painted on a masked ::before; shadow via drop-shadow so it follows the notches. --ty = tear line y, set by placeTicketNotch(). */
+.dash .ticket.next{background:transparent!important;box-shadow:none!important;isolation:isolate;filter:drop-shadow(0 14px 22px rgba(0,0,0,.18))}
+.dash .ticket.next::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:#faf1de;--m:radial-gradient(circle 12px at 0 var(--ty,70%),transparent 11.5px,#000 12px),radial-gradient(circle 12px at 100% var(--ty,70%),transparent 11.5px,#000 12px);-webkit-mask:var(--m);-webkit-mask-composite:source-in;mask:var(--m);mask-composite:intersect}
+.dash .ticket-tear::before,.dash .ticket-tear::after{display:none}.dash .ticket.next .ticket-tear{margin-left:-8px;margin-right:-8px}
 .dash .ticket .ticket-center{font-family:var(--font-display);font-size:2.1rem;letter-spacing:.005em;text-transform:uppercase;margin-top:6px;line-height:1}.dash .ticket.next{padding:18px 22px 16px}.dash .ticket-date{margin-top:8px}.dash .ticket-day{font-size:3.4rem}.dash .ticket-squads{margin-top:14px}.dash .ticket-squads span{padding:8px 4px}.dash .ticket-tear{margin:16px -22px 16px}.dash .ticket-foot{font-size:15px}.dash .champ{align-items:start}.dash .c.champ{display:flow-root}.dash .champ .ph{float:left;width:250px;aspect-ratio:1/1;margin:0 22px 10px 0}.dash .champ .mini{gap:18px;flex-wrap:nowrap}.dash .champ .mini b{font-size:25px}.dash .champ .mini span{font-size:13px}.dash .champ h3{font-size:40px}.dash .champ .btn{margin-top:4px}
 .dash .ticket .up{font-size:16px;margin-top:10px}.dash .ticket .up li{padding:5px 0}.dash .ticket .up span{color:var(--muted);font-size:14px}
 .dash .ticket .up-h{font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#56686d;padding-top:10px!important}
@@ -2646,7 +2646,9 @@ function renderJackpots(year) {
     </li>`; }).join("");
 }
 /* Home champion card: fill it with as much of the story as fits beside the ticket card (no empty space, no taller than the ticket). */
+function placeTicketNotch() { const tk = $(".dash .ticket.next"), t = tk && tk.querySelector(".ticket-tear"); if (t) tk.style.setProperty("--ty", (t.offsetTop + 1) + "px"); }
 function fitChampStory() {
+  placeTicketNotch();
   const card = $(".dash .champ"), st = card && card.querySelector(".story"), tk = $(".dash .ticket.next"); if (!st || !tk) return;
   const full = st.dataset.full || (st.dataset.full = st.textContent); st.textContent = full;
   if (innerWidth <= 960) { if (full.length > 430) st.textContent = full.slice(0, full.lastIndexOf(" ", 430)) + "…"; return; }
@@ -2656,7 +2658,7 @@ function fitChampStory() {
     while (lo < hi) { const mid = (lo + hi + 1) >> 1; st.textContent = words.slice(0, mid).join(" ") + (mid < words.length ? "…" : ""); if (card.offsetHeight <= target) lo = mid; else hi = mid - 1; }
     st.textContent = words.slice(0, lo).join(" ") + (lo < words.length ? "…" : "");
   }
-  card.style.alignSelf = ""; tk.style.alignSelf = "";
+  card.style.alignSelf = ""; tk.style.alignSelf = ""; placeTicketNotch();
 }
 const wallCard = (c, yr) => `
     <button type="button" class="wc" data-photo="${c.id}" aria-haspopup="dialog">
