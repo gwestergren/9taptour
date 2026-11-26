@@ -187,7 +187,8 @@ p { margin: 0; }
 .cb-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 900px; margin: 22px auto 0; text-align: center; }
 .cb-stats div { padding: 12px 8px; border: 1px solid rgba(227,194,134,.35); border-radius: 10px; background: rgba(255,255,255,.04); }
 .cb-stats b { display: block; font-family: var(--font-num); font-size: 1.45rem; color: var(--maple); }
-.cb-stats span { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep-muted); }
+.cb-stats span { display: block; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep-muted); }
+.cb-stats .cb-who { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--on-deep); }
 .cb-pick { display: flex; justify-content: center; margin: 26px 0 22px; }
 .cb-feature { display: grid; grid-template-columns: 320px 1fr; gap: 28px; align-items: center; max-width: 900px; margin: 26px auto 0; padding: 18px; border: 2px solid var(--maple); border-radius: 14px; background: linear-gradient(135deg, rgba(227,194,134,.12), rgba(255,255,255,.02)); }
 .cbf-pic { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; overflow: hidden; display: block; }
@@ -1145,7 +1146,7 @@ const VIEWS = {
           <p class="cbf-links"><button type="button" class="btn btn-primary" data-photo="${f.id}" aria-haspopup="dialog">Read story</button><a class="btn btn-ghost-light" href="#results/${f.id}">Results →</a></p>
         </div>
       </div>
-      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments won</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check · ${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
+      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments won</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
       <div class="champ-grid" id="champ-grid"></div>`; })()}
     </div></section>
