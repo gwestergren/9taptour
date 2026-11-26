@@ -1240,7 +1240,8 @@ const SHEET = {
   // Put sheet data where the rest of the page already looks for it.
   apply(data, first) {
     const ev = SHEET.events(data); if (ev && first) DATA.events = ev;
-    const P = (data.Pots || []).filter(r => SHEET.iso(r["Email sent"])).sort((a, b) => SHEET.iso(b["Email sent"]).localeCompare(SHEET.iso(a["Email sent"])));
+    // Newest date wins; on the same date the lower row (added later) wins, wherever rows sit in the tab.
+    const P = (data.Pots || []).map((r, i) => [r, i]).filter(([r]) => SHEET.iso(r["Email sent"])).sort((a, b) => SHEET.iso(b[0]["Email sent"]).localeCompare(SHEET.iso(a[0]["Email sent"])) || b[1] - a[1]).map(([r]) => r);
     if (P.length) { const p = P[0], rec = Math.max(0, ...P.map(r => +r["9-Tap Jackpot"] || 0));
       SHEET.set("9tap-pots", { savedOn: SHEET.iso(p["Email sent"]), jackpot: +p["9-Tap Jackpot"] || 0, progressive: +p["Progressive Pot"] || 0, jackpotRecord: rec }); }
     const V = (data.Venues || []).filter(r => r["Format (site data)"] && typeof r["Format (site data)"] === "object");
