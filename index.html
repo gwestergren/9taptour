@@ -2415,7 +2415,7 @@ const HIST = (() => {
   const realWin = {};
   [["01-12","Bowlero Paradise","Jesse Sherman",800,2368,0],["01-19","Bowlero Acme","Amy Silverhorn",840,2709,203],["01-26","Bowlero Lynnwood","Chandra Martinez",807,2617,164],
    ["02-01","Bowlero Acme","Jessica Trinidad-Hill",781,1200,208],["02-09","Daffodil Bowl","Johnny Seng",861,2608,221],["02-16","Bowlero Lanes","Karl Helbich",874,2781,277],
-   ["02-22","Kenmore Lanes","Jeff Price",834,3232,225],["03-01","Bowlero Paradise","Cliff Taimanglo",850,1750,293],["03-16","Secoma Lanes","Skip Shear",809,3415,296],
+   ["02-22","Kenmore Lanes","Jeff Price",834,3232,225],["03-01","Bowlero Paradise","Cliff Taimanglo",850,1750,293],["03-16","Secoma Lanes","Skip Shear Jr",809,3415,296],
    ["03-22","Hi Joy Bowl","Bruce Mang",873,3394,244],["03-29","Bowlero Acme","Mike Crowe",764,3024,299],["04-05","Kent Bowl","Michael Hendricks",898,3346,196],
    ["04-12","Bowlero Lanes","Oscar Gestoso",826,2745,227],["04-27","West Seattle Bowl","Walt Dalrymple",825,2550,204],["05-17","Bowlero Paradise","Johnny Seng",818,2433,238],
    ["05-24","Secoma Lanes","Eddie Burdsall",702,3011,301],["06-01","Daffodil Bowl","Paul Kelly",828,3117,215],["06-07","Kent Bowl","Thang Duc Thai",841,2694,0],
@@ -2441,13 +2441,13 @@ const HIST = (() => {
   DATA.champions.filter(c => !c.mock).forEach(c => { const r = recapFields(RECAP[c.date]);
     list.push(Object.assign({}, c, { id: c.photo, sample: false, champ: true }, r.recap ? { top: r.top, entries: r.entries || c.entries, lowCash: r.lowCash, recap: true } : {})); });
   // Real winner photos for recap champions (file img/champ-<id>.jpg), by tournament date.
-  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown", "2026-05-02": "rene-malicdan", "2025-10-26": "montana-xaysana", "2025-05-10": "eric-arkoncel", "2026-08-22": "william-poole", "2026-02-01": "samson-ibale-2026-02-01", "2026-06-14": "steve-nolan-2026-06-14", "2024-10-13": "remi-serrano", "2025-04-20": "joe-fincher-jr-2025-04-20", "2025-01-26": "chandra-martinez", "2025-05-24": "eddie-burdsall", "2025-03-16": "skip-shear", "2024-12-08": "alex-cady" };
+  const PHOTOS = { "2026-11-22": "miles-nerona", "2026-11-15": "joel-brown", "2026-05-02": "rene-malicdan", "2025-10-26": "montana-xaysana", "2025-05-10": "eric-arkoncel", "2026-08-22": "william-poole", "2026-02-01": "samson-ibale-2026-02-01", "2026-06-14": "steve-nolan-2026-06-14", "2024-10-13": "remi-serrano", "2025-04-20": "joe-fincher-jr-2025-04-20", "2025-01-26": "chandra-martinez", "2025-05-24": "eddie-burdsall", "2025-03-16": "skip-shear", "2024-12-08": "alex-cady", "2026-07-19": "david-suom", "2026-08-29": "chanyn-pauole", "2026-07-25": "david-pettengill", "2025-11-16": "lii-kalima-marion", "2026-06-06": "serina-reese", "2026-03-29": "rob-hess", "2026-10-04": "charles-daughery-jr", "2026-09-06": "james-mitchell", "2026-09-13": "yoel-green", "2026-08-02": "kim-pohlot", "2026-09-19": "paul-kelly", "2025-09-28": "austin-forrest", "2026-05-24": "stephanie-perrine", "2026-08-08": "skip-shear-jr" };
   // Winners known only from champion photos (no recap email or old-site result): the winner's name is real, the rest stays sample.
   const PHOTO_WINNERS = { "2026-05-02": "Rene Malicdan", "2026-06-14": "Steve Nolan", "2024-10-13": "Remi Serrano", "2025-04-20": "Joe Fincher Jr.", "2024-12-08": "Alex Cady", "2025-05-10": "Eric Arkoncel" };
   list.forEach(x => { const w = PHOTO_WINNERS[x.date]; if (w && !x.recap && !x.real) Object.assign(x, { name: w, winnerOnly: true, winnerSrc: "photo" }); });
   list.forEach(x => { if (!x.photo && PHOTOS[x.date]) x.photo = PHOTOS[x.date]; });
   // Photos sent without a date: used for every real win by that bowler (a dated photo wins).
-  const NAME_PHOTOS = { "brian ward": "brian-ward", "brandon parker": "brandon-parker" };
+  const NAME_PHOTOS = { "brian ward": "brian-ward", "brandon parker": "brandon-parker", "david sims": "david-sims" };
   // A champion with no photo for that day reuses the same bowler's photo from their nearest other win.
   const pkey = n => n.toLowerCase().replace(/[^a-z ]/g, "").trim().replace(/\s+/g, " ");
   const wins = list.filter(x => x.photo && (x.recap || x.real || x.champ || x.winnerOnly || x.final));
