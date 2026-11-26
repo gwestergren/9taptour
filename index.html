@@ -1272,7 +1272,7 @@ const VIEWS = {
     const later = DATA.events.filter(x => x.date > e.date).slice(0, 2);
     const all = WALL(), tot = all.reduce((a, x) => a + wallWon(x), 0), big = all.reduce((a, x) => wallWon(x) > wallWon(a) ? x : a), first = all[all.length - 1];
     const yrs = [...new Set(all.map(x => x.date.slice(0, 4)))];
-    const J = JACKPOTS, jyrs = [...new Set(J.map(j => j.d.slice(0, 4)))], cnt = k => J.filter(j => j.k === k).reduce((a, j) => a + j.n.length, 0);
+    const J = JACKPOTS, jyrs = [...new Set(J.map(j => j.d.slice(0, 4)))];
     const pct = DATA.jackpotRecord ? Math.min(100, Math.round(DATA.jackpot / DATA.jackpotRecord * 100)) : 0;
     const top = (c.top || []).filter(t => t[0]).slice(0, 3);
     return `<div class="dash"><div class="wrap">
@@ -1310,7 +1310,7 @@ const VIEWS = {
           <div class="wg" id="champ-grid"></div>
         </div>
         <div id="cb-jp" hidden>
-          <p class="jp-how">String 9-counts from the start of a game. Seven in a row wins the 9-Tap Jackpot; six earns a Golden Shot; shorter strings and seven in the middle pay consolation money. <b>${cnt("jackpot")}</b> jackpots, <b>${cnt("golden")}</b> Golden Shots and <b>${cnt("middle")}</b> Middle-7 strings since ${esc(HIST.MON[+J[J.length - 1].d.slice(5, 7) - 1])} ${J[J.length - 1].d.slice(0, 4)}.</p>
+          <p class="jp-how">String 9-counts from the start of a game. Seven in a row wins the 9-Tap Jackpot; six earns a Golden Shot; shorter strings and seven in the middle pay consolation money.</p>
           <div class="pick"><input type="search" id="jp-find" class="find" placeholder="Search a name" aria-label="Search jackpot winners by name" autocomplete="off"><select id="jp-year" aria-label="Season">${jyrs.map(y => `<option>${y}</option>`).join("")}</select></div>
           <ol class="jp-list" id="jp-list"></ol>
         </div>
