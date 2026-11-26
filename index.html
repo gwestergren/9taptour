@@ -1017,6 +1017,17 @@ main:has(> .champs-band:last-child) + .site-foot { margin-top: 0; }
 .dash .wg:empty::after{content:"No champions posted for this month yet.";color:var(--muted)}
 .dash .jp-how{color:var(--muted);font-size:17px;margin:0 0 12px;max-width:none}
 .dash .jp-list{max-width:none}
+#app .dash .grid{padding-top:22px}
+.rh-find{display:grid;gap:8px}
+.rh-row:has(.rh-find){align-items:start}.rh-row:has(.rh-find) .rh-lab{padding-top:14px}
+.find-all{font:400 1.05rem var(--font-body);padding:10px 14px;border:2px solid var(--line);border-radius:10px;width:min(460px,100%);background:#fff}
+.find-all:focus{outline:none;border-color:var(--ink)}
+.all-hits{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:#fff;max-height:340px;overflow:auto}
+.all-hits li+li{border-top:1px solid var(--line)}
+.all-hits a{display:grid;grid-template-columns:120px 1fr auto;gap:12px;padding:10px 14px;color:var(--ink);text-decoration:none;align-items:baseline}
+.all-hits a:hover{background:#f6f3ec}.ah-date{color:var(--muted);font-size:.92rem}.ah-num{font-family:var(--font-num);color:var(--muted);font-size:.92rem}
+.ah-none{padding:10px 14px;color:var(--muted)}
+@media(max-width:600px){.all-hits a{grid-template-columns:1fr}.ah-num{justify-self:start}}
 .dash .find{font:400 18px "Atkinson Hyperlegible",sans-serif;padding:9px 14px;border:2px solid var(--line);border-radius:10px;min-width:240px;flex:0 1 300px;background:#fff}
 .dash .find:focus{outline:none;border-color:var(--navy)}
 .dash .find-none{color:var(--muted);grid-column:1/-1;list-style:none;margin:6px 0}
@@ -1264,7 +1275,6 @@ const VIEWS = {
     const pct = DATA.jackpotRecord ? Math.min(100, Math.round(DATA.jackpot / DATA.jackpotRecord * 100)) : 0;
     const top = (c.top || []).filter(t => t[0]).slice(0, 3);
     return `<div class="dash"><div class="wrap">
-    <div class="hi"><h2>Welcome, bowlers</h2><p>${esc(today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }))} · Next tournament ${esc(relDays(e).toLowerCase())}</p></div>
     <div class="grid">
       <div class="c champ">
         <button type="button" class="ph" data-photo="${c.id}" aria-haspopup="dialog" aria-label="Read ${esc(c.name)}'s story">${c.photo ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : mockPic(c, "cc-initials")}</button>
@@ -1363,6 +1373,7 @@ const VIEWS = {
         <div class="rh-row"><span class="rh-lab">Year</span><div class="rh-opts rh-months">${years.map(yr => `<a href="#results/${HIST.inYear(yr)[0].id}"${yr === y ? ' aria-current="page"' : ""}>${yr}</a>`).join("")}<a class="rh-older" href="#results-archive" onclick="document.getElementById('results-archive').scrollIntoView({ behavior: 'smooth' }); return false">Before<br>${oldest}</a></div></div>
         <div class="rh-row"><span class="rh-lab">Month</span><div class="rh-opts rh-months">${months}</div></div>
         <div class="rh-row"><span class="rh-lab">Tournament</span><div class="rh-opts rh-events">${events}</div></div>
+        <div class="rh-row"><span class="rh-lab">Search</span><div class="rh-find"><input id="all-find" class="find-all" type="search" placeholder="Find a bowler in every tournament" aria-label="Find a bowler in every tournament" autocomplete="off"><ol class="all-hits" id="all-hits" hidden></ol></div></div>
       </nav>
     </section>
     <section class="wrap section">
@@ -1620,7 +1631,7 @@ const VIEWS = {
     const boy = BOY.get(y), max = boy[0][1];
     let prev = null, rank = 0;
     const rows = boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
-      <tr class="${rank <= 3 ? "top3" : ""}"><td class="place">${rank}${boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
+      <tr class="${rank <= 3 ? "top3" : ""}" data-name="${esc(n.toLowerCase())}"><td class="place">${rank}${boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
       <td class="bar-cell"><div class="bar"><i style="width:${(p / max * 100).toFixed(1)}%"></i></div></td><td class="r num">${p}</td></tr>`; }).join("");
     const intro = y === 2025 ? "These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted."
       : y === 2026 ? "The 2026 race is still going. Sample standings through the November 22 tournament."
@@ -1641,9 +1652,10 @@ const VIEWS = {
         <div class="panel pc ${i === 0 ? "first" : ""}"><div class="p">${[won,"2nd","3rd"][i]}</div><div class="n">${esc(n)}</div>
         <div class="s"><span>Points <b>${p}</b></span>${i ? `<span>Back <b>${max - p}</b></span>` : ""}</div></div>`).join("")}
       </div>
+      <div class="toolbar"><h2 style="font-size:1.8rem">Standings</h2><div class="field search"><label for="boy-find">Find a bowler</label><input id="boy-find" type="search" placeholder="Type a name" autocomplete="off"></div></div>
       <div class="table-wrap"><table>
         <thead><tr><th>Rank</th><th>Bowler</th><th>Points</th><th class="r">Total</th></tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody id="boy-body">${rows}</tbody>
       </table></div>
       <p class="foot-note">Top 25 shown. ${y === 2025 ? "" : "<b>Sample standings for this mockup.</b> "}In the new site this table would update after every tournament instead of living in a PDF. Past seasons: <a class="link-more" href="#results">tournament results by year</a>.</p>
     </section>`;
@@ -2573,6 +2585,16 @@ function eventResults(c) {
   const floor = Math.min(...out.slice(0, k).map(r => r[4])) - 1, shift = out[k] ? Math.max(0, out[k][4] - floor) : 0;
   for (let i = k; i < out.length; i++) out[i][4] -= shift;
   return out;
+}
+/* Results page: find a bowler across every tournament with real names (champions, plus top finishers from the Tour emails). */
+function renderAllFind(q) {
+  const box = $("#all-hits"); if (!box) return; const t = q.trim().toLowerCase(); box.hidden = !t; if (!t) { box.innerHTML = ""; return; }
+  const hits = [];
+  WALL().forEach(c => { const top = c.recap && c.top ? c.top.filter(r => r[0]) : [[c.name, c.total, wallWon(c) || null, "1"]];
+    top.forEach((r, i) => { if (r[0].toLowerCase().includes(t)) hits.push({ c, name: r[0], place: r[3] || String(i + 1), total: r[1], won: r[2] }); }); });
+  const ord = p => ({ 1: "1st", 2: "2nd", 3: "3rd" })[parseInt(p)] || (parseInt(p) ? parseInt(p) + "th" : p);
+  box.innerHTML = hits.length ? hits.map(x => `<li><a href="#results/${x.c.id}"><span class="ah-date">${esc(new Date(x.c.date + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }))}</span><span class="ah-who"><b>${esc(x.name)}</b> · ${esc(ord(x.place))} at ${esc(x.c.where)}</span><span class="ah-num">${x.total ? x.total : ""}${x.won ? ` · ${money(x.won)}` : ""}</span></a></li>`).join("")
+    : `<li class="ah-none">No top finishers named “${esc(q.trim())}” in the tournaments we have results for.</li>`;
 }
 function renderResults(q = "") {
   const body = $("#res-body"); if (!body) return;
@@ -3585,7 +3607,11 @@ function wire(view) {
     document.querySelectorAll(".dash .champ [data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
     fitChampStory(); window.addEventListener("resize", fitChampStory);
   }
-  if (view === "results") { renderResults(); fitNewsletter(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
+  if (view === "results") { renderResults(); fitNewsletter(); $("#find").addEventListener("input", e => renderResults(e.target.value)); const af = $("#all-find"); if (af) af.addEventListener("input", () => renderAllFind(af.value)); }
+  if (view === "bowler-of-the-year") { const bf = $("#boy-find"); if (bf) bf.addEventListener("input", () => { const t = bf.value.trim().toLowerCase(); let any = false;
+    document.querySelectorAll("#boy-body tr[data-name]").forEach(r => { const hit = !t || r.dataset.name.includes(t); r.hidden = !hit; any = any || hit; });
+    let none = $("#boy-none"); if (!none) { none = document.createElement("tr"); none.id = "boy-none"; none.innerHTML = '<td colspan="4" class="meta"></td>'; $("#boy-body").appendChild(none); }
+    none.hidden = any; none.firstChild.textContent = any ? "" : `No one named "${bf.value.trim()}" in this season's top 25.`; }); }
   if (view === "rules") {
     $("#rule-find").addEventListener("input", e => {
       const q = e.target.value.trim().toLowerCase(); let any = false;
