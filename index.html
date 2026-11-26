@@ -227,6 +227,10 @@ span.mock-pic.mock-pic { position: relative; display: block; overflow: hidden; a
 .cbf-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
 .btn-ghost-light { border: 1px solid rgba(255,255,255,.4); color: #fff; background: transparent; }
 @media (max-width: 760px) { .cb-feature { grid-template-columns: 1fr; gap: 14px; } }
+.cb-months { margin: -8px auto 10px; max-width: 760px; }
+.mp-mon { padding: 6px 12px; font-size: .8rem; min-width: 52px; }
+.mp-mon:disabled { opacity: .35; cursor: default; }
+.cb-mcap { text-align: center; margin: 4px 0 22px; font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .month-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .mp-btn { font: 600 .85rem var(--font-body); padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: var(--on-deep); cursor: pointer; }
 .mp-btn:hover { border-color: var(--maple); }
@@ -870,6 +874,32 @@ body.tv-mode { background: #0b1f26; }
 .sc-board .g { color: var(--muted); }
 .sc-board .drop { text-decoration: line-through; opacity: .6; }
 @media (max-width: 420px) { .sc-board .g { display: none; } }
+/* Home color scheme (option D, Greg Nov 26): dark hero, cream pots band, light Wall with white cards */
+.champs-band { background: var(--bg); color: var(--ink); border-bottom-color: var(--line); }
+.cb-head .eyebrow, .cbf-body .eyebrow { color: var(--accent); }
+.cb-head h2 { color: var(--ink); }
+.jp-how { color: var(--muted); }
+.cb-switch { border-color: var(--ink); }
+.cb-tab { color: var(--ink); }
+.cb-tab[aria-selected="true"] { background: var(--ink); color: #fff; }
+.cb-stats div { background: #fff; border-color: var(--line); box-shadow: 0 2px 8px rgba(16,36,42,.06); }
+.cb-stats b { color: var(--accent); } .cb-stats span { color: var(--muted); } .cb-stats .cb-who { color: var(--ink); }
+.cb-feature { background: #fff; border-color: var(--maple); box-shadow: 0 10px 30px rgba(16,36,42,.12); }
+.cbf-body h3 { color: var(--ink); } .cbf-where { color: var(--ink); } .cbf-where b { color: var(--accent); } .cbf-head { color: var(--muted); }
+.btn-ghost-light { color: var(--ink); border-color: var(--line); }
+.mp-btn { color: var(--ink); border-color: var(--line); background: #fff; }
+.mp-btn[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.hero-pots { background: #f6ecd8; box-shadow: 0 0 0 100vmax #f6ecd8; clip-path: inset(0 -100vmax); padding-top: 36px; padding-bottom: 46px; margin-top: 8px; }
+.hero-pots .pot { background: #fff; border-color: #e6d3ad; box-shadow: 0 6px 18px rgba(120,90,30,.12); }
+.hero-pots .pot .label { color: var(--accent); } .hero-pots .pot .amount { color: var(--ink); } .hero-pots .pot .note { color: var(--muted); }
+.hero { overflow: visible; } .hero::after { display: none; }
+.champs-band { border-top: 6px solid var(--accent); }
+.champ-card { background: #fff; color: var(--ink); border-color: #e6d3ad; box-shadow: 0 8px 22px rgba(16,36,42,.12); }
+.champ-card b { color: var(--ink); } .cc-body > span { color: var(--muted); }
+.cc-links { border-top-color: var(--line); } .cc-links > * { color: var(--accent); } .cc-links > * + * { border-left-color: var(--line); }
+.jp-row { background: #fff; border-color: var(--line); } .jp-who b { color: var(--ink); } .jp-hit { color: var(--muted); } .jp-date a { color: var(--muted); }
+.jp-amt { color: var(--accent); } .jp-badge { border-color: var(--line); color: var(--ink); }
+.jp-date { color: var(--ink); } .jp-golden { border-color: var(--maple); } .jp-jackpot { background: linear-gradient(90deg, #f6ecd8, #fff); }
 </style>
 
 </head>
@@ -1174,6 +1204,8 @@ const VIEWS = {
       </div>
       <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check</span><span class="cb-who">${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
       <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
+      <div class="cb-months month-pick" id="cb-months" role="group" aria-label="Choose a month"></div>
+      <p class="cb-mcap" id="cb-mcap"></p>
       <div class="champ-grid" id="champ-grid"></div>`; })()}
       </div>
       <div id="cb-jp" hidden>
@@ -2487,11 +2519,18 @@ function renderJackpots(year) {
       <span class="jp-amt">${money(j.a)}${j.n.length > 1 ? "<small>each</small>" : ""}</span>
     </li>`; }).join("");
 }
-function renderChamps(year) {
+function renderChamps(year, month) {
   const g = $("#champ-grid"); if (!g) return;
   const all = WALL();
-  const f = HIST.latest();
-  g.innerHTML = all.filter(c => c !== f && c.date.startsWith(year)).map(c => `
+  const f = HIST.latest(), inYr = all.filter(c => c !== f && c.date.startsWith(year));
+  const has = m => inYr.some(c => +c.date.slice(5, 7) - 1 === m);
+  if (month == null || !has(month)) month = inYr.length ? +inYr[0].date.slice(5, 7) - 1 : 0;
+  const mb = $("#cb-months");
+  if (mb) { mb.innerHTML = HIST.MON.map((n, i) => `<button type="button" class="mp-btn mp-mon" data-month="${i}" aria-pressed="${i === month}"${has(i) ? "" : " disabled"}>${n.slice(0, 3)}</button>`).join("");
+    mb.querySelectorAll("[data-month]").forEach(b => b.addEventListener("click", () => renderChamps(year, +b.dataset.month))); }
+  const list = inYr.filter(c => +c.date.slice(5, 7) - 1 === month);
+  const cap = $("#cb-mcap"); if (cap) cap.textContent = `${HIST.MON[month]} ${year} · ${list.length} champion${list.length === 1 ? "" : "s"}${f.date.startsWith(year) && +f.date.slice(5, 7) - 1 === month ? ", plus the latest champion above" : ""}`;
+  g.innerHTML = list.map(c => `
     <div class="champ-card">
       <button type="button" class="cc-open" data-photo="${c.id}" aria-haspopup="dialog">
         <span class="cc-photo">${wallPic(c, 252, 224)}<span class="cc-ribbon">${wallWon(c) ? money(wallWon(c)) : "Champion"}</span></span>
