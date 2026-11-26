@@ -189,6 +189,16 @@ p { margin: 0; }
 .cb-stats b { display: block; font-family: var(--font-num); font-size: 1.45rem; color: var(--maple); }
 .cb-stats span { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--on-deep-muted); }
 .cb-pick { display: flex; justify-content: center; margin: 26px 0 22px; }
+.cb-feature { display: grid; grid-template-columns: 320px 1fr; gap: 28px; align-items: center; max-width: 900px; margin: 26px auto 0; padding: 18px; border: 2px solid var(--maple); border-radius: 14px; background: linear-gradient(135deg, rgba(227,194,134,.12), rgba(255,255,255,.02)); }
+.cbf-pic { padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; overflow: hidden; display: block; }
+.cbf-pic img, .cbf-pic .cc-initials { display: block; width: 100%; aspect-ratio: 126 / 112; object-fit: cover; }
+.cbf-body .eyebrow { color: var(--maple); }
+.cbf-body h3 { color: #fff; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
+.cbf-where { color: var(--on-deep); margin: 0; } .cbf-where b { color: var(--maple); font-family: var(--font-num); }
+.cbf-head { color: var(--on-deep-muted); margin: 6px 0 14px; }
+.cbf-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
+.btn-ghost-light { border: 1px solid rgba(255,255,255,.4); color: #fff; background: transparent; }
+@media (max-width: 760px) { .cb-feature { grid-template-columns: 1fr; gap: 14px; } }
 .month-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .mp-btn { font: 600 .85rem var(--font-body); padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: var(--on-deep); cursor: pointer; }
 .mp-btn:hover { border-color: var(--maple); }
@@ -1121,14 +1131,23 @@ const VIEWS = {
       </div>
     </section>
 
-    <section class="champs-band" aria-label="Champions by month"><div class="wrap">
-      <div class="cb-head"><p class="eyebrow">2026 season</p><h2>Wall of Champions</h2></div>
-      <div class="cb-stats">${(() => { const w = WALL(); const tot = w.reduce((a, c) => a + wallWon(c), 0), big = w.reduce((a, c) => wallWon(c) > wallWon(a) ? c : a); return `
-        <div><b>${w.length}</b><span>Champions</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check · ${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div>`; })()}</div>
-      <div class="cb-pick">
-        <div class="month-pick" role="group" aria-label="Choose a month">${[...new Set(WALL().map(wallMonth))].map((m, i) => `<button type="button" class="mp-btn" data-month="${esc(m)}" aria-pressed="${i === 0}">${esc(m)}</button>`).join("")}</div>
+    <section class="champs-band" aria-label="Wall of Champions"><div class="wrap">
+      ${(() => { const all = WALL(), f = all[0], yrs = [...new Set(all.map(c => c.date.slice(0, 4)))], first = all[all.length - 1];
+        const tot = all.reduce((a, c) => a + wallWon(c), 0), big = all.reduce((a, c) => wallWon(c) > wallWon(a) ? c : a); return `
+      <div class="cb-head"><p class="eyebrow">Every Tour champion since ${esc(HIST.MON[+first.date.slice(5, 7) - 1])} ${first.date.slice(0, 4)}</p><h2>Wall of Champions</h2></div>
+      <div class="cb-feature">
+        <button type="button" class="cbf-pic" data-photo="${f.id}" aria-haspopup="dialog" aria-label="Read ${esc(f.name)}'s story">${wallPic(f, 320, 284)}</button>
+        <div class="cbf-body">
+          <p class="eyebrow">Latest champion · ${esc(new Date(f.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }))}</p>
+          <h3>${esc(f.name)}</h3>
+          <p class="cbf-where">1st at ${esc(f.where)}${wallWon(f) ? ` · won <b>${money(wallWon(f))}</b>` : ""}</p>
+          <p class="cbf-head">${esc(f.head)}</p>
+          <p class="cbf-links"><button type="button" class="btn btn-primary" data-photo="${f.id}" aria-haspopup="dialog">Read story</button><a class="btn btn-ghost-light" href="#results/${f.id}">Results →</a></p>
+        </div>
       </div>
-      <div class="champ-grid" id="champ-grid"></div>
+      <div class="cb-stats"><div><b>${all.length}</b><span>Tournaments won</span></div><div><b>${money(tot)}</b><span>Won by champions</span></div><div><b>${money(wallWon(big))}</b><span>Biggest check · ${esc(big.name)}</span></div><div><b>${money(DATA.jackpot)}</b><span>9-Tap Jackpot now</span></div></div>
+      <div class="cb-pick"><div class="month-pick" role="group" aria-label="Choose a season">${yrs.map((y, i) => `<button type="button" class="mp-btn" data-year="${y}" aria-pressed="${i === 0}">${y}</button>`).join("")}</div></div>
+      <div class="champ-grid" id="champ-grid"></div>`; })()}
     </div></section>
 
     <section class="wrap section">
@@ -2345,15 +2364,16 @@ function renderResults(q = "") {
     : `<tr><td colspan="6" class="meta">No cashers match "${esc(q)}". ${CUR_RESULTS.some(r => !r[5]) ? "Nobody by that name bowled this event." : `Only the top ${CUR_RESULTS.length} cashed at this event.`}</td></tr>`;
 }
 
-/* Wall of Champions: every real 2026 winner (from the Tour emails, plus Michael Miller and Ruta Hert, who have photos), newest first. */
-function WALL() { return HIST.inYear(2026).filter(c => c.champ || c.recap || c.winnerOnly); }
+/* Wall of Champions: every real winner we have (old-site 2025 winners, the Tour emails, Michael Miller and Ruta Hert with photos, and finalized tournament days), newest first. */
+function WALL() { return HIST.list.filter(c => c.champ || c.recap || c.winnerOnly || c.real || c.final); }
 const wallMonth = c => HIST.MON[+c.date.slice(5, 7) - 1] + " " + c.date.slice(0, 4);
 const wallWon = c => c.recap && !c.top[0][2] || c.winnerOnly ? 0 : c.won;
 const wallPic = (c, w, h) => c.champ ? `<img src="img/champ-${c.photo}.jpg" width="${w}" height="${h}" alt="">`
   : `<span class="cc-initials" aria-hidden="true">${esc(c.name.split(/\s+/).filter(x => /^[A-Za-z]/.test(x)).slice(0, 2).map(x => x[0]).join(""))}</span>`;
-function renderChamps(month) {
+function renderChamps(year) {
   const g = $("#champ-grid"); if (!g) return;
-  g.innerHTML = WALL().filter(c => wallMonth(c) === month).map(c => `
+  const all = WALL();
+  g.innerHTML = all.filter(c => c !== all[0] && c.date.startsWith(year)).map(c => `
     <div class="champ-card">
       <button type="button" class="cc-open" data-photo="${c.id}" aria-haspopup="dialog">
         <span class="cc-photo">${wallPic(c, 252, 224)}<span class="cc-ribbon">${wallWon(c) ? money(wallWon(c)) : "Champion"}</span></span>
@@ -2371,8 +2391,8 @@ function openChamp(photo) {
     d.addEventListener("click", e => { if (e.target === d) d.close(); }); }
   d.innerHTML = `<button type="button" class="dlg-x" aria-label="Close">×</button>
     <div class="dlg-head">${c.champ ? `<img src="img/champ-${c.photo}.jpg" alt="${esc(c.name)}">` : wallPic(c)}<div>
-      <p class="eyebrow">Champion · ${esc(c.where)} · ${esc(c.when || new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }))}</p><div class="dlg-name"><h2>${esc(c.name)}</h2>${wallWon(c) ? `<span class="dlg-won">Won <b>${money(wallWon(c))}</b></span>` : ""}</div><p class="dlg-sub">${esc(c.head)}</p></div></div>
-    ${c.winnerOnly ? `<p>${esc(c.name)} won at ${esc(c.where)} on April 18. The Tour's April 26 email mentions the win; the recap email for this day isn't in the inbox, so there's no story yet.</p>` : c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
+      <p class="eyebrow">Champion · ${esc(c.where)} · ${esc(c.when || new Date(c.date + "T12:00").toLocaleDateString("en-US", { month: "long", day: "numeric" }))}</p><div class="dlg-name"><h2>${esc(c.name)}</h2>${wallWon(c) ? `<span class="dlg-won">Won <b>${money(wallWon(c))}</b></span>` : ""}</div>${c.real && !c.recap ? "" : `<p class="dlg-sub">${esc(c.head)}</p>`}</div></div>
+    ${c.real && !c.recap ? `<p>${esc(c.name)} won at ${esc(c.where)} with ${/^8/.test(c.total) ? "an" : "a"} ${c.total} total. The winner, total, first-place check and entries come from the old site's 2025 results; there's no write-up for this one.</p>` : c.winnerOnly ? `<p>${esc(c.name)} won at ${esc(c.where)} on April 18. The Tour's April 26 email mentions the win; the recap email for this day isn't in the inbox, so there's no story yet.</p>` : c.bio.map(t => `<p>${esc(t)}</p>`).join("")}
     ${c.games ? (() => { const keep = c.games.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(x => x[1]);
       const scr = keep.reduce((t, i) => t + c.games[i], 0), hd = c.hdcp * 3, bo = (c.bonus || 0) * 3, tot = scr + hd + bo; return `
     <div class="dlg-scores"><table><thead><tr>${c.games.map((_, i) => `<th>G${i + 1}</th>`).join("")}<th>Scratch</th>${c.avg ? "<th>Avg</th>" : ""}<th>Hdcp</th>${bo ? "<th>Bonus</th>" : ""}<th>Total</th></tr></thead>
@@ -3290,8 +3310,9 @@ function wire(view) {
   if (view === "setup") wireSetup();
   if (view === "home") {
     const btns = document.querySelectorAll(".mp-btn");
-    btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.month); }));
-    if (btns[0]) renderChamps(btns[0].dataset.month);
+    btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderChamps(b.dataset.year); }));
+    if (btns[0]) renderChamps(btns[0].dataset.year);
+    document.querySelectorAll(".cb-feature [data-photo]").forEach(b => b.addEventListener("click", () => openChamp(b.dataset.photo)));
   }
   if (view === "results") { renderResults(); fitNewsletter(); $("#find").addEventListener("input", e => renderResults(e.target.value)); }
   if (view === "rules") {
