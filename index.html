@@ -704,10 +704,14 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-paid { font-weight: 700; }
 .dk-row.unpaid .dk-paid { background: #c7362b; color: #fff; border-radius: 6px; padding: 6px 10px; }
 .dk-paid.on { color: var(--good); }
+.dk-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.dk-filter input[type=search] { flex: 1 1 240px; min-height: 44px; }
+.dk-row[hidden] { display: none !important; }
 .dk-lanes { margin-bottom: 12px; padding: 14px 16px; }
 .dk-lanes-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-bottom: 10px; }
 .dk-lanes-head span { color: var(--muted); font-size: .9rem; }
-.dk-lanes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.dk-lanes-grid { display: grid; grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 760px) { .dk-lanes-grid { grid-template-columns: repeat(var(--mcols, 4), minmax(0, 1fr)); } }
 .dk-pair { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .dk-pair-l { font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .dk-pair b { font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -3275,7 +3279,7 @@ const CK = {
   // Re-entry: a bowler in more than one squad that day is never placed on a lane pair they already bowled on.
   pick(e, sq, l, r, friend) {
     const cf = CFG.get(e), c = CK.counts(e, sq, l, r), used = CK.usedPairs(l, r), order = CFG.order(cf).filter(n => !used.has(CK.pair(n)));
-    if (friend && friend.lane && !used.has(CK.pair(friend.lane))) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => x >= cf.first && x <= cf.last && c[x] < CFG.cap(cf)).sort((x, y) => c[x] - c[y]); if (t.length) return t[0]; }
+    if (friend && friend.lane && !used.has(CK.pair(friend.lane))) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => x >= cf.first && x <= cf.last && c[x] < cf.max); if (t.length) return t[0]; } // friend's own lane first, never past the per-lane limit
     const at = cap => { const ok = order.filter(n => c[n] < cap); if (!ok.length) return null; return cf.fill === "spread" ? ok.reduce((b, n) => c[n] < c[b] ? n : b) : ok[0]; };
     return at(cf.max) ?? (cf.overflow ? at(cf.overflowMax) : null);
   },
@@ -3623,7 +3627,7 @@ function wireCheckin() {
       const pots = (r.jackpot ? 4 : 0) + r.prog;
       app.innerHTML = `
         <div class="ck-ok${r.paid ? "" : " ck-unpaid"}"><span aria-hidden="true">${r.paid ? "✓" : "$"}</span><div><b>${r.paid ? `You're all set, ${esc(m.first)}.` : `You're checked in, ${esc(m.first)}. Now pay at the desk.`}</b><span>${r.lane ? `Starting lane ${r.lane}${r.pos} · ${esc(e.squads[r.squad])} squad` : r.paid ? "The desk will give you a lane." : `You get your lane once you've paid. It shows up on this screen.`}</span></div></div>
-        ${!r.lane && r.friend ? `<p class="toast ck-note">When you pay, we'll try to put you on the same pair as ${esc(r.friend)} (if they've paid too).</p>` : r.lane && r.friend ? (() => { const f = CK.friendOf(CK.list(e), r.squad, r.friend, r); return f && f.lane && CK.pair(f.lane) === CK.pair(r.lane) ? `<p class="toast ck-note">You're on the same pair as ${esc(f.first)} ${esc(f.last)}.</p>` : ""; })() : ""}
+        ${!r.lane && r.friend ? `<p class="toast ck-note">When you pay, we'll try to put you on the same lane as ${esc(r.friend)} (if they've paid too).</p>` : r.lane && r.friend ? (() => { const f = CK.friendOf(CK.list(e), r.squad, r.friend, r); return f && f.lane && CK.pair(f.lane) === CK.pair(r.lane) ? `<p class="toast ck-note">You're on the same pair as ${esc(f.first)} ${esc(f.last)}.</p>` : ""; })() : ""}
         ${CK.card(e, m, r)}
         <ol class="checklist ck-steps">
           <li><span class="dot">${r.paid ? "✓" : "1"}</span><span>${r.paid ? "Paid. Thanks!" : `Show this screen at the desk and pay your entry fee${pots ? ` plus $${pots} in side pots` : ""}${m.isNew ? " and the $25 membership. A director will confirm your average" : ""}. You can't bowl until you've paid.`}</span></li>
@@ -3696,6 +3700,11 @@ function wireDesk() {
   if (CK.deskSq === null) CK.deskSq = 0;
   const msg = t => { const m = $("#dk-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
   CKCTL.wire(e, msg);
+  // Bowler list filter (search + paid / not paid). Only hides bowler cards; the lane report always counts everyone.
+  const F = { q: "", paid: true, unpaid: true };
+  const filt = () => { const q = F.q.trim().toLowerCase().split(/\s+/).filter(Boolean); let n = 0, all = 0;
+    document.querySelectorAll("#dk-body .dk-row").forEach(row => { all++; const paid = !row.classList.contains("unpaid"), ok = (paid ? F.paid : F.unpaid) && q.every(w => row.dataset.find.includes(w)); row.hidden = !ok; if (ok) n++; });
+    const fc = $("#dk-fcount"); if (fc) fc.textContent = n === all ? `${all} bowler${all === 1 ? "" : "s"}` : `Showing ${n} of ${all}`; };
   const draw = () => {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
     $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(CFG.normT(s))}<small>${l.filter(r => r.squad === i).length} checked in${l.some(r => r.squad === i && !r.paid) ? ` · ${l.filter(r => r.squad === i && !r.paid).length} not paid` : ""}</small></button>`).join("");
@@ -3704,7 +3713,7 @@ function wireDesk() {
     const nm = m => `${m.first} ${m.last}`.trim(), seenN = new Set(), allM = CK.members().map(m => ({ member: m.member, first: m.first, last: m.last })).concat(SHEET.names().map(x => ({ member: x.member || "name:" + x.full, first: x.first || x.full, last: x.first ? x.last : "" })))
       .filter(m => { const k = nm(m).toLowerCase(); if (!k || seenN.has(k)) return false; seenN.add(k); return true; }).sort((a, b) => (a.last || a.first).localeCompare(b.last || b.first) || a.first.localeCompare(b.first));
     const withOpts = r => { const want = (r.friend || "").trim().toLowerCase(), on = rs.filter(x => x !== r && x.lane && x.paid), onSet = new Set(on.map(x => x.member)), sel = x => want && nm(x).toLowerCase() === want ? "selected" : "";
-      return `<option value="">${r.friend ? "No one" : "Pick a bowler…"}</option>${on.length ? `<optgroup label="On a lane now">${on.map(x => `<option value="${esc(x.member)}" ${sel(x)}>${esc(nm(x))} (lane ${x.lane})</option>`).join("")}</optgroup>` : ""}<optgroup label="All bowlers">${allM.filter(m => m.member !== r.member && !onSet.has(m.member)).map(m => `<option value="${esc(m.member)}" ${sel(m)}>${m.last ? `${esc(m.last)}, ${esc(m.first)}` : esc(m.first)}</option>`).join("")}</optgroup>`; };
+      return `<option value="">${r.friend ? "No one" : "Pick a bowler…"}</option>${on.length ? `<optgroup label="On a lane now">${on.map(x => { const full = r.lane !== x.lane && c[x.lane] >= cf.max; return `<option value="${esc(x.member)}" ${sel(x)} ${full ? "disabled" : ""}>${esc(nm(x))} (lane ${x.lane}${full ? " · lane full" : ""})</option>`; }).join("")}</optgroup>` : ""}<optgroup label="All bowlers">${allM.filter(m => m.member !== r.member && !onSet.has(m.member)).map(m => `<option value="${esc(m.member)}" ${sel(m)}>${m.last ? `${esc(m.last)}, ${esc(m.first)}` : esc(m.first)}</option>`).join("")}</optgroup>`; };
     const owe = r => { const o = CK.owes(e, r, l); return o.known ? money(o.total) : `entry fee${o.extra ? " + " + money(o.extra) : ""}`; };
     const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n}${c[n] >= CFG.cap(cf) && r.lane !== n ? " (full)" : ""}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
     const unpaid = rs.filter(r => !r.paid), paid = rs.filter(r => r.paid), feeSet = CFG.get(e).fee != null;
@@ -3714,11 +3723,11 @@ function wireDesk() {
     const pairs = []; for (let n = cf.first; n <= cf.last; n++) { const p = CK.pair(n); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [] }); g.lanes.push(n); }
     const onLanes = pairs.reduce((t, g) => t + g.lanes.reduce((a, n) => a + c[n], 0), 0), used = pairs.filter(g => g.lanes.some(n => c[n])).length, cap = CFG.cap(cf);
     const laneRep = rs.length || sample ? `<div class="panel dk-lanes"><div class="dk-lanes-head"><b>Lane pairs</b><span>${onLanes} bowler${onLanes === 1 ? "" : "s"} on ${used} of ${pairs.length} pairs${unpaid.length ? ` · ${unpaid.length} waiting to pay (no lane yet)` : ""}</span></div>
-      <div class="dk-lanes-grid">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
+      <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
         return `<div class="dk-pair${t ? "" : " empty"}${full ? " full" : ""}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small></div>`; }).join("")}</div>
       <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
-    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + laneRep + (rs.length ? rs.map(r => `
-      <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}">
+    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label><span class="meta" id="dk-fcount"></span></div>` : "") + (rs.length ? rs.map(r => `
+      <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
@@ -3734,6 +3743,7 @@ function wireDesk() {
           <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r, l).known ? " · " + owe(r) : ""}`}</label></div></div>
         </div>
       </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the poster below with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
+    if ($("#dk-find")) { $("#dk-find").addEventListener("input", ev => { F.q = ev.target.value; filt(); }); $("#dk-fp").addEventListener("change", ev => { F.paid = ev.target.checked; filt(); }); $("#dk-fu").addEventListener("change", ev => { F.unpaid = ev.target.checked; filt(); }); filt(); }
     $("#dk-body").querySelectorAll(".dk-row").forEach(row => {
       const r = () => { const L = CK.list(e); return [L, L.find(x => x.member === row.dataset.k && x.squad === sq)]; };
       row.querySelector("[data-del]").addEventListener("click", () => {
@@ -3748,12 +3758,12 @@ function wireDesk() {
         if (act === "with" && !el.value) { me.friend = ""; msg(`${me.first} ${me.last} has no bowl-with request now.`); }
         else if (act === "with") { const f = L.find(x => x.member === el.value && x.squad === sq), m = CK.members().find(x => x.member === el.value) || SHEET.names().map(x => ({ member: x.member || "name:" + x.full, first: x.full, last: "" })).find(x => x.member === el.value); me.friend = f ? `${f.first} ${f.last}` : m ? `${m.first} ${m.last}`.trim() : ""; }
         if (act === "with" && el.value) { const f = L.find(x => x.member === el.value && x.squad === sq && x.paid && x.lane);
-          if (!f) msg(`Noted: ${me.first} ${me.last} wants to bowl with ${me.friend}. They go on the same pair once both are checked in for this squad and paid.`);
-          else if (!me.paid) msg(`Noted: ${me.first} ${me.last} goes on ${f.first} ${f.last}'s pair after paying.`);
-          else { const n = CK.pick(e, sq, L, me, f), rp = CK.repeatOf(e, L, me, f.lane); if (rp) msg(`${me.first} ${me.last} already bowled lanes ${CK.pairName(CK.pair(f.lane))} in the ${rp} squad today. Pick a different pair, or use the Lane box to override.`); else if (n && Math.ceil(n / 2) === Math.ceil(f.lane / 2)) { me.lane = n; msg(`${me.first} ${me.last} is now on lane ${n}, on the same pair as ${f.first} ${f.last}.`); } else msg(`That pair is full. Move someone else off it first, or raise the limit in Tournament setup.`); } }
+          if (!f) msg(`Noted: ${me.first} ${me.last} wants to bowl with ${me.friend}. They go on the same lane once both are checked in for this squad and paid.`);
+          else if (!me.paid) msg(`Noted: ${me.first} ${me.last} goes on ${f.first} ${f.last}'s lane after paying.`);
+          else { const n = CK.pick(e, sq, L, me, f), rp = CK.repeatOf(e, L, me, f.lane); if (rp) msg(`${me.first} ${me.last} already bowled lanes ${CK.pairName(CK.pair(f.lane))} in the ${rp} squad today. Pick a different pair, or use the Lane box to override.`); else if (n && Math.ceil(n / 2) === Math.ceil(f.lane / 2)) { me.lane = n; msg(`${me.first} ${me.last} is now on lane ${n}, ${n === f.lane ? "the same lane" : "the same pair"} as ${f.first} ${f.last}.`); } else msg(`That lane is full. Move someone else off it first, or raise the limit in Tournament setup.`); } }
         if (act === "avg") { me.avg = Number(el.value) || null; const nm = CK.newMembers(), x = nm.find(m => m.member === me.member); if (x) { x.avg = me.avg; CK.put("9tap-newmembers", nm); } }
         if (act === "paid") {
-          if (el.checked) { const n = CK.payIn(e, L, me), f = CK.friendOf(L, sq, me.friend, me); msg(n ? `${me.first} ${me.last} paid${CK.owes(e, me).known ? " " + owe(me) : ""}: lane ${n}${f && f.lane && CK.pair(f.lane) === CK.pair(n) ? `, same pair as ${f.first} ${f.last}` : ""}.` : `${me.first} ${me.last} paid, but every lane is full. Raise the limit in Tournament setup, then pick a lane.`); }
+          if (el.checked) { const n = CK.payIn(e, L, me), f = CK.friendOf(L, sq, me.friend, me); msg(n ? `${me.first} ${me.last} paid${CK.owes(e, me).known ? " " + owe(me) : ""}: lane ${n}${f && f.lane && CK.pair(f.lane) === CK.pair(n) ? `, same ${f.lane === n ? "lane" : "pair"} as ${f.first} ${f.last}` : ""}.` : `${me.first} ${me.last} paid, but every lane is full. Raise the limit in Tournament setup, then pick a lane.`); }
           else if (!confirm(`Mark ${me.first} ${me.last} as NOT paid? They lose lane ${me.lane || "–"} and any scores won't count until they pay.`)) { el.checked = true; return; }
           else { CK.unpay(me); msg(`${me.first} ${me.last} marked not paid. Lane released.`); }
         }
