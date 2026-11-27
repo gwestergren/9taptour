@@ -1383,6 +1383,10 @@ const SHEET = {
     const ed = CK.get("9tap-member-edits", {}); if (row["Member #"] && ed[row["Member #"]]) { delete ed[row["Member #"]]; CK.put("9tap-member-edits", ed); } // the sheet row is the truth now
     const out = {}; ["Member #", "First name", "Last name", "Full name", "Nickname / other names", "City", "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
     SHEET.send({ action: "saveMember", id: "mem:" + (was || row["Full name"]).toLowerCase(), was: was || "", member: out });
+    const num = String(row["Member #"] || "").trim(), ho = row["Handicap override"];
+    if (num) [CK.event(), SC.event()].forEach(ev => { const L = CK.list(ev); let hit = false;
+      L.forEach(r => { if (r.member !== num) return; hit = true; Object.assign(r, { first: row["First name"] || r.first, last: row["Last name"] || r.last, avg: +row.Average || r.avg, bonus: +row["Bonus pins"] || 0, hcp: ho === "" || ho == null ? null : +ho }); });
+      if (hit) CK.save(ev, L); });
     return row["Full name"];
   },
   // Every name on the Members tab (with or without a member #), for the Desk's Bowl with list.
@@ -1705,18 +1709,13 @@ const VIEWS = {
 
   bowlers() {
     return `
-    <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>Look up a member to change their average, handicap or bonus pins, or add a new member.</p></div></section>
-    <section class="wrap sc-main bw-main">
-      <div class="bw-top">
-        <input id="bw-q" type="search" placeholder="Search by name or member #" autocomplete="off">
-        <button type="button" class="btn btn-primary" id="bw-add">+ Add member</button>
-        <button type="button" class="btn btn-ghost" id="bw-csv">Download CSV</button>
-      </div>
-      <div id="bw-edit"></div>
-      <p class="meta" id="bw-count"></p>
-      <div class="table-wrap"><table class="sc-board bw-board"><thead><tr><th>#</th><th>Bowler</th><th>Avg</th><th>Hdcp</th><th>Bonus</th><th></th></tr></thead><tbody id="bw-list"></tbody></table></div>
-      <div id="bw-msg" class="toast" hidden></div>
-      <p class="foot-note">Handicap is 90% of the difference between the Tour average and 220 (averages under 125 count as 125). Leave the handicap box empty to use that, or type a number to set it by hand. Bonus pins (0 to 5) are added on top. Changes show up right away on the Desk, bowler check-in, scores and standings. Prototype: the member list is a sample of 60 bowlers plus anyone added here, saved on this device only. In the live version this list would be the Members tab of the Tour's Google Sheet, with the same columns as the CSV.</p>
+    <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>The Tour's member list, the same as the Members tab of the Tour's data. Change a box and it saves by itself.</p></div></section>
+    <section class="wrap sc-main">
+      <div class="bw-top"><input id="dt-q" type="search" placeholder="Search by name or member #" autocomplete="off"><button type="button" class="btn btn-primary" id="dt-add">+ Add member</button><button type="button" class="btn btn-ghost" id="dt-csv">Download CSV</button></div>
+      <p class="meta" id="dt-info"></p>
+      <div class="dt-wrap"><table class="dt-grid" id="dt-grid"></table></div>
+      <div id="dt-msg" class="toast" hidden></div>
+      <p class="foot-note">Leave Hdcp (by hand) empty to use 90% of the difference between the average and 220 (averages under 125 count as 125); the grey number shows that. Bonus pins (0 to 5) are added on top. Changes reach the Desk, check-in, scores and standings right away. Phone and email aren't shown here.</p>
     </section>`;
   },
 
@@ -3936,64 +3935,15 @@ window.addEventListener("storage", ev => {
   if (ev.key === FIN.KEY || ev.key === FIN.DEMO) { FIN.sync(); const v = (location.hash || "").slice(1).split("/")[0]; if (["live", "tv", "standings", "results"].includes(v)) route(); return; }
   if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw();
 });
-/* ---- Staff Bowlers page (#bowlers): search, edit average / handicap / bonus pins, add members ---- */
-function wireBowlers() {
-  let open = null; // member # being edited, or "new"
-  const msg = t => { const m = $("#bw-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
-  const list = () => {
-    const q = $("#bw-q").value.trim().toLowerCase(), all = CK.members().slice().sort((a, b) => a.last.localeCompare(b.last) || a.first.localeCompare(b.first));
-    const hits = q ? all.filter(m => (m.first + " " + m.last + " " + m.member).toLowerCase().includes(q)) : all;
-    $("#bw-count").textContent = `${hits.length} of ${all.length} members`;
-    $("#bw-list").innerHTML = hits.map(m => `<tr${open === m.member ? ' class="cur"' : ""}><td class="num">${esc(m.member)}</td><td><b>${esc(m.first)} ${esc(m.last)}</b>${m.isNew ? "<small>New member</small>" : ""}</td><td class="num">${m.avg || "–"}</td><td class="num">${CK.rh(m)}${m.hcp != null && m.hcp !== "" ? "<small>set by hand</small>" : ""}</td><td class="num">${m.bonus || 0}</td><td><button type="button" class="ck-back" data-edit="${esc(m.member)}">Edit</button></td></tr>`).join("") || `<tr><td colspan="6">No members match. <button type="button" class="ck-back" data-edit="new">Add a new member</button></td></tr>`;
-  };
-  const form = () => {
-    const box = $("#bw-edit");
-    if (!open) { box.innerHTML = ""; return; }
-    const m = open === "new" ? { member: CK.nextNumber(), first: "", last: "", city: "", avg: "", bonus: 0, hcp: null } : CK.members().find(x => x.member === open);
-    box.innerHTML = `<form class="panel bw-form" id="bw-form" novalidate>
-      <h3>${open === "new" ? "New member" : `${esc(m.first)} ${esc(m.last)}`} <span class="meta">#${esc(m.member)}</span></h3>
-      <div class="form-grid bw-grid">
-        <div class="field"><label for="bw-first">First name</label><input id="bw-first" value="${esc(m.first)}"></div>
-        <div class="field"><label for="bw-last">Last name</label><input id="bw-last" value="${esc(m.last)}"></div>
-        <div class="field"><label for="bw-avg">Tour average</label><input id="bw-avg" type="number" inputmode="numeric" min="0" max="300" value="${m.avg || ""}"></div>
-        <div class="field"><label for="bw-hcp">Handicap</label><input id="bw-hcp" type="number" inputmode="numeric" min="-100" max="200" value="${m.hcp != null && m.hcp !== "" ? m.hcp : ""}" placeholder=""><span class="meta" id="bw-auto"></span></div>
-        <div class="field"><label for="bw-bonus">Bonus pins</label><input id="bw-bonus" type="number" inputmode="numeric" min="0" max="5" value="${m.bonus || 0}"></div>
-      </div>
-      <div class="su-vbtns"><button class="btn btn-primary" type="submit">${open === "new" ? "Add member" : "Save changes"}</button><button type="button" class="ck-back" id="bw-cancel">Cancel</button></div>
-    </form>`;
-    const auto = () => { const a = +$("#bw-avg").value || 0; $("#bw-hcp").placeholder = String(CK.hcp(a)); $("#bw-auto").textContent = $("#bw-hcp").value === "" ? `Calculated from average: ${CK.hcp(a)}. Type a number to override.` : `Set by hand (average gives ${CK.hcp(a)})`; };
-    ["bw-avg", "bw-hcp"].forEach(id => $("#" + id).addEventListener("input", auto)); auto();
-    $("#bw-cancel").addEventListener("click", () => { open = null; form(); list(); });
-    $("#bw-form").addEventListener("submit", ev => {
-      ev.preventDefault();
-      const first = $("#bw-first").value.trim(), last = $("#bw-last").value.trim(), avg = Number($("#bw-avg").value), hv = $("#bw-hcp").value.trim(), bonus = Math.max(0, Math.min(5, Math.round(+$("#bw-bonus").value || 0)));
-      if (!first || !last) { msg("Enter a first and last name."); return; }
-      if (!avg || avg < 50 || avg > 300) { msg("Enter a Tour average between 50 and 300."); $("#bw-avg").focus(); return; }
-      CK.saveMember({ member: m.member, first, last, avg, bonus, hcp: hv === "" ? null : Math.round(+hv) });
-      msg(`${open === "new" ? "Added" : "Saved"} ${first} ${last} (#${m.member}): average ${avg}, handicap ${hv === "" ? CK.hcp(avg) : Math.round(+hv)}, ${bonus} bonus pin${bonus === 1 ? "" : "s"}.`);
-      open = null; form(); list();
-    });
-    $("#bw-first").focus(); box.scrollIntoView({ block: "nearest" });
-  };
-  $("#bw-q").addEventListener("input", list);
-  $("#bw-list").addEventListener("click", ev => { const b = ev.target.closest("[data-edit]"); if (!b) return; open = b.dataset.edit; form(); list(); });
-  $("#bw-add").addEventListener("click", () => { open = "new"; form(); list(); });
-  $("#bw-csv").addEventListener("click", () => {
-    const rows = [["Member #", "Last", "First", "Average", "Handicap", "Handicap set by hand", "Bonus pins"]].concat(CK.members().map(m => [m.member, m.last, m.first, m.avg || "", CK.rh(m), m.hcp != null && m.hcp !== "" ? "Y" : "", m.bonus || 0]));
-    const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(",")).join("\n");
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "9-tap-members.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
-  list();
-}
-function wireData() {
-  const e = CK.event(); let tab = "ck";
+function wireData(mode) {
+  const e = CK.event(); let tab = mode || "ck";
   const msg = t => { const m = $("#dt-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 3500); };
   const memRows = () => ((SHEET.get(SHEET.CACHE, {}).data || {}).Members || []).filter(r => String(r["Full name"] || r["First name"] || r["Last name"] || "").trim() || r._new);
   const v = x => esc(x == null ? "" : String(x));
   const draw = () => {
     const q = $("#dt-q").value.trim().toLowerCase(), hit = t => !q || t.toLowerCase().includes(q);
     $("#dt-add").hidden = tab !== "mem";
-    $("#dt-names").innerHTML = SHEET.names().map(n => `<option value="${v(n.full)}">`).join("");
+    if ($("#dt-names")) $("#dt-names").innerHTML = SHEET.names().map(n => `<option value="${v(n.full)}">`).join("");
     if (tab === "ck") {
       const L = CK.list(e), cf = CFG.get(e), rs = L.map((r, i) => ({ r, i })).filter(({ r }) => hit(`${r.first} ${r.last} ${r.member}`)).sort((a, b) => a.r.squad - b.r.squad || (a.r.lane || 99) - (b.r.lane || 99) || a.r.at - b.r.at);
       $("#dt-info").textContent = `${longDate(e.date)} · ${e.center} · ${L.length} check-in${L.length === 1 ? "" : "s"}, ${L.filter(r => !r.paid).length} not paid`;
@@ -4018,7 +3968,7 @@ function wireData() {
     $("#dt-info").textContent = `${memRows().length} members · ${memRows().filter(r => String(r["Member #"] || "").trim()).length} with a member #`;
     const F = [["Member #", "num"], ["First name"], ["Last name"], ["Nickname / other names"], ["City"], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]];
     $("#dt-grid").innerHTML = `<thead><tr>${F.map(([k]) => `<th>${k === "Handicap override" ? "Hdcp (by hand)" : k === "Nickname / other names" ? "Other names" : k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
-      <tr data-k="${v(r["Full name"] || "")}"${r._new ? ' class="new"' : ""}>${F.map(([k, t]) => `<td><input data-f="${v(k)}" value="${v(r[k])}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}></td>`).join("")}</tr>`).join("") || `<tr><td colspan="8" class="dt-none">No members match.</td></tr>`}</tbody>`;
+      <tr data-k="${v(r["Full name"] || "")}"${r._new ? ' class="new"' : ""}>${F.map(([k, t]) => `<td><input data-f="${v(k)}" value="${v(r[k])}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}${k === "Handicap override" && +r.Average ? ` placeholder="${CK.hcp(+r.Average)}" title="Empty = ${CK.hcp(+r.Average)} from the average"` : ""}></td>`).join("")}</tr>`).join("") || `<tr><td colspan="8" class="dt-none">No members match.</td></tr>`}</tbody>`;
   };
   // check-in edits
   $("#dt-grid").addEventListener("change", ev => {
@@ -4029,7 +3979,8 @@ function wireData() {
       const num = patch["Member #"]; if (num && memRows().some(r => String(r["Member #"] || "").trim() === num && String(r["Full name"] || "") !== was)) { msg(`Member # ${num} already belongs to someone else.`); el.value = ""; return; }
       if (!patch["First name"] || !patch["Last name"]) { msg("A member needs a first and last name. Nothing saved yet."); return; }
       const c = SHEET.get(SHEET.CACHE, {}), nw = ((c.data || {}).Members || []).find(r => r._new); if (!was && nw) { delete nw._new; SHEET.set(SHEET.CACHE, c); }
-      const full = SHEET.editMember(was, patch); tr.dataset.k = full; tr.classList.remove("new"); msg(`Saved ${full}.`); return;
+      const full = SHEET.editMember(was, patch); tr.dataset.k = full; tr.classList.remove("new"); msg(`Saved ${full}.`);
+      const hb = tr.querySelector('[data-f="Handicap override"]'), av = +patch.Average; if (hb) { hb.placeholder = av ? String(CK.hcp(av)) : ""; hb.title = av ? `Empty = ${CK.hcp(av)} from the average` : ""; } return;
     }
     const L = CK.list(e), me = L[+el.closest("tr").dataset.i]; if (!me) return;
     const nm = `${me.first} ${me.last}`;
@@ -4048,8 +3999,13 @@ function wireData() {
     if (!me || !confirm(`Remove ${me.first} ${me.last} from the ${e.squads[me.squad]} squad?`)) return;
     CK.save(e, L.filter(x => x !== me)); msg(`Removed ${me.first} ${me.last}.`); draw();
   });
-  $("#dt-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t; $("#dt-tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); $("#dt-q").value = ""; draw(); });
+  if ($("#dt-tabs")) $("#dt-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t; $("#dt-tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); $("#dt-q").value = ""; draw(); });
   $("#dt-q").addEventListener("input", draw);
+  if ($("#dt-csv")) $("#dt-csv").addEventListener("click", () => {
+    const K = ["Member #", "First name", "Last name", "Nickname / other names", "City", "Average", "Handicap override", "Bonus pins"], rows = [K.concat("Handicap used")].concat(memRows().filter(r => !r._new).map(r => K.map(k => r[k] == null ? "" : r[k]).concat(r["Handicap override"] !== "" && r["Handicap override"] != null ? r["Handicap override"] : r.Average ? CK.hcp(+r.Average) : "")));
+    const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "9-tap-members.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
   $("#dt-add").addEventListener("click", () => { const c = SHEET.get(SHEET.CACHE, {}); c.data = c.data || {}; const M = c.data.Members = c.data.Members || []; if (!M.some(r => r._new)) M.push({ _new: true }); SHEET.set(SHEET.CACHE, c); $("#dt-q").value = ""; draw(); const i = $("#dt-grid tr.new input[data-f='First name']"); if (i) i.focus(); });
   draw(); SHEET.pullDay(e);
   const onStore = ev => { if (!document.getElementById("dt-grid")) return window.removeEventListener("storage", onStore);
@@ -4057,7 +4013,7 @@ function wireData() {
   window.addEventListener("storage", onStore);
 }
 function wire(view) {
-  if (view === "bowlers") wireBowlers();
+  if (view === "bowlers") wireData("mem");
   if (view === "data") wireData();
   if (view === "scores") wireScores();
   if (view === "standings" || view === "live") wireLive();
