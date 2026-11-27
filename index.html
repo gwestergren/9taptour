@@ -839,7 +839,6 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-card h3 { margin: 0 0 12px; }
 .su-intro h2 { margin: 0 0 2px; font-size: 1.6rem; } .su-intro .meta { margin: 0; }
 .su-tabs button { flex: 1 1 0; }
-.su-tabs button.dirty::after { content: "●"; color: var(--maple); margin-left: 6px; font-size: .8em; }
 .su-main .dk-poster { margin-top: 16px; }
 .su-sec { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; padding-top: 18px; border-top: 3px solid var(--maple); }
 .su-sec:first-child { margin-top: 0; }
@@ -1842,11 +1841,10 @@ const VIEWS = {
     const step = (id, v, lbl) => `<div class="su-step" data-step="${id}"><button type="button" data-d="-1" aria-label="Fewer ${lbl}">−</button><output id="${id}">${v}</output><button type="button" data-d="1" aria-label="More ${lbl}">+</button></div>`;
     const combo = (id, ph) => `<div class="su-combo"><label class="sr-only" for="${id}-q">Bowling center</label><input id="${id}-q" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-list" placeholder="${ph}" autocomplete="off" enterkeyhint="search"><div class="su-vlist" id="${id}-list" role="listbox" hidden></div></div>`;
     const bar = (k, lbl) => `<div class="su-bar su-wide"><div class="su-state" id="su-${k}-state"></div><div id="su-${k}-msg" class="su-msg" role="status" hidden></div><div class="su-btns"><button class="btn btn-ghost su-save" type="submit" id="su-${k}-save">${lbl}</button></div></div>`;
-    const sd = new Date(e.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return `
     <section class="page-head sc-head su-head"><div class="wrap"><h1>Setup</h1></div></section>
     <div class="sc-bar"><div class="wrap"><div class="sc-row"><div class="sc-seg su-tabs" id="su-tabs">
-      <button type="button" data-tab="t" aria-pressed="${tab === "t"}">Tournament<small>${esc(sd)} · venue, games, squads</small></button>
+      <button type="button" data-tab="t" aria-pressed="${tab === "t"}">Tournament<small>venue, games, squads</small></button>
       <button type="button" data-tab="v" aria-pressed="${tab === "v"}">Venues<small>lanes and filling</small></button>
       <button type="button" data-tab="o" aria-pressed="${tab === "o"}">Tour<small>every tournament</small></button>
     </div></div></div></div>
@@ -3546,7 +3544,7 @@ function wireSetup() {
   const dirty = { t: false, v: false, o: false }, NAMES = { t: "Tournament", v: "Venues", o: "Tour" };
   const say = (k, t) => { const m = $("#su-" + k + "-msg"); m.hidden = !t; m.innerHTML = t || ""; };
   const st = k => { $("#su-" + k + "-state").innerHTML = `<span class="su-dot${dirty[k] ? " wait" : " on"}"></span><span><b>${dirty[k] ? "Unsaved changes" : "Saved"}</b>${k === "t" ? ` · open and close check-in on the <a class="link-more" href="#desk">Desk</a>` : ""}</span>`;
-    const b = $(`#su-tabs [data-tab="${k}"]`); if (b) b.classList.toggle("dirty", dirty[k]); };
+  };
   const touch = k => { dirty[k] = true; st(k); if (k === "t") tSum(); };
   const clean = k => { dirty[k] = false; st(k); };
   const flash = k => { const b = $("#su-" + k + "-save"), t0 = b.textContent; b.textContent = "Saved ✓"; b.classList.add("ok"); setTimeout(() => { if (b.isConnected) { b.textContent = t0; b.classList.remove("ok"); } }, 2500); };
@@ -3651,7 +3649,8 @@ function wireSetup() {
   const tNote = () => { const v = VEN.find(c.venue), n = $("#su-tv-note");
     n.innerHTML = v ? `${esc(fmtLine(VEN.fmt(Object.assign({}, DEF, v.fmt))))}. <button type="button" class="ck-back" id="su-tv-edit">Change in Venues →</button>` : "Type the bowling center's name. New center? Add it on the Venues tab.";
     const b = $("#su-tv-edit"); if (b) b.addEventListener("click", () => { if (vid !== c.venue && (!dirty.v || confirm("Drop your unsaved venue changes?"))) vLoad(c.venue); go("v"); }); };
-  const tRedraw = combo("su-tv", () => c.venue, id => { c.venue = id; const v = VEN.find(id); c.venueName = v ? v.name : ""; tNote(); touch("t"); say("t", v ? `Venue set to ${esc(v.name)}. Press Save tournament to keep it.` : ""); }, name => box("add", name));
+  const tRedraw = combo("su-tv", () => c.venue, id => { const v = VEN.find(id); c.venue = id; c.venueName = v ? v.name : ""; // the venue is saved the moment it's picked
+    const y = CFG.get(e); y.venue = id; y.venueName = c.venueName; y.saved = true; CFG.put(e, y); tNote(); tSum(); say("t", v ? `Venue set to ${esc(v.name)} and saved. Its lanes come from the Venues tab.` : ""); }, name => box("add", name));
   const tPick = (id, key) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = +b.dataset.v; if (key === "games") c.count = Math.min(3, c.games); touch("t"); });
   tPick("su-games", "games"); tPick("su-count", "count");
   function tSum() {
