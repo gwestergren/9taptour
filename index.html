@@ -711,6 +711,16 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-ready li button { background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; text-align: left; }
 .dk-ready li button[aria-pressed="true"] { font-weight: 700; }
 .dk-ready .dk-fpair { justify-self: start; }
+.dk-setup-wrap { margin-top: 18px; }
+.dk-setup { border: 2px solid var(--maple); padding: 14px 18px; }
+.dk-setup.red { border-color: #b3261e; background: #fdecea; }
+.dk-setup.green { border-color: #2e7d4f; background: #e8f5ec; }
+.dk-setup h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.dk-setup dl { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 10px; }
+.dk-setup dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; opacity: .7; }
+.dk-setup dd { margin: 0; font-weight: 600; }
+.dk-setup ul { margin: 4px 0 10px; padding-left: 20px; color: #7a1a14; }
+.dk-setup .dk-set-act { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
 .dk-locked { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 2px solid #0f2f3a; background: #eef3f4; margin-bottom: 14px; }
 .dk-locked b { display: block; font-size: 1.05rem; } .dk-locked span { color: var(--muted); font-size: .9rem; }
 .dk-row.locked { opacity: .72; } .dk-row.locked .dk-del { visibility: hidden; }
@@ -874,6 +884,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-stop { padding: 0 !important; margin-left: 6px; font-size: .85rem !important; }
 .su-dot.on { background: var(--good); box-shadow: 0 0 0 4px color-mix(in srgb, var(--good) 25%, transparent); }
 .su-btns { display: flex; gap: 10px; flex: 1 1 260px; justify-content: flex-end; }
+.su-confirm.red { border: 2px solid #b3261e; background: #fdecea; }
+.su-confirm.amber { border: 2px solid var(--maple); }
+.su-confirm.green { border: 2px solid #2e7d4f; background: #e8f5ec; }
+.su-confirm ul { margin: 6px 0 12px; padding-left: 20px; color: #7a1a14; }
+.su-confirm p { margin: 0 0 10px; }
 .su-save.ok { border-color: var(--good); color: var(--good); }
 .su-btns .btn { min-height: 48px; flex: 1 1 0; max-width: 220px; }
 .su-msg { flex: 1 0 100%; order: -1; padding: 10px 12px; border-radius: var(--radius); font-size: .92rem; background: color-mix(in srgb, var(--good) 14%, transparent); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
@@ -1481,7 +1496,7 @@ const SHEET = {
     const k = SHEET.key(), n = SHEET.pending(), when = SHEET.at ? new Date(SHEET.at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     const read = SHEET.status === "ok" ? `Read from the sheet at ${when}.` : when ? `Can't reach the sheet right now. Using the copy from ${when}.` : "Can't reach the sheet right now. Using the data built into the site.";
     box.innerHTML = `<h3>Google Sheet</h3>
-      <p class="meta">${read} <a href="https://docs.google.com/spreadsheets/d/1uFFsYJEtcIdM9gO580G6o28YptwrWx-NVEOY3ouVycY/edit" target="_blank" rel="noopener">Open the sheet ↗</a></p>
+      <p class="meta">${read}</p>
       ${k ? `<p><b>This device saves to the sheet.</b> Setup, venues and jackpots go to the sheet when you press Save.${n ? ` ${n} change${n === 1 ? " is" : "s are"} waiting to be sent.` : ""}</p>
         <div class="su-btns"><button type="button" class="btn btn-ghost" id="su-sk-out">Disconnect this device</button>${n ? ` <button type="button" class="btn btn-ghost" id="su-sk-retry">Send now</button>` : ""}</div>`
       : `<p>This device saves only in this browser. Enter the staff key once to send saves to the sheet.</p>
@@ -1879,6 +1894,8 @@ const VIEWS = {
 
         <div class="panel su-card su-wide su-sumcard"><h3>Summary</h3><div id="su-sum"></div></div>
 
+        <div class="panel su-card su-wide su-confirm" id="su-confirm"></div>
+
         <div class="su-bar su-wide">
           <div class="su-state" id="su-state"></div>
           <div id="su-msg" class="su-msg" role="status" hidden></div>
@@ -1917,6 +1934,7 @@ const VIEWS = {
       <p class="eyebrow">Check-in desk · Tour staff</p><h1>Check-in desk</h1>
       <p>${esc(e.center)} · ${esc(e.city)} · ${esc(longDate(e.date))}</p>
     </div></section>
+    <section class="wrap dk-setup-wrap"><div class="panel dk-setup" id="dk-setup"></div></section>
     <div class="sc-bar"><div class="wrap">
       <div class="sc-row"><span class="sc-lbl">Squad</span><div class="sc-seg" id="dk-squads"></div></div>
     </div></div>
@@ -3022,7 +3040,22 @@ const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
   defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, fee: CFG.lastFee("9tap-fee"), fee2: CFG.lastFee("9tap-fee2"), saved: false }; },
   lastFee(k) { try { const f = JSON.parse(localStorage.getItem(k)); return typeof f === "number" ? f : null; } catch (_) { return null; } },
-  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
+  // Before check-in can open, staff confirm the tournament's setup (Greg, Nov 27). The confirmation is tied to these
+  // values: change any of them afterwards and the setup needs confirming again.
+  sig(c) { return JSON.stringify([(c.venue && VEN.find(c.venue) || {}).name || c.venueName || "", c.first, c.last, c.dir, c.max, c.fill, !!c.overflow, c.overflowMax, c.games, c.count, (c.squads || []).map(CFG.normT), c.openMins, c.fee, c.fee2]); },
+  confirmed(e) { const c = CFG.get(e); return !!c.confirmedSig && c.confirmedSig === CFG.sig(c); },
+  problems(c) { const o = [], sq = c.squads || [], t = sq.map(CFG.parseT);
+    if (!c.venueName && !(c.venue && VEN.find(c.venue))) o.push("Pick the venue");
+    if (!(c.first >= 1) || !(c.last > c.first)) o.push("Lane range doesn't look right");
+    if (!(c.max >= 1)) o.push("Set bowlers per lane");
+    if (!sq.length) o.push("Add at least one squad time");
+    else if (t.some(x => x == null)) o.push("Fix the squad times (like 11:00 AM)");
+    else if (t.some((x, i) => i && x <= t[i - 1])) o.push("Squad times should go from earliest to latest");
+    if (!(c.games >= 1) || c.count > c.games) o.push("Games bowled / games that count");
+    if (c.fee == null) o.push("Entry fee (first squad) is blank");
+    if (sq.length > 1 && c.fee2 == null) o.push("Re-entry fee (each extra squad) is blank");
+    return o; },
+  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); if (!c.venue && !c.venueName) { const vn = VEN.byName(e.center); if (vn) c.venue = vn.id; } c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
@@ -3443,6 +3476,8 @@ const CKCTL = {
       const b = $("#ckc-btn");
       b.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
       b.dataset.act = st.state; b.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
+      const gate = st.state === "off" && !CFG.confirmed(e); b.disabled = gate;
+      if (gate) $("#ckc-state").innerHTML = `<span class="su-dot" style="background:#b3261e"></span><span><b>Setup not confirmed</b> · <a class="link-more" href="#setup">review and confirm the setup</a> for this tournament before opening check-in</span>`;
       const cl = c.closed || [], last = cl[cl.length - 1], undo = $("#ckc-undo"); // reopen the squad closed most recently (by mistake, or for a late bowler)
       undo.hidden = !c.open || !cl.length || st.state === "done"; if (!undo.hidden) undo.textContent = `Reopen ${c.squads[last]} squad`;
       const stop = $("#ckc-stop"); stop.hidden = !c.open; stop.textContent = st.state === "done" ? "Start over" : "Turn off check-in";
@@ -3451,6 +3486,7 @@ const CKCTL = {
     $("#ckc-btn").addEventListener("click", () => {
       const c = CFG.get(e), st = CFG.status(c), act = $("#ckc-btn").dataset.act;
       c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
+      if (act === "off" && !CFG.confirmed(e)) { say("Confirm the setup first (Setup page), then open check-in."); return; }
       if (act === "off") { c.open = true; c.closed = []; c.forced = []; c.saved = true; }
       else if (act === "open") { const iss = CK.issues(e, st.k);
         if (iss.length) { CK.deskSq = st.k; route(); say(`The ${c.squads[st.k]} squad can't close yet: ${iss.map(x => x.text).join("; ")}. Fix these (they're listed in red above the bowlers), then close.`); return; }
@@ -3575,10 +3611,18 @@ function wireSetup() {
       <li>Check-in places ${firstFew}. Bowlers pick their order at the lane.</li>
       <li>${c.count < c.games ? `Bowl ${c.games} games, the best ${c.count} count (low game dropped).` : `Bowl ${c.games} games, all count.`}</li>
       <li>${sq.length} squad${sq.length === 1 ? "" : "s"}${sq.length ? ` (${sq.map(esc).join(", ")})` : ""}.${later.length ? ` Check-in opens for the ${later.join(", the ")}.` : ""}</li></ul>`;
-    opens(); vnote();
+    opens(); vnote(); confirmBox();
   };
   const touch = () => { dirty = true; state(); };
-  const state = () => {
+  function confirmBox() { const box = $("#su-confirm"); if (!box) return; const live = Object.assign({}, c, { squads: squadsNow() }), pr = CFG.problems(live), ok = !!c.confirmedSig && c.confirmedSig === CFG.sig(live);
+    const when = c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+    box.className = "panel su-card su-wide su-confirm " + (ok ? "green" : pr.length ? "red" : "amber");
+    box.innerHTML = `<h3>Confirm setup for check-in</h3>${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing anything above means confirming again.</p>`
+      : pr.length ? `<p><b>Not ready.</b> Fix these, then confirm. The Desk can't open check-in until you do.</p><ul>${pr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`
+      : `<p>Check the setup for <b>${esc(longDate(e.date))}</b>: venue, lanes, bowlers per lane, squads, games and entry fees. When it's right, confirm it. The Desk can't open check-in until you do.</p>`}
+      ${ok ? "" : `<button type="button" class="btn btn-primary" id="su-ok" ${pr.length ? "disabled" : ""}>Confirm setup${dirty ? " (saves it)" : ""}</button>`}`;
+    const b = $("#su-ok"); if (b) b.addEventListener("click", () => { if (!store()) return; c.confirmedSig = CFG.sig(c); c.confirmedAt = new Date().toISOString(); CFG.put(e, c); flash(); confirmBox(); msg("Setup confirmed. The Desk can open check-in now."); }); }
+  const state = () => { confirmBox();
     $("#su-state").innerHTML = `<span class="su-dot${dirty ? " wait" : c.saved ? " on" : ""}"></span><span><b>${dirty ? "Unsaved changes" : c.saved ? "Setup saved" : "Not saved yet"}</b> · open and close check-in on the <a class="link-more" href="#desk">Desk</a></span>`;
     opens();
   };
@@ -3780,6 +3824,21 @@ function wireDesk() {
   if (CK.deskSq === null) CK.deskSq = 0;
   const msg = t => { const m = $("#dk-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
   CKCTL.wire(e, msg);
+  // The event's setup (venue, lanes, squads, games, fees) above the squad buttons; staff confirm it before check-in opens.
+  const setupBox = () => { const box = $("#dk-setup"); if (!box) return; const c = CFG.get(e), pr = CFG.problems(c), ok = CFG.confirmed(e);
+    const ven = c.venueName || (c.venue && VEN.find(c.venue) || {}).name || e.center, sq = (c.squads || []).map(CFG.normT), fee = x => x == null ? "Not set" : money(x);
+    const when = ok && c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+    box.className = "panel dk-setup " + (ok ? "green" : pr.length ? "red" : "");
+    box.innerHTML = `<h3>${ok ? "✓ Setup confirmed" : pr.length ? "Setup not ready" : "Confirm the setup before opening check-in"} · ${esc(ven)} · ${esc(longDate(e.date))}</h3>
+      <dl><div><dt>Lanes</dt><dd>${c.first}–${c.last}, start lane ${c.dir === "down" ? c.last + " going down" : c.first + " going up"}</dd></div>
+      <div><dt>Bowlers per lane</dt><dd>${c.max}${c.overflow && c.overflowMax > c.max ? ` (${c.overflowMax} when full)` : ""}</dd></div>
+      <div><dt>Squads</dt><dd>${sq.length ? sq.map(esc).join(", ") : "None"}</dd></div>
+      <div><dt>Games</dt><dd>${c.games} bowled, ${c.count < c.games ? `best ${c.count} count` : "all count"}</dd></div>
+      <div><dt>Entry fee</dt><dd>${fee(c.fee)}</dd></div>${sq.length > 1 ? `<div><dt>Re-entry fee</dt><dd>${fee(c.fee2)}</dd></div>` : ""}</dl>
+      ${pr.length ? `<p><b>Fix these on Setup first:</b></p><ul>${pr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <div class="dk-set-act">${ok ? `<span>Confirmed${when ? ` ${esc(when)}` : ""}. Changing the setup means confirming again.</span>` : pr.length ? "" : `<button type="button" class="btn btn-primary" id="dk-set-ok">Setup is correct · Confirm</button>`}<a class="link-more" href="#setup">Change setup →</a></div>`;
+    const b = $("#dk-set-ok"); if (b) b.addEventListener("click", () => { const c2 = CFG.get(e); c2.confirmedSig = CFG.sig(c2); c2.confirmedAt = new Date().toISOString(); c2.saved = true; CFG.put(e, c2); route(); }); };
+  setupBox();
   // Bowler list filter (search + paid / not paid). Only hides bowler cards; the lane report always counts everyone.
   const F = { q: "", paid: false, unpaid: false, pair: null, iss: null }; // neither box ticked = everyone
   const filt = () => { const q = F.q.trim().toLowerCase().split(/\s+/).filter(Boolean); let n = 0, all = 0;
