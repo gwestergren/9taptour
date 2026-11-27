@@ -1382,7 +1382,7 @@ const SHEET = {
     SHEET.set(SHEET.CACHE, c);
     const ed = CK.get("9tap-member-edits", {}); if (row["Member #"] && ed[row["Member #"]]) { delete ed[row["Member #"]]; CK.put("9tap-member-edits", ed); } // the sheet row is the truth now
     if (SHEET.NICK in patch && SHEET.nkKey() !== SHEET.NICK) { row[SHEET.OLDNICK] = patch[SHEET.NICK]; delete row[SHEET.NICK]; } // old header until the script renames it
-    const out = {}; ["Member #", "First name", "Last name", "Full name", SHEET.NICK, SHEET.OLDNICK, "City", "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
+    const out = {}; ["Member #", "First name", "Last name", "Full name", SHEET.NICK, SHEET.OLDNICK, "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
     SHEET.send({ action: "saveMember", id: "mem:" + (was || row["Full name"]).toLowerCase(), was: was || "", member: out });
     const num = String(row["Member #"] || "").trim(), ho = row["Handicap override"];
     if (num) [CK.event(), SC.event()].forEach(ev => { const L = CK.list(ev); let hit = false;
@@ -3279,7 +3279,7 @@ const CK = {
   // Save a member's details (staff Bowlers page). Sample members get an override; added members are edited in place.
   // Today's check-ins (and the last tournament's) pick up the change so the Desk, scores and standings agree.
   saveMember(m) {
-    if (SHEET.ready()) SHEET.send({ action: "saveMember", id: "m" + m.member, member: { "Member #": m.member, "First name": m.first, "Last name": m.last, "City": m.city || "", "Average": m.avg || "", "Handicap override": m.hcp == null ? "" : m.hcp, "Bonus pins": m.bonus || "" } });
+    if (SHEET.ready()) SHEET.send({ action: "saveMember", id: "m" + m.member, member: { "Member #": m.member, "First name": m.first, "Last name": m.last, "Average": m.avg || "", "Handicap override": m.hcp == null ? "" : m.hcp, "Bonus pins": m.bonus || "" } });
     const nm = CK.newMembers(), i = nm.findIndex(x => x.member === m.member), keep = { first: m.first, last: m.last, city: m.city, avg: m.avg, bonus: m.bonus, hcp: m.hcp };
     if (i >= 0) { Object.assign(nm[i], keep); CK.put("9tap-newmembers", nm); }
     else if (CK._m.some(x => x.member === m.member)) { const ed = CK.get("9tap-member-edits", {}); ed[m.member] = keep; CK.put("9tap-member-edits", ed); }

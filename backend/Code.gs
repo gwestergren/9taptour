@@ -184,7 +184,7 @@ function isStaff(key) {
 function out(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function tz() { return SpreadsheetApp.getActive().getSpreadsheetTimeZone(); }
 function today() { return Utilities.formatDate(new Date(), tz(), 'yyyy-MM-dd'); }
-// One-time tidy of the Members tab: header "Nickname / other names" becomes "Nicknames", and each cell keeps only
+// One-time tidy of the Members tab: the City column is removed, header "Nickname / other names" becomes "Nicknames", and each cell keeps only
 // names that aren't already the bowler's first or last name ("Steve Nolan" for Steven Nolan -> "Steve").
 function nickClean(first, last, str) {
   const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ''), own = new Set((first + ' ' + last).split(/\s+/).map(k).filter(Boolean).concat(['jr', 'sr', 'ii', 'iii'])), seen = new Set();
@@ -193,10 +193,13 @@ function nickClean(first, last, str) {
 }
 function fixMembers() {
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
-  const h = headers(s), c = h.indexOf('Nickname / other names'); if (c < 0) return;
-  const n = s.getLastRow() - 1, fi = h.indexOf('First name'), li = h.indexOf('Last name');
-  if (n > 0) { const v = s.getRange(2, 1, n, h.length).getValues(); s.getRange(2, c + 1, n, 1).setValues(v.map(r => [nickClean(r[fi], r[li], r[c])])); }
-  s.getRange(1, c + 1).setValue('Nicknames');
+  let h = headers(s); const c = h.indexOf('Nickname / other names');
+  if (c >= 0) {
+    const n = s.getLastRow() - 1, fi = h.indexOf('First name'), li = h.indexOf('Last name');
+    if (n > 0) { const v = s.getRange(2, 1, n, h.length).getValues(); s.getRange(2, c + 1, n, 1).setValues(v.map(r => [nickClean(r[fi], r[li], r[c])])); }
+    s.getRange(1, c + 1).setValue('Nicknames');
+  }
+  const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1); // the Tour doesn't keep a member's city
 }
 function sheet(name) { const s = SpreadsheetApp.getActive().getSheetByName(name); if (!s) throw new Error('No tab named ' + name); return s; }
 function headers(s) { return s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0].map(String); }
