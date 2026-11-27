@@ -695,6 +695,13 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-del:hover, .dk-del:focus-visible { background: color-mix(in srgb, #c7362b 12%, transparent); border-color: color-mix(in srgb, #c7362b 40%, transparent); }
 .dk-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 6px 12px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; }
 .dk-lane { width: 48px; height: 48px; font-size: .95rem; grid-row: span 2; }
+.dk-who { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; justify-content: space-between; padding-right: 8px; }
+.dk-whomain { min-width: 0; flex: 1 1 260px; }
+.dk-set { display: flex; gap: 8px; padding: 8px 10px; border: 1px dashed #c7362b; border-radius: 8px; background: #fff8f6; }
+.dk-set .field { margin: 0; display: grid; gap: 2px; }
+.dk-set .field span { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #b3261e; }
+.dk-set input { width: 78px; min-height: 38px; padding: 4px 8px; }
+.dk-need { color: #b3261e; }
 .dk-who b { font-size: 1.05rem; }
 .dk-who small { display: block; font-size: .8rem; color: var(--muted); margin-top: 2px; }
 .dk-who small.dk-warn { color: #b3261e; font-weight: 700; }
@@ -3322,7 +3329,7 @@ const CK = {
     for (let i = 0; i < 20; i++) {
       let first, last; do { first = pickA(SC.FIRST); last = pickA(SC.LAST); } while (names.has(first + " " + last)); names.add(first + " " + last);
       const isNew = i % 7 === 3, avg = isNew && i % 2 ? null : R(138, 224);
-      mk.push({ member: nextId(), first, last, city: pickA(["Everett", "Lynnwood", "Kent", "Tacoma", "Seattle", "Bremerton", "Renton", "Marysville"]), avg, bonus: i % 6 === 1 ? R(1, 5) : 0, hcp: i === 9 ? 30 : null, isNew,
+      mk.push({ member: nextId(), first, last, city: pickA(["Everett", "Lynnwood", "Kent", "Tacoma", "Seattle", "Bremerton", "Renton", "Marysville"]), avg, bonus: i % 5 === 0 ? 0 : R(1, 5), hcp: i === 9 ? 30 : null, isNew,
         squad: sq, lane: null, pos: "", jackpot: Math.random() < .55, prog: isNew ? pickA([0, 10]) : pickA([0, 0, 20, 20]), friend: "", via: i % 3 === 0 ? "desk" : "phone", paid: false, sample: true, at: Date.now() - (20 - i) * 90000 });
     }
     // bowl-with requests: some pairs where both pay (same pair of lanes), one with a friend who hasn't paid, one with a real member not here
@@ -3741,14 +3748,18 @@ function wireDesk() {
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
-        <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
-          <small>#${esc(r.member)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.rh(r)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
+        <div class="dk-who"><div class="dk-whomain"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
+          <small>#${esc(r.member)}${r.avg ? ` · Avg ${r.avg} · Hdcp ${CK.rh(r)}${r.hcp != null && r.hcp !== "" ? " (set by hand)" : ""} · Bonus pins ${r.bonus || 0}` : ` · <b class="dk-need">Average not set yet</b>`}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(r.friend)}` : "No friend request"}</small>
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
+          ${r.avg ? "" : `<div class="dk-set" title="Needs setting before this bowler can bowl">
+            <label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" min="50" max="300" placeholder="Set"></label>
+            <label class="field"><span>Hdcp</span><input data-act="hcp" type="number" inputmode="numeric" value="${r.hcp != null && r.hcp !== "" ? r.hcp : ""}" placeholder="Auto"></label>
+            <label class="field"><span>Bonus pins</span><input data-act="bonus" type="number" inputmode="numeric" min="0" max="5" value="${r.bonus || 0}"></label></div>`}</div>
         <div class="dk-ctl">
           <label class="field"><span>Lane</span><select data-act="lane" ${r.paid ? "" : "disabled"}>${r.paid ? laneOpts(r) : `<option>After paid</option>`}</select></label>
           <label class="field"><span>Bowl with</span><select data-act="with">${withOpts(r)}</select></label>
-          ${r.isNew ? `<label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" value="${r.avg || ""}" placeholder="Set"></label>` : ""}
+          
           <div class="field dk-grp"><span>Progressive</span><div class="dk-boxes">${[10, 20].map(v => `<label class="dk-box"><input type="checkbox" data-act="prog" data-v="${v}" ${r.prog === v ? "checked" : ""} ${(r.isNew ? 10 : 20) !== v ? `disabled title="${r.isNew ? "New members: $10 only" : "$10 is for new members"}"` : ""}>$${v}</label>`).join("")}</div></div>
           <div class="field dk-grp"><span>Jackpot</span><div class="dk-boxes"><label class="dk-box"><input type="checkbox" data-act="jp" ${r.jackpot ? "checked" : ""}>$4</label></div></div>
           <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r, l).known ? " · " + owe(r) : ""}`}</label></div></div>
@@ -3776,7 +3787,14 @@ function wireDesk() {
           if (!f) msg(`Noted: ${me.first} ${me.last} wants to bowl with ${me.friend}. They go on the same lane once both are checked in for this squad and paid.`);
           else if (!me.paid) msg(`Noted: ${me.first} ${me.last} goes on ${f.first} ${f.last}'s lane after paying.`);
           else { const n = CK.pick(e, sq, L, me, f), rp = CK.repeatOf(e, L, me, f.lane); if (rp) msg(`${me.first} ${me.last} already bowled lanes ${CK.pairName(CK.pair(f.lane))} in the ${rp} squad today. Pick a different pair, or use the Lane box to override.`); else if (n && Math.ceil(n / 2) === Math.ceil(f.lane / 2)) { me.lane = n; msg(`${me.first} ${me.last} is now on lane ${n}, ${n === f.lane ? "the same lane" : "the same pair"} as ${f.first} ${f.last}.`); } else msg(`That lane is full. Move someone else off it first, or raise the limit in Tournament setup.`); } }
-        if (act === "avg") { me.avg = Number(el.value) || null; const nm = CK.newMembers(), x = nm.find(m => m.member === me.member); if (x) { x.avg = me.avg; CK.put("9tap-newmembers", nm); } }
+        if (act === "avg" || act === "hcp" || act === "bonus") {
+          if (act === "avg") me.avg = Number(el.value) || null;
+          if (act === "hcp") me.hcp = el.value.trim() === "" ? null : Math.round(+el.value);
+          if (act === "bonus") me.bonus = Math.max(0, Math.min(5, Math.round(+el.value || 0)));
+          const nm = CK.newMembers(), x = nm.find(m => m.member === me.member); if (x) { Object.assign(x, { avg: me.avg, hcp: me.hcp, bonus: me.bonus }); CK.put("9tap-newmembers", nm); }
+          if (act !== "avg" && !me.avg) { CK.save(e, L); return; } // keep the boxes open until the average is in
+          if (act === "avg" && me.avg) msg(`${me.first} ${me.last}: average ${me.avg}, handicap ${CK.rh(me)}, ${me.bonus || 0} bonus pins.`);
+        }
         if (act === "paid") {
           if (el.checked) { const n = CK.payIn(e, L, me), f = CK.friendOf(L, sq, me.friend, me); msg(n ? `${me.first} ${me.last} paid${CK.owes(e, me).known ? " " + owe(me) : ""}: lane ${n}${f && f.lane && CK.pair(f.lane) === CK.pair(n) ? `, same ${f.lane === n ? "lane" : "pair"} as ${f.first} ${f.last}` : ""}.` : `${me.first} ${me.last} paid, but every lane is full. Raise the limit in Tournament setup, then pick a lane.`); }
           else if (!confirm(`Mark ${me.first} ${me.last} as NOT paid? They lose lane ${me.lane || "–"} and any scores won't count until they pay.`)) { el.checked = true; return; }
