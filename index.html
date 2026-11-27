@@ -758,7 +758,9 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-pair b { font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .dk-pair small { font-size: .72rem; color: var(--muted); }
 .dk-pair:not(.empty) { border-color: #9fc7a8; background: color-mix(in srgb, var(--good) 8%, var(--surface)); }
-.dk-pair.full { border-color: #c7362b; background: #fdf0ee; }
+.dk-pair.full { border-color: #2e7d4f; background: #e8f5ec; }
+.dk-pair.over { border: 2px solid #b3261e; background: #fdecea; }
+.dk-pair small.dk-over { color: #b3261e; font-weight: 700; }
 .dk-pair.empty b { color: var(--muted); opacity: .5; }
 .dk-lanes .meta { margin-top: 8px; font-size: .8rem; }
 .dk-paybar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 10px 14px; margin-bottom: 10px; border-radius: var(--radius); background: #eaf5ec; border: 1px solid #b9dcc0; }
@@ -3264,11 +3266,16 @@ const CK = {
   deskSq: null,
   // A squad the Desk has closed is locked: its check-ins can't be changed until the squad is reopened.
   // What still has to be done before a squad's check-in can close (Greg, Nov 27). Each item: key, text, bowlers.
-  rowIssues(e, l, r) { const o = []; if (!r.paid) o.push("unpaid"); else if (!r.lane) o.push("nolane"); if (!r.avg) o.push("avg"); if (r.paid && r.lane && CK.repeatOf(e, l, r, r.lane)) o.push("repeat"); return o; },
+  // Lanes holding more bowlers than Setup allows: bowlers per lane, or the "when full" number once every lane is full.
+  overLanes(e, l, sq) { const cf = CFG.get(e), n = {}; l.filter(r => r.squad === sq && r.paid && r.lane).forEach(r => n[r.lane] = (n[r.lane] || 0) + 1);
+    const lanes = CFG.order(cf), allFull = lanes.every(x => (n[x] || 0) >= cf.max), lim = allFull ? CFG.cap(cf) : cf.max;
+    return { lim, lanes: Object.keys(n).map(Number).filter(x => n[x] > lim).sort((a, b) => a - b), n }; },
+  rowIssues(e, l, r) { const o = []; if (r.paid && r.lane && CK.overLanes(e, l, r.squad).lanes.includes(r.lane)) o.push("over"); if (!r.paid) o.push("unpaid"); else if (!r.lane) o.push("nolane"); if (!r.avg) o.push("avg"); if (r.paid && r.lane && CK.repeatOf(e, l, r, r.lane)) o.push("repeat"); return o; },
   issues(e, sq) {
     const l = CK.list(e), rs = l.filter(r => r.squad === sq), n = k => rs.filter(r => CK.rowIssues(e, l, r).includes(k)).length, out = [], pl = (x, a, b) => `${x} ${x === 1 ? a : b}`;
     if (rs.length && CFG.get(e).fee == null) out.push({ k: "fee", text: "Entry fee not set in Setup" });
     [["unpaid", x => `${pl(x, "bowler", "bowlers")} not paid (take payment or remove them)`], ["nolane", x => `${pl(x, "paid bowler has", "paid bowlers have")} no lane`],
+     ["over", x => { const ov = CK.overLanes(e, l, sq); return `${ov.lanes.length === 1 ? `Lane ${ov.lanes[0]} has` : `Lanes ${ov.lanes.join(", ")} have`} more than ${ov.lim} bowlers (Setup limit): move ${x === 1 ? "the bowler" : "bowlers"} to another lane`; }],
      ["avg", x => `${pl(x, "bowler has", "bowlers have")} no Tour average`], ["repeat", x => `${pl(x, "bowler is", "bowlers are")} on a pair they already bowled today`]]
       .forEach(([k, f]) => { const x = n(k); if (x) out.push({ k, text: f(x) }); });
     return out;
@@ -3805,8 +3812,8 @@ function wireDesk() {
     const pairs = []; for (let n = cf.first; n <= cf.last; n++) { const p = CK.pair(n); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [] }); g.lanes.push(n); }
     const onLanes = pairs.reduce((t, g) => t + g.lanes.reduce((a, n) => a + c[n], 0), 0), used = pairs.filter(g => g.lanes.some(n => c[n])).length, cap = CFG.cap(cf);
     const laneRep = rs.length || sample ? `<div class="panel dk-lanes"><div class="dk-lanes-head"><b>Lane pairs</b><span>${onLanes} bowler${onLanes === 1 ? "" : "s"} on ${used} of ${pairs.length} pairs${unpaid.length ? ` · ${unpaid.length} waiting to pay (no lane yet)` : ""}</span></div>
-      <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
-        return `<button type="button" class="dk-pair${t ? "" : " empty"}${full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small></button>`; }).join("")}</div>
+      <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max), ov = CK.overLanes(e, l, sq), over = g.lanes.some(n => ov.lanes.includes(n));
+        return `<button type="button" class="dk-pair${t ? "" : " empty"}${over ? " over" : full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small>${over ? `<small class="dk-over">over limit</small>` : ""}</button>`; }).join("")}</div>
       <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
     const iss = CK.issues(e, sq), sqn = esc(CFG.normT(e.squads[sq])), shut = CK.locked(e, sq);
     if (F.iss && !iss.some(x => x.k === F.iss)) F.iss = null;
@@ -3819,6 +3826,7 @@ function wireDesk() {
         <div class="dk-who"><div class="dk-whomain"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
           <small>#${esc(r.member)}${r.avg ? ` · Avg ${r.avg} · Hdcp ${CK.rh(r)}${r.hcp != null && r.hcp !== "" ? " (set by hand)" : ""} · Bonus pins ${r.bonus || 0}` : ` · <b class="dk-need">Average not set yet</b>`}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(CK.friends(r.friend).join(" and "))}` : "No friend request"}</small>${grp(r) ? `<small class="dk-grpline">${esc(grp(r))}</small>` : ""}
+          ${r.paid && r.lane && CK.overLanes(e, l, sq).lanes.includes(r.lane) ? `<small class="dk-warn">Lane ${r.lane} is over the Setup limit of ${CK.overLanes(e, l, sq).lim} per lane. Move someone to another lane.</small>` : ""}
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
           ${r.avg ? "" : `<div class="dk-set" title="Needs setting before this bowler can bowl">
             <label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" min="50" max="300" placeholder="Set"></label>
