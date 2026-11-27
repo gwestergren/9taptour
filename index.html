@@ -702,6 +702,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-set .field span { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #b3261e; }
 .dk-set input { width: 78px; min-height: 38px; padding: 4px 8px; }
 .dk-need { color: #b3261e; }
+.jump { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: grid; gap: 8px; }
+.jump[hidden] { display: none; }
+.jump button { min-width: 92px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: #c7362b; color: #fff; font: inherit; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
+.jump button:hover { filter: brightness(1.08); }
+@media print { .jump { display: none !important; } }
 .dk-who small.dk-grpline { color: #0f2f3a; font-weight: 700; }
 .dk-who b { font-size: 1.05rem; }
 .dk-who small { display: block; font-size: .8rem; color: var(--muted); margin-top: 2px; }
@@ -4181,6 +4186,13 @@ STAFF.load().finally(route);
 // Fresh data from the Google Sheet: redraw public pages when it changed (staff pages keep what's being typed).
 SHEET.flush(); SHEET.refresh().then(changed => { SHEET.startDay(); POTS.load(); const v = (location.hash || "#home").slice(1).split("/")[0];
   if (changed && !STAFF.views.includes(v)) route(); const b = document.getElementById("su-sheet"); if (b && SHEET.drawBox) SHEET.drawBox(); });
+</script>
+<div class="jump" id="jump" hidden><button type="button" data-j="top" aria-label="Back to top">↑ Top</button><button type="button" data-j="bot" aria-label="Jump to bottom">↓ Bottom</button></div>
+<script>
+// Staff pages: floating Top / Bottom buttons once the page is long enough to scroll.
+(() => { const j = document.getElementById("jump"), sync = () => { j.hidden = !document.body.classList.contains("staff") || document.documentElement.scrollHeight - innerHeight < 400; };
+  j.addEventListener("click", ev => { const b = ev.target.closest("[data-j]"); if (b) window.scrollTo({ top: b.dataset.j === "top" ? 0 : document.documentElement.scrollHeight, behavior: "smooth" }); });
+  addEventListener("scroll", sync, { passive: true }); addEventListener("resize", sync); addEventListener("hashchange", () => setTimeout(sync, 50)); new MutationObserver(() => sync()).observe(document.getElementById("app"), { childList: true, subtree: true }); setTimeout(sync, 300); })();
 </script>
 
 </body>
