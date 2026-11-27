@@ -838,7 +838,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-col { display: grid; gap: 16px; }
 .su-card h3 { margin: 0 0 12px; }
 .su-intro h2 { margin: 0 0 2px; font-size: 1.6rem; } .su-intro .meta { margin: 0; }
-.su-evrow { display: grid; gap: 6px; } .su-evpick select { min-height: 52px; font: 700 1.05rem var(--font-body); max-width: 520px; width: 100%; }
+.su-evtop { display: grid; gap: 6px; } .su-evtop select { min-height: 54px; font: 700 1.1rem var(--font-body); width: 100%; }
+.su-evven { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.su-evinfo { display: grid; gap: 2px; } .su-evinfo b { font-size: 1.05rem; } .su-evinfo span { color: var(--muted); font-size: .92rem; }
+.su-evbtns { display: flex; gap: 16px; flex-wrap: wrap; } .su-evbox { margin-top: 12px; } .su-evbox .meta { margin: 6px 0 0; }
+.su-confirm #su-sum { margin-bottom: 12px; color: var(--ink); }
 .su-tabs button { flex: 1 1 0; }
 .su-main .dk-poster { margin-top: 16px; }
 .su-sec { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; padding-top: 18px; border-top: 3px solid var(--maple); }
@@ -1852,21 +1856,23 @@ const VIEWS = {
     </div></div></div></div>
     <section class="wrap su-main">
       <form id="su-t" class="su-pane" novalidate ${tab === "t" ? "" : "hidden"}>
-        <div class="su-intro su-wide su-evrow"><div class="field su-evpick"><label for="su-ev">Tournament</label><select id="su-ev">${ups.map(x => `<option value="${x.date}" ${x.date === e.date ? "selected" : ""}>${esc(new Date(x.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${esc(CK.eventFor(x).center)}${x === nextEvent ? " (next)" : ""}</option>`).join("")}</select></div>
-          <p class="meta">Every upcoming tournament on the schedule. Each one keeps its own venue, games and squad times, saved to the Tour's data. The Desk uses the next one${e === nextEvent ? "" : `; this is a later one, so check-in for it opens on its own day`}.</p></div>
-        <div class="panel su-card"><h3>Venue</h3>${combo("su-tv", "Type a bowling center name")}<p class="su-vnote" id="su-tv-note"></p></div>
+        <div class="panel su-card su-wide su-evcard">
+          <div class="su-evtop"><label class="sc-lbl" for="su-ev">Tournament</label><select id="su-ev">${ups.map(x => `<option value="${x.date}" ${x.date === e.date ? "selected" : ""}>${esc(new Date(x.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${esc(CK.eventFor(x).center)}${x === nextEvent ? " (next)" : ""}</option>`).join("")}</select></div>
+          <div class="su-evven"><div class="su-evinfo"><b id="su-tv-name"></b><span id="su-tv-note"></span></div>
+            <div class="su-evbtns"><button type="button" class="ck-back" id="su-tv-chg">Change venue</button><button type="button" class="ck-back" id="su-tv-edit">Lanes in Venues →</button></div></div>
+          <div class="su-evbox" id="su-tv-box" hidden>${combo("su-tv", "Type a bowling center name")}<p class="meta">Picking a venue saves it for this tournament right away.</p></div>
+        </div>
         <div class="panel su-card"><h3>Games</h3>
           <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
           <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div></div>
         <div class="panel su-card"><h3>Squad times</h3><div class="su-sqlist" id="su-squads"></div><button type="button" class="ck-back" id="su-add">+ Add a squad</button></div>
-        <div class="panel su-card"><h3>Jackpots</h3><p class="meta">These show on the home page and the printable schedule.</p>
+        <div class="panel su-card su-wide"><h3>Jackpots</h3><p class="meta">These show on the home page and the printable schedule.</p>
           <div class="form-grid su-pots">
             <div class="field"><label for="su-jp">9-Tap Jackpot ($)</label><input id="su-jp" type="number" inputmode="numeric" min="0" step="1" value="${DATA.jackpot}"></div>
             <div class="field"><label for="su-jprec">Record jackpot ($)</label><input id="su-jprec" type="number" inputmode="numeric" min="0" step="1" value="${DATA.jackpotRecord}"></div>
             <div class="field"><label for="su-prog">Progressive Pot ($)</label><input id="su-prog" type="number" inputmode="numeric" min="0" step="1" value="${DATA.progressive}"></div>
           </div></div>
-        <div class="panel su-card su-wide su-sumcard"><h3>Summary</h3><div id="su-sum"></div></div>
-        <div class="panel su-card su-wide su-confirm" id="su-confirm"></div>
+        <div class="panel su-card su-wide su-confirm" id="su-confirm-card"><h3>Check and confirm</h3><div id="su-sum"></div><div id="su-confirm"></div></div>
         ${bar("t", "Save tournament")}
       </form>
       <form id="su-v" class="su-pane" novalidate ${tab === "v" ? "" : "hidden"}>
@@ -3654,11 +3660,14 @@ function wireSetup() {
     row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30 PM"; }); };
   // What check-in will use: this tab's venue, games and squads, with the venue's and the Tour's SAVED settings.
   const live = () => { const x = Object.assign({}, c, { squads: squadsNow().map(CFG.normT) }), v = VEN.find(c.venue); if (v) { Object.assign(x, VEN.fmt(v.fmt)); x.venueName = v.name; } else x.venueName = ""; return Object.assign(x, TOUR.get()); };
-  const tNote = () => { const v = VEN.find(c.venue), n = $("#su-tv-note");
-    n.innerHTML = v ? `${esc(fmtLine(VEN.fmt(Object.assign({}, DEF, v.fmt))))}. <button type="button" class="ck-back" id="su-tv-edit">Change in Venues →</button>` : "Type the bowling center's name. New center? Add it on the Venues tab.";
-    const b = $("#su-tv-edit"); if (b) b.addEventListener("click", () => { if (vid !== c.venue && (!dirty.v || confirm("Drop your unsaved venue changes?"))) vLoad(c.venue); go("v"); }); };
+  const tNote = () => { const v = VEN.find(c.venue);
+    $("#su-tv-name").textContent = v ? "📍 " + label(v) : "No venue picked yet";
+    $("#su-tv-note").textContent = v ? fmtLine(VEN.fmt(Object.assign({}, DEF, v.fmt))) + "." : "Press Change venue and type the bowling center's name.";
+    $("#su-tv-edit").hidden = !v; if (!v) $("#su-tv-box").hidden = false; };
+  $("#su-tv-chg").addEventListener("click", () => { const bx = $("#su-tv-box"); bx.hidden = !bx.hidden; if (!bx.hidden) $("#su-tv-q").focus(); });
+  $("#su-tv-edit").addEventListener("click", () => { if (vid !== c.venue && (!dirty.v || confirm("Drop your unsaved venue changes?"))) vLoad(c.venue); go("v"); });
   const tRedraw = combo("su-tv", () => c.venue, id => { const v = VEN.find(id); c.venue = id; c.venueName = v ? v.name : ""; // the venue is saved the moment it's picked
-    const y = CFG.get(e); y.venue = id; y.venueName = c.venueName; y.saved = true; CFG.put(e, y); tNote(); tSum(); { const o = $("#su-ev").selectedOptions[0]; if (o && v) o.textContent = o.textContent.replace(/ · .*?( \(next\))?$/, (m, n) => ` · ${v.name}${n || ""}`); } say("t", v ? `Venue set to ${esc(v.name)} and saved. Its lanes come from the Venues tab.` : ""); }, name => box("add", name));
+    const y = CFG.get(e); y.venue = id; y.venueName = c.venueName; y.saved = true; CFG.put(e, y); if (v) $("#su-tv-box").hidden = true; tNote(); tSum(); { const o = $("#su-ev").selectedOptions[0]; if (o && v) o.textContent = o.textContent.replace(/ · .*?( \(next\))?$/, (m, n) => ` · ${v.name}${n || ""}`); } say("t", v ? `Venue set to ${esc(v.name)} and saved. Its lanes come from the Venues tab.` : ""); }, name => box("add", name));
   const tPick = (id, key) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = +b.dataset.v; if (key === "games") c.count = Math.min(3, c.games); touch("t"); });
   tPick("su-games", "games"); tPick("su-count", "count");
   function tSum() {
@@ -3666,18 +3675,18 @@ function wireSetup() {
     [["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
     const x = live(), n = x.last - x.first + 1, sq = x.squads, om = x.openMins, later = sq.slice(1).map(t => CFG.opensAt(t, om) ? `${esc(t)} squad at ${CFG.opensAt(t, om)}` : null).filter(Boolean), fee = v => v == null ? "not set" : money(v);
     $("#su-sum").innerHTML = `<ul class="su-sumlist">
-      <li><b>${esc(x.venueName || "No venue picked")}</b>${x.venueName ? `: ${esc(fmtLine(x))}. ${n} lanes × ${x.max} = <b>${n * x.max} bowlers</b> per squad.` : ""}</li>
+      <li>${x.venueName ? `<b>${n} lanes</b> × ${x.max} = <b>${n * x.max} bowlers</b> per squad${x.overflow && x.overflowMax > x.max ? ` (up to ${n * x.overflowMax} when every lane is full)` : ""}.` : "<b>No venue picked yet.</b>"}</li>
       <li>${x.count < x.games ? `Bowl ${x.games} games, the best ${x.count} count (low game dropped).` : `Bowl ${x.games} games, all count.`}</li>
       <li>${sq.length} squad${sq.length === 1 ? "" : "s"}${sq.length ? ` (${sq.map(esc).join(", ")})` : ""}.${later.length ? ` Check-in opens for the ${later.join(", the ")}.` : ""}</li>
       <li>Entry fee ${fee(x.fee)}${sq.length > 1 ? `, re-entry ${fee(x.fee2)}` : ""} (Tour settings).</li></ul>`;
     opens(); confirmBox(); }
-  function confirmBox() { const box = $("#su-confirm"), x = live(), pr = CFG.problems(x), ok = !dirty.t && !!c.confirmedSig && c.confirmedSig === CFG.sig(x);
+  function confirmBox() { const box = $("#su-confirm"), card = $("#su-confirm-card"), x = live(), pr = CFG.problems(x), ok = !dirty.t && !!c.confirmedSig && c.confirmedSig === CFG.sig(x);
     const when = c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     const other = ["v", "o"].filter(k => dirty[k]).map(k => NAMES[k]);
-    box.className = "panel su-card su-wide su-confirm " + (ok ? "green" : pr.length ? "red" : "amber");
-    box.innerHTML = `<h3>Confirm setup for check-in</h3>${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing the tournament, its venue's lanes or the Tour settings means confirming again.</p>`
+    card.className = "panel su-card su-wide su-confirm " + (ok ? "green" : pr.length ? "red" : "amber");
+    box.innerHTML = `${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing the tournament, its venue's lanes or the Tour settings means confirming again.</p>`
       : pr.length ? `<p><b>Not ready.</b> Fix these, then confirm. The Desk can't open check-in until you do.</p><ul>${pr.map(t => { const m = /\((Tour|Venues|Tournaments) tab\)$/.exec(t); return `<li>${esc(t.replace(/ \(\w+ tab\)$/, ""))}${m ? ` · <button type="button" class="ck-back" data-go="${{ Tour: "o", Venues: "v", Tournaments: "t" }[m[1]]}">${m[1]} tab →</button>` : ""}</li>`; }).join("")}</ul>`
-      : `<p>Check the summary above: venue and lanes, games, squads and entry fees. When it's right, confirm it. The Desk can't open check-in until you do.</p>`}
+      : `<p>When this is right, confirm it. The Desk can't open check-in until you do.</p>`}
       ${other.length ? `<p class="meta">Unsaved changes on the ${other.join(" and ")} tab${other.length > 1 ? "s" : ""} don't count until you save them.</p>` : ""}
       ${ok ? "" : `<button type="button" class="btn btn-primary" id="su-ok" ${pr.length ? "disabled" : ""}>Confirm setup${dirty.t ? " (saves the tournament)" : ""}</button>`}`;
     box.querySelectorAll("[data-go]").forEach(g => g.addEventListener("click", () => go(g.dataset.go)));
