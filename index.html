@@ -702,6 +702,10 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-set .field span { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #b3261e; }
 .dk-set input { width: 78px; min-height: 38px; padding: 4px 8px; }
 .dk-need { color: #b3261e; }
+.dk-locked { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 2px solid #0f2f3a; background: #eef3f4; margin-bottom: 14px; }
+.dk-locked b { display: block; font-size: 1.05rem; } .dk-locked span { color: var(--muted); font-size: .9rem; }
+.dk-row.locked { opacity: .72; } .dk-row.locked .dk-del { visibility: hidden; }
+.dt-grid tr.locked td { background: #eef3f4; color: var(--muted); }
 .jump { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: grid; gap: 8px; }
 .jump[hidden] { display: none; }
 .jump button { min-width: 92px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: #c7362b; color: #fff; font: inherit; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.25); cursor: pointer; }
@@ -3241,6 +3245,9 @@ function wireScores() {
 const CK = {
   ui: { step: "find", who: null, sq: null },
   deskSq: null,
+  // A squad the Desk has closed is locked: its check-ins can't be changed until the squad is reopened.
+  locked(e, sq) { return (CFG.get(e).closed || []).includes(sq); },
+  reopen(e, sq) { const c = CFG.get(e); c.closed = (c.closed || []).filter(x => x !== sq); c.forced = (c.forced || []).filter(x => x !== sq).concat(sq); CFG.put(e, c); },
   CITIES: ["Tacoma","Puyallup","Lakewood","Olympia","Port Orchard","Federal Way","Kent","Auburn","Gig Harbor","Bremerton","Everett","Lynnwood","Spanaway","Renton","Sumner","Bonney Lake","Lacey","Kenmore","Arlington","Shelton"],
   // The next tournament on the schedule (date moves on by itself), with the venue and squads saved on Setup.
   event() { return CK.eventFor(nextEvent); },
@@ -3743,7 +3750,7 @@ function wireDesk() {
     const fc = $("#dk-fcount"); if (fc) fc.textContent = n === all ? `${all} bowler${all === 1 ? "" : "s"}` : `Showing ${n} of ${all}`; };
   const draw = () => {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
-    $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(CFG.normT(s))}<small>${l.filter(r => r.squad === i).length} checked in${l.some(r => r.squad === i && !r.paid) ? ` · ${l.filter(r => r.squad === i && !r.paid).length} not paid` : ""}</small></button>`).join("");
+    $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${CK.locked(e, i) ? "🔒 " : ""}${esc(CFG.normT(s))}<small>${CK.locked(e, i) ? "Closed · " : ""}${l.filter(r => r.squad === i).length} checked in${l.some(r => r.squad === i && !r.paid) ? ` · ${l.filter(r => r.squad === i && !r.paid).length} not paid` : ""}</small></button>`).join("");
     const c = CK.counts(e, sq, l), sample = SC.roster(e, sq, true).length;
     // Bowl with: bowlers already on a lane in this squad first, then every other member (they join this pair when they pay).
     const nm = m => `${m.first} ${m.last}`.trim(), seenN = new Set(), allM = CK.members().map(m => ({ member: m.member, first: m.first, last: m.last })).concat(SHEET.names().map(x => ({ member: x.member || "name:" + x.full, first: x.first || x.full, last: x.first ? x.last : "" })))
@@ -3771,7 +3778,7 @@ function wireDesk() {
       <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
         return `<button type="button" class="dk-pair${t ? "" : " empty"}${full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small></button>`; }).join("")}</div>
       <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
-    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
+    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
@@ -3796,7 +3803,12 @@ function wireDesk() {
     $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
     if ($("#dk-find")) { $("#dk-find").addEventListener("input", ev => { F.q = ev.target.value; filt(); }); $("#dk-fp").addEventListener("change", ev => { F.paid = ev.target.checked; filt(); }); $("#dk-fu").addEventListener("change", ev => { F.unpaid = ev.target.checked; filt(); }); filt(); }
-    $("#dk-body").querySelectorAll(".dk-row").forEach(row => {
+    if (CK.locked(e, sq)) {
+      $("#dk-body").querySelectorAll(".dk-row").forEach(x => { x.classList.add("locked"); x.querySelectorAll("input, select, button").forEach(i => i.disabled = true); });
+      $("#dk-body").insertAdjacentHTML("afterbegin", `<div class="panel dk-locked"><div><b>🔒 The ${esc(CFG.normT(e.squads[sq]))} squad is closed</b><span>Its bowlers are locked. Reopen the squad to change lanes, payments, pots or anything else.</span></div><button type="button" class="btn btn-dark" id="dk-reopen">Reopen ${esc(CFG.normT(e.squads[sq]))} squad</button></div>`);
+      $("#dk-reopen").addEventListener("click", () => { CK.reopen(e, sq); msg(`The ${e.squads[sq]} squad is open again. Close it again on the check-in panel when you're done.`); route(); });
+    }
+    $("#dk-body").querySelectorAll(".dk-row:not(.locked)").forEach(row => {
       const r = () => { const L = CK.list(e); return [L, L.find(x => x.member === row.dataset.k && x.squad === sq)]; };
       row.querySelector("[data-del]").addEventListener("click", () => {
         const [L, me] = r(); if (!me || !confirm(`Remove ${me.first} ${me.last} from the ${e.squads[sq]} squad?${me.lane ? ` Lane ${me.lane} gets their spot back.` : ""}`)) return;
@@ -3836,6 +3848,7 @@ function wireDesk() {
   };
   const hits = () => {
     const q = $("#dk-q").value, L = CK.list(e), h = CK.find(q);
+    if (q.trim() && CK.locked(e, CK.deskSq)) { $("#dk-hits").innerHTML = `<p class="meta dk-need">The ${esc(e.squads[CK.deskSq])} squad is closed. Reopen it to add a bowler.</p>`; return; }
     $("#dk-hits").innerHTML = !q.trim() ? "" : h.length ? h.map(m => { const inn = L.some(r => r.member === m.member && r.squad === CK.deskSq); return `<button type="button" class="ck-hit" data-m="${esc(m.member)}" ${inn ? "disabled" : ""}><b>${esc(m.last)}, ${esc(m.first)}</b><span>#${esc(m.member)} · Avg ${m.avg || "pending"}${inn ? " · already checked in" : ""}</span></button>`; }).join("") : `<p class="meta">No member matches “${esc(q)}”.</p>`;
   };
   $("#dk-q").addEventListener("input", hits);
@@ -3844,7 +3857,7 @@ function wireDesk() {
   $("#dk-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; CK.deskSq = +b.dataset.sq; draw(); });
   const tsv = () => CK.rows(e, CK.deskSq).map(r => r.join("\t")).join("\n");
   $("#dk-csv").addEventListener("click", () => { const csv = CK.rows(e, null).map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `checkins-${e.date}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
-  $("#dk-demo").addEventListener("click", () => { const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear sample check-ins removes them again.`); draw(); });
+  $("#dk-demo").addEventListener("click", () => { if (CK.locked(e, CK.deskSq)) { msg(`The ${e.squads[CK.deskSq]} squad is closed. Reopen it to add sample bowlers.`); return; } const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear sample check-ins removes them again.`); draw(); });
   $("#dk-clear").addEventListener("click", () => { const n = CK.list(e).filter(r => r.sample).length; if (!n) { msg("There are no sample check-ins to clear."); return; } if (!confirm(`Remove all ${n} sample check-ins (every squad)? Real check-ins stay.`)) return; CK.clearSamples(e); msg(`Cleared ${n} sample check-ins.`); draw(); });
 
   draw();
@@ -3943,9 +3956,10 @@ function wireData(mode) {
     if ($("#dt-names")) $("#dt-names").innerHTML = SHEET.names().map(n => `<option value="${v(n.full)}">`).join("");
     if (tab === "ck") {
       const L = CK.list(e), cf = CFG.get(e), rs = L.map((r, i) => ({ r, i })).filter(({ r }) => hit(`${r.first} ${r.last} ${r.member}`)).sort((a, b) => a.r.squad - b.r.squad || (a.r.lane || 99) - (b.r.lane || 99) || a.r.at - b.r.at);
-      $("#dt-info").textContent = `${longDate(e.date)} · ${e.center} · ${L.length} check-in${L.length === 1 ? "" : "s"}, ${L.filter(r => !r.paid).length} not paid`;
+      const cl = e.squads.filter((_, k) => CK.locked(e, k)).map(CFG.normT);
+      $("#dt-info").textContent = `${longDate(e.date)} · ${e.center} · ${L.length} check-in${L.length === 1 ? "" : "s"}, ${L.filter(r => !r.paid).length} not paid${cl.length ? ` · 🔒 ${cl.join(", ")} squad${cl.length > 1 ? "s" : ""} closed (reopen on the Desk to edit)` : ""}`;
       $("#dt-grid").innerHTML = `<thead><tr><th>Squad</th><th>Member #</th><th>Bowler</th><th>Avg</th><th>Paid</th><th>Lane</th><th>Jackpot $4</th><th>Progressive</th><th>Bowl with</th><th>Checked in</th><th></th></tr></thead><tbody>${rs.map(({ r, i }) => `
-        <tr data-i="${i}" class="${r.paid ? "" : "unpaid"}">
+        <tr data-i="${i}" class="${CK.locked(e, r.squad) ? "locked" : r.paid ? "" : "unpaid"}">
           <td><select data-f="squad">${e.squads.map((t, k) => `<option value="${k}" ${k === r.squad ? "selected" : ""}>${v(CFG.normT(t))}</option>`).join("")}</select></td>
           <td class="num">${v(r.member)}</td>
           <td><b>${v(r.first)} ${v(r.last)}</b>${r.isNew ? "<small>New member</small>" : ""}${r.sample ? "<small>Sample</small>" : ""}</td>
@@ -3956,8 +3970,9 @@ function wireData(mode) {
           <td class="dt-prog">${[10, 20].map(p => `<label><input data-f="prog" data-v="${p}" type="checkbox" ${r.prog === p ? "checked" : ""} ${(r.isNew ? 10 : 20) !== p ? "disabled" : ""}> $${p}</label>`).join("")}</td>
           <td class="dt-with">${Array.from({ length: Math.max(CK.withMax(e), CK.friends(r.friend).length) }, (_, k) => `<input data-f="friend" data-i="${k}" list="dt-names" value="${v(CK.friends(r.friend)[k] || "")}" placeholder="${k ? "Another (optional)" : "Anyone"}">`).join("")}</td>
           <td class="num">${r.at ? new Date(r.at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : ""}</td>
-          <td><button type="button" class="dk-del" data-del title="Remove this check-in" aria-label="Remove">✕</button></td>
+          <td>${CK.locked(e, r.squad) ? `<span title="Squad closed: reopen it on the Desk to edit">🔒</span>` : `<button type="button" class="dk-del" data-del title="Remove this check-in" aria-label="Remove">✕</button>`}</td>
         </tr>`).join("") || `<tr><td colspan="11" class="dt-none">No check-ins${q ? " match" : " yet for this tournament"}.</td></tr>`}</tbody>`;
+      $("#dt-grid").querySelectorAll("tr.locked").forEach(tr => tr.querySelectorAll("input, select").forEach(x => x.disabled = true));
       return;
     }
     const all = memRows().map((r, i) => ({ r, i })).filter(({ r }) => r._new || hit(`${r["Full name"]} ${SHEET.nk(r)} ${r["Member #"] || ""}`))
@@ -3983,7 +3998,8 @@ function wireData(mode) {
     }
     const L = CK.list(e), me = L[+el.closest("tr").dataset.i]; if (!me) return;
     const nm = `${me.first} ${me.last}`;
-    if (f === "squad") { const to = +el.value; if (L.some(x => x !== me && x.member === me.member && x.squad === to)) { msg(`${nm} is already checked in for that squad.`); draw(); return; }
+    if (CK.locked(e, me.squad)) { msg(`The ${e.squads[me.squad]} squad is closed. Reopen it on the Desk to make changes.`); draw(); return; }
+    if (f === "squad") { const to = +el.value; if (CK.locked(e, to)) { msg(`The ${e.squads[to]} squad is closed. Reopen it on the Desk first.`); draw(); return; } if (L.some(x => x !== me && x.member === me.member && x.squad === to)) { msg(`${nm} is already checked in for that squad.`); draw(); return; }
       me.squad = to; me.lane = null; if (me.paid) CK.payIn(e, L, me); msg(`${nm} moved to the ${e.squads[to]} squad${me.lane ? `, lane ${me.lane}` : ""}.`); }
     if (f === "avg") me.avg = Number(el.value) || null;
     if (f === "paid") { if (el.checked) { const n = CK.payIn(e, L, me); msg(n ? `${nm} paid: lane ${n}.` : `${nm} paid, but every lane is full. Raise the limit in Setup.`); } else { CK.unpay(me); msg(`${nm} marked not paid. Lane released.`); } }
