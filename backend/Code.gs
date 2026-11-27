@@ -146,7 +146,7 @@ const ACTIONS = {
     const full = m['Full name'] || [m['First name'], m['Last name']].filter(Boolean).join(' ');
     const rows = readTab('Members');
     const was = String(b.was || '').trim().toLowerCase(); // the row's name before a rename on the site
-    const hit = (was && rows.find(r => String(r['Full name'] || '').trim().toLowerCase() === was)) || rows.find(r => m['Member #'] && String(r['Member #']) === String(m['Member #'])) || rows.find(r => r['Full name'] && r['Full name'].toLowerCase() === full.toLowerCase());
+    const hit = (was && rows.find(r => nameKey(r['Full name']) === nameKey(was))) || rows.find(r => m['Member #'] && String(r['Member #']) === String(m['Member #'])) || rows.find(r => r['Full name'] && nameKey(r['Full name']) === nameKey(full)); // "Jr." and "Jr" are the same row
     m['Full name'] = full;
     if (hit) upsert('Members', 'Full name', hit['Full name'], m); else appendRows('Members', [m]);
     sortMembers();
@@ -201,7 +201,45 @@ function fixMembers() {
     s.getRange(1, c + 1).setValue('Nicknames');
   }
   const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1); // the Tour doesn't keep a member's city
+  dedupeMembers(s);
   sortMembers(s);
+}
+// Same person twice ("Charles Daughery Jr" / "Charles Daughery Jr."): names that match once case, punctuation and spacing
+// are ignored. Keeps one row (the one with a Member #), fills its blanks from the others, joins Nicknames / Found in / Notes,
+// and renames the dropped spelling on the other tabs so the title counts still add up. Jr and Sr stay different people.
+// Two different Member #s are never merged.
+function nameKey(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
+function dedupeMembers(s) {
+  s = s || sheet('Members'); const h = headers(s), n = s.getLastRow() - 1, fu = h.indexOf('Full name'), mi = h.indexOf('Member #');
+  if (n < 2 || fu < 0) return;
+  const rng = s.getRange(2, 1, n, h.length), vals = rng.getValues(), forms = rng.getFormulas(), groups = {}, kill = [], ren = {};
+  const num = i => mi < 0 ? '' : String(vals[i][mi] || '').trim(), blank = v => v === '' || v == null;
+  vals.forEach((r, i) => { const k = nameKey(r[fu]); if (k) (groups[k] = groups[k] || []).push(i); });
+  Object.keys(groups).forEach(k => {
+    const g = groups[k]; if (g.length < 2 || new Set(g.map(num).filter(Boolean)).size > 1) return;
+    g.sort((a, b) => (num(b) ? 1 : 0) - (num(a) ? 1 : 0));
+    const keep = g[0], row = vals[keep].slice(), names = g.map(i => String(vals[i][fu]).trim()), best = g[Math.max(0, names.findIndex(x => x.indexOf('.') < 0))];
+    g.slice(1).forEach(i => h.forEach((col, c) => {
+      if (forms[keep][c] || forms[i][c] || blank(vals[i][c])) return;
+      if (blank(row[c])) row[c] = vals[i][c];
+      else if (/^(Nicknames|Nickname \/ other names|Found in|Notes)$/.test(col)) row[c] = [...new Set(String(row[c]).split(/\s*,\s*/).concat(String(vals[i][c]).split(/\s*,\s*/)).filter(Boolean))].join(', ');
+    }));
+    ['First name', 'Last name', 'Full name'].forEach(col => { const c = h.indexOf(col); if (c >= 0) row[c] = vals[best][c]; });
+    h.forEach((col, c) => { if (!forms[keep][c] && row[c] !== vals[keep][c]) s.getRange(keep + 2, c + 1).setValue(row[c]); });
+    names.forEach(x => { if (x !== String(vals[best][fu]).trim()) ren[x] = String(vals[best][fu]).trim(); });
+    kill.push(...g.slice(1));
+  });
+  if (!kill.length) return;
+  kill.sort((a, b) => b - a).forEach(i => s.deleteRow(i + 2));
+  ['Results', 'Jackpot Winners', 'BOTY', 'Tournaments', 'Scores', 'Check-ins'].forEach(t => {
+    const ts = SpreadsheetApp.getActive().getSheetByName(t); if (!ts || ts.getLastRow() < 2) return;
+    headers(ts).forEach((col, c) => {
+      if (!/^(Bowler|Name|Winner|Full name)$/.test(col)) return;
+      const r = ts.getRange(2, c + 1, ts.getLastRow() - 1, 1), v = r.getValues();
+      if (r.getFormulas().some(f => f[0])) return;
+      let ch = false; v.forEach(x => { const nm = String(x[0]).trim(); if (ren[nm]) { x[0] = ren[nm]; ch = true; } }); if (ch) r.setValues(v);
+    });
+  });
 }
 // Members stay A-Z by last name, then first name (only re-sorted when something is out of order).
 function sortMembers(s) {

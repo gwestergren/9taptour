@@ -3986,6 +3986,8 @@ function wireData(mode) {
       if (["Average", "Bonus pins", "Handicap override"].some(k => patch[k] !== "" && isNaN(+patch[k]))) { msg("Average, handicap and bonus pins must be numbers."); return; }
       const num = patch["Member #"]; if (num && memRows().some(r => String(r["Member #"] || "").trim() === num && String(r["Full name"] || "") !== was)) { msg(`Member # ${num} already belongs to someone else.`); el.value = ""; return; }
       if (!patch["First name"] || !patch["Last name"]) { msg("A member needs a first and last name. Nothing saved yet."); return; }
+      const nk = x => String(x || "").toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim(), dup = memRows().find(r => !r._new && String(r["Full name"] || "") !== was && nk(r["Full name"]) === nk(patch["First name"] + " " + patch["Last name"]));
+      if (dup) { msg(`${dup["Full name"]} is already on the member list${dup["Member #"] ? ` (#${dup["Member #"]})` : ""}. Nothing saved.`); return; }
       const c = SHEET.get(SHEET.CACHE, {}), nw = ((c.data || {}).Members || []).find(r => r._new); if (!was && nw) { delete nw._new; SHEET.set(SHEET.CACHE, c); }
       const full = SHEET.editMember(was, patch); tr.dataset.k = full; tr.classList.remove("new"); msg(`Saved ${full}.`);
       const hb = tr.querySelector('[data-f="Handicap override"]'), av = +patch.Average; if (hb) { hb.placeholder = av ? String(CK.hcp(av)) : ""; hb.title = av ? `Empty = ${CK.hcp(av)} from the average` : ""; } return;
