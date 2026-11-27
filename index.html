@@ -3067,8 +3067,11 @@ const CFG = {
     if (sq.length > 1 && c.fee2 == null) o.push("Re-entry fee (each extra squad) is blank (Tour tab)");
     return o; },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); if (!c.venue && !c.venueName) { const vn = VEN.byName(e.center); if (vn) c.venue = vn.id; }
-    const ven = (c.venueName && VEN.byName(c.venueName)) || (c.venue && VEN.find(c.venue)); if (ven) { c.venue = ven.id; c.venueName = ven.name; Object.assign(c, VEN.fmt(ven.fmt)); } // lanes come from the venue
-    Object.assign(c, TOUR.get()); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
+    // Upcoming and today's tournaments use the venue's lanes and the Tour settings as they are now. A past tournament keeps
+    // the copy saved with it (its own Tournaments row), so changing a venue later never rewrites history.
+    if (!(v && e.date < TODAY_ISO)) { const ven = (c.venueName && VEN.byName(c.venueName)) || (c.venue && VEN.find(c.venue)); if (ven) { c.venue = ven.id; c.venueName = ven.name; Object.assign(c, VEN.fmt(ven.fmt)); } // lanes come from the venue
+      Object.assign(c, TOUR.get()); }
+    c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
@@ -3639,7 +3642,7 @@ function wireSetup() {
     const list = VEN.all(), v = list.find(x => x.id === vid);
     if (!v) { say("v", "Pick a venue first, or add a new one."); return; }
     v.fmt = VEN.fmt(F); VEN.put(list); clean("v"); flash("v");
-    if (v.id === (VEN.find(c.venue) || {}).id) CFG.put(e, CFG.get(e)); // the tournament at this venue picks up the new lanes
+    SU.list().forEach(x => { const y = CFG.get(x); if (y.venue === v.id) CFG.put(x, y); }); // upcoming tournaments at this venue: their sheet rows get the new lanes
     say("v", `Saved ${esc(v.name)} at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`); tNote(); vSum(); });
 
   /* ---------- Tour tab ---------- */
@@ -3647,7 +3650,7 @@ function wireSetup() {
   const oSum = () => { const n = id => { const f = $(id).value.trim(); return f === "" || !(+f >= 0) ? null : Math.round(+f); }; T.fee = n("#su-fee"); T.fee2 = n("#su-fee2"); $("#su-open").textContent = T.openMins; };
   ["su-fee", "su-fee2"].forEach(id => $("#" + id).addEventListener("input", () => { oSum(); touch("o"); }));
   $("#su-o").querySelector('[data-step="su-open"]').addEventListener("click", ev => { const b = ev.target.closest("[data-d]"); if (!b) return; T.openMins = Math.min(180, Math.max(15, T.openMins + +b.dataset.d * 15)); oSum(); touch("o"); });
-  $("#su-o").addEventListener("submit", ev => { ev.preventDefault(); oSum(); TOUR.put(Object.assign({}, T)); CFG.put(e, CFG.get(e)); clean("o"); flash("o");
+  $("#su-o").addEventListener("submit", ev => { ev.preventDefault(); oSum(); TOUR.put(Object.assign({}, T)); SU.list().forEach(x => { const y = CFG.get(x); if (y.saved || x === e) CFG.put(x, y); }); clean("o"); flash("o");
     say("o", `Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Every tournament uses these.`); opens(); tSum(); });
 
   /* ---------- Tournament tab ---------- */
