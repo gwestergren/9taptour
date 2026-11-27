@@ -1386,7 +1386,7 @@ const SHEET = {
     if (V.length && !SHEET.get(SHEET.QUEUE, []).some(x => x.action === "saveVenues")) { const old = SHEET.get("9tap-venues", []); SHEET.set("9tap-venues", V.map((r, i) => ({ id: (old.find(o => o.name === r.Venue) || {}).id || "s" + i, name: r.Venue, city: r.City || "", fmt: r["Format (site data)"] }))); }
     const waiting = SHEET.get(SHEET.QUEUE, []); // a save that hasn't reached the sheet yet wins over the sheet's older copy
     { const m = {}; (data.Settings || []).forEach(r => { if (r.Setting) m[r.Setting] = r.Value; }); const n = x => x === "" || x == null || !(+x >= 0) ? null : +x;
-      if ("Entry fee (first squad)" in m && !waiting.some(x => x.action === "saveSettings")) SHEET.set(TOUR.KEY, { fee: n(m["Entry fee (first squad)"]), fee2: n(m["Re-entry fee (each extra squad)"]), openMins: +m["Check-in opens (min before squad)"] || 60 }); }
+      if ("Entry fee (first squad)" in m && !waiting.some(x => x.action === "saveSettings")) SHEET.set("9tap-tour", { fee: n(m["Entry fee (first squad)"]), fee2: n(m["Re-entry fee (each extra squad)"]), openMins: +m["Check-in opens (min before squad)"] || 60 }); }
     (data.Tournaments || []).forEach(r => { const s = r["Setup (site data)"], d = SHEET.iso(r.Date); if (s && typeof s === "object" && d && !waiting.some(x => x.action === "saveSetup" && x.date === d)) SHEET.set("9tap-setup:" + d, Object.assign({}, s, r.Center ? { venueName: r.Center } : {})); });
   },
   // Load the last good copy right away (before the page draws), then ask the sheet for a fresh one.
