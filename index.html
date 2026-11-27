@@ -3314,7 +3314,7 @@ const CK = {
       let first, last; do { first = pickA(SC.FIRST); last = pickA(SC.LAST); } while (names.has(first + " " + last)); names.add(first + " " + last);
       const isNew = i % 7 === 3, avg = isNew && i % 2 ? null : R(138, 224);
       mk.push({ member: nextId(), first, last, city: pickA(["Everett", "Lynnwood", "Kent", "Tacoma", "Seattle", "Bremerton", "Renton", "Marysville"]), avg, bonus: i % 6 === 1 ? R(1, 5) : 0, hcp: i === 9 ? 30 : null, isNew,
-        squad: sq, lane: null, pos: "", jackpot: Math.random() < .55, prog: isNew ? pickA([0, 10]) : pickA([0, 0, 10, 20]), friend: "", via: i % 3 === 0 ? "desk" : "phone", paid: false, sample: true, at: Date.now() - (20 - i) * 90000 });
+        squad: sq, lane: null, pos: "", jackpot: Math.random() < .55, prog: isNew ? pickA([0, 10]) : pickA([0, 0, 20, 20]), friend: "", via: i % 3 === 0 ? "desk" : "phone", paid: false, sample: true, at: Date.now() - (20 - i) * 90000 });
     }
     // bowl-with requests: some pairs where both pay (same pair of lanes), one with a friend who hasn't paid, one with a real member not here
     [[1, 2], [5, 6], [11, 12], [15, 4]].forEach(([a, b]) => { mk[a].friend = mk[b].first + " " + mk[b].last; });
@@ -3605,8 +3605,8 @@ function wireCheckin() {
         <div class="ck-sec"><span class="sc-lbl">Squad</span><div class="sc-seg" id="ck-squads">${e.squads.map((s, i) => { const off = taken[i] || (openSq !== null && i !== openSq); return `<button type="button" data-sq="${i}" aria-pressed="${i === U.sq}" ${off ? "disabled" : ""}>${esc(s)}${taken[i] ? "<small>Checked in</small>" : openSq !== null && i < openSq ? "<small>Closed</small>" : i && i !== openSq && CFG.opensAt(s, cfg.openMins) ? `<small>Opens ${CFG.opensAt(s, cfg.openMins)}</small>` : openSq === i ? "<small>Open now</small>" : ""}</button>`; }).join("")}</div></div>
         <div class="ck-sec"><span class="sc-lbl">Side pots</span>
           <label class="ck-tog"><input type="checkbox" id="ck-jp"> <span><b>9-Tap Jackpot</b> $4 · seven 9-counts to start a game</span></label>
-          <div class="ck-prog"><span>Progressive Pot</span><div class="sc-seg" id="ck-prog">${[0, 10, 20].map(v => `<button type="button" data-p="${v}" aria-pressed="${v === 0}" ${v > maxProg ? "disabled" : ""}>$${v}</button>`).join("")}</div></div>
-          ${m.isNew ? `<p class="meta">New members can put up to $10 in the Progressive Pot.</p>` : ""}
+          <div class="ck-prog"><span>Progressive Pot</span><div class="sc-seg" id="ck-prog">${[0, 10, 20].map(v => `<button type="button" data-p="${v}" aria-pressed="${v === 0}" ${v && v !== maxProg ? "disabled" : ""}>$${v}</button>`).join("")}</div></div>
+          ${m.isNew ? `<p class="meta">New members can put $10 in the Progressive Pot.</p>` : `<p class="meta">Members can put $20 in the Progressive Pot ($10 is for new members).</p>`}
         </div>
         <div class="ck-sec field"><label for="ck-friend">Bowling with a friend? <span class="meta">(optional)</span></label><input id="ck-friend" placeholder="Their name" autocomplete="off"><span class="meta">If they've checked in, we'll put you on their pair. The desk can also move you.</span></div>
         <button type="button" class="btn btn-primary ck-go" id="ck-go">Check in for the ${esc(e.squads[U.sq])} squad</button>
@@ -3738,7 +3738,7 @@ function wireDesk() {
           <label class="field"><span>Lane</span><select data-act="lane" ${r.paid ? "" : "disabled"}>${r.paid ? laneOpts(r) : `<option>After paid</option>`}</select></label>
           <label class="field"><span>Bowl with</span><select data-act="with">${withOpts(r)}</select></label>
           ${r.isNew ? `<label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" value="${r.avg || ""}" placeholder="Set"></label>` : ""}
-          <div class="field dk-grp"><span>Progressive</span><div class="dk-boxes">${[10, 20].map(v => `<label class="dk-box"><input type="checkbox" data-act="prog" data-v="${v}" ${r.prog === v ? "checked" : ""} ${r.isNew && v > 10 ? "disabled title=\"New members: up to $10\"" : ""}>$${v}</label>`).join("")}</div></div>
+          <div class="field dk-grp"><span>Progressive</span><div class="dk-boxes">${[10, 20].map(v => `<label class="dk-box"><input type="checkbox" data-act="prog" data-v="${v}" ${r.prog === v ? "checked" : ""} ${(r.isNew ? 10 : 20) !== v ? `disabled title="${r.isNew ? "New members: $10 only" : "$10 is for new members"}"` : ""}>$${v}</label>`).join("")}</div></div>
           <div class="field dk-grp"><span>Jackpot</span><div class="dk-boxes"><label class="dk-box"><input type="checkbox" data-act="jp" ${r.jackpot ? "checked" : ""}>$4</label></div></div>
           <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r, l).known ? " · " + owe(r) : ""}`}</label></div></div>
         </div>
@@ -3941,7 +3941,7 @@ function wireData() {
           <td><input data-f="paid" type="checkbox" ${r.paid ? "checked" : ""}></td>
           <td>${r.paid ? `<select data-f="lane">${CFG.order(cf).map(n => `<option value="${n}" ${n === r.lane ? "selected" : ""}>${n}</option>`).join("")}</select>` : `<span class="dt-wait">After paid</span>`}</td>
           <td><input data-f="jackpot" type="checkbox" ${r.jackpot ? "checked" : ""}></td>
-          <td class="dt-prog">${[10, 20].map(p => `<label><input data-f="prog" data-v="${p}" type="checkbox" ${r.prog === p ? "checked" : ""} ${r.isNew && p > 10 ? "disabled" : ""}> $${p}</label>`).join("")}</td>
+          <td class="dt-prog">${[10, 20].map(p => `<label><input data-f="prog" data-v="${p}" type="checkbox" ${r.prog === p ? "checked" : ""} ${(r.isNew ? 10 : 20) !== p ? "disabled" : ""}> $${p}</label>`).join("")}</td>
           <td><input data-f="friend" list="dt-names" value="${v(r.friend)}" placeholder="Anyone"></td>
           <td class="num">${r.at ? new Date(r.at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : ""}</td>
           <td><button type="button" class="dk-del" data-del title="Remove this check-in" aria-label="Remove">✕</button></td>
