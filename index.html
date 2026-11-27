@@ -1679,7 +1679,9 @@ const VIEWS = {
   },
 
   scores() {
-    const e = SC.event(), sq = SC.squad, ng = SC.games(e);
+    const e = SC.event(), ng = SC.games(e);
+    if (SC.squad == null || SC.squad >= e.squads.length) { const cl = CFG.get(e).closed || []; SC.squad = cl.length ? Math.max(...cl) : 0; }
+    const sq = SC.squad;
     return `
     <section class="page-head sc-head"><div class="wrap">
       <p class="eyebrow">Rover score entry · Tour staff</p><h1>Enter scores</h1>
@@ -1694,8 +1696,7 @@ const VIEWS = {
       ${FIN.get(e.date) ? `<p class="toast">This tournament is final and on <a class="link-more" href="#results/${FIN.get(e.date).id}">Results</a>. Score changes here show up there after you press Update results on Standings.</p>` : ""}
       <p class="sc-checkin" id="sc-checkin"></p>
       <div id="sc-body"></div>
-      <div class="sc-tools"><button type="button" class="btn btn-ghost" id="sc-reset">Reset sample squad</button></div>
-      <p class="foot-note">Prototype: most bowlers here are sample check-ins, plus anyone checked in on this device through <a class="link-more" href="#checkin">Bowler check-in</a> or the <a class="link-more" href="#desk">desk</a>. Scores are saved only on this phone. In the live version each rover's entries would go straight to the tournament desk and the results page. Handicap shown is per game (90% of 220, plus bonus pins).</p>
+      <p class="foot-note">Bowlers come from the Desk: everyone paid for this squad, on the lane they were given. A squad loads once the Desk closes its check-in. Scores save to the Tour's data as they're entered, so every rover, the Standings and the TV see them. Handicap shown is per game (90% of 220 minus average, plus bonus pins).</p>
     </section>`;
   },
 
@@ -3057,9 +3058,10 @@ const VEN = {
 } catch (_) {} })();
 /* ---- Rover score entry ---- */
 const SC = {
-  squad: 0, game: null, lanes: null,
+  squad: null, game: null, lanes: null, early: {},
   // Scores and standings stay on the last tournament until the day of the next one, then roll over.
-  event() { const played = DATA.events.filter(x => parse(x.date) <= today); return CK.eventFor(played.length ? played[played.length - 1] : nextEvent); },
+  // Scores use the same tournament as the Desk: today's, or the next one (the last one is finalized to Results by then).
+  event() { return CK.event(); },
   // Standings rows: one per entry. All squads together (sq null) skips entries with no games yet.
   board(e, sq) {
     const ng = SC.games(e), rows = [];
@@ -3074,20 +3076,10 @@ const SC = {
   key(e, sq) { return `9tap-scores3:${e.date}:${sq}`; },
   FIRST: ["Dave","Linda","Mike","Karen","Tony","Sharon","Ray","Debbie","Jim","Carla","Steve","Pam","Rick","Tina","Gary","Lori","Ron","Wendy","Don","Kim","Phil","Jenny","Mark","Rose","Al","Bev","Ed","Sue","Larry","Nancy"],
   LAST: ["Anderson","Nguyen","Kowalski","Ramirez","Olsen","Park","Thompson","Sato","Lindqvist","Morales","Becker","Haugen","Delgado","Fisher","Yamada","Jorgensen","Whitaker","Reyes","Dahl","Okafor","Brennan","Castillo","Pruitt","Moen","Larsen","Ito","Gallagher","Vu","Soto","Halvorsen"],
+  // The squad's bowlers: everyone checked in for it who has paid (that's when the Desk gives them a lane).
   roster(e, sq, sampleOnly) {
-    let s = (parse(e.date).getDate() * 31 + sq * 7 + 3) >>> 0;
-    const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
-    const out = [], used = new Set(), mem = CK.members(), ckd = new Set(CK.list(e).filter(r => r.squad === sq).map(r => r.member));
-    const pool = mem.filter(m => !ckd.has(m.member));
-    // Sample bowlers are drawn from the member list, so handicap and bonus pins edited on the Bowlers page apply here too. may use any of the center's 32 lanes; some pairs sit empty. Bowlers per lane vary (1 to 3).
-    const empty = [[3, 7, 9, 12, 15], [2, 6, 10, 11, 14], [4, 5, 8, 13, 16]][sq % 3];
-    const cf = CFG.get(e); if (!SHEET.ready()) for (let lane = cf.first; lane <= cf.last; lane++) { if (empty.includes(Math.ceil((lane - cf.first + 1) / 2))) continue; const per = 1 + Math.floor(rnd() * 3); for (let k = 0; k < per; k++) {
-      const left = pool.filter(m => !used.has(m.member)), pickR = rnd();
-      if (left.length) { const m = left[Math.floor(pickR * left.length)]; used.add(m.member); out.push(SC.entry("s" + lane + "-" + k, lane, m)); continue; }
-      let n; do { n = SC.FIRST[Math.floor(rnd() * SC.FIRST.length)] + " " + SC.LAST[Math.floor(rnd() * SC.LAST.length)]; } while (used.has(n)); used.add(n);
-      out.push(SC.entry(lane + "-" + k, lane, { first: n, last: "", avg: 150 + Math.floor(rnd() * 56), bonus: 0 }));
-    } }
-    if (sampleOnly) return out;
+    if (sampleOnly) return [];
+    const out = [], mem = CK.members();
     CK.list(e).filter(r => r.squad === sq && r.lane && r.paid).forEach(r => { const m = mem.find(x => x.member === r.member) || r; out.push(Object.assign(SC.entry("ck-" + r.member, r.lane, m), { checkedIn: true, sample: !!r.sample })); });
     return out.sort((a, b) => a.lane - b.lane);
   },
@@ -3096,11 +3088,6 @@ const SC = {
   load(e, sq) {
     try { const v = JSON.parse(localStorage.getItem(SC.key(e, sq))); if (v && v.scores) return v; } catch (_) {}
     const v = { scores: {} };
-    if (sq === 0 && !SHEET.ready()) { // demo: first squad has Game 1 in; Games 2 and 3 are empty, ready to enter
-      let s = 99;
-      const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
-      SC.roster(e, sq).forEach((b, i) => { const g = [Math.max(95, Math.min(290, Math.round(b.avg + (rnd() - .45) * 70)))]; v.scores[b.id] = g; });
-    }
     return v;
   },
   save(e, sq, v) { v.savedOn = TODAY_ISO; try { localStorage.setItem(SC.key(e, sq), JSON.stringify(v)); } catch (_) {} SHEET.saveScores(e, sq, v); },
@@ -3164,8 +3151,13 @@ const FIN = {
 setTimeout(() => location.reload(), new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 30) - new Date());
 function wireScores() {
   const e = SC.event(), ng = SC.games(e), sq = SC.squad;
-  const roster = SC.roster(e, sq), state = SC.load(e, sq);
+  const cf0 = CFG.get(e), closed = (cf0.closed || []).includes(sq) || CFG.status(cf0).state === "done";
+  const roster = closed || SC.early[e.date + ":" + sq] ? SC.roster(e, sq) : [], state = SC.load(e, sq);
   const pairs = []; roster.forEach(b => { const p = Math.floor((b.lane - 1) / 2); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [p * 2 + 1, p * 2 + 2], items: [] }); g.items.push(b); });
+  if (!roster.length && !closed && !SC.early[e.date + ":" + sq]) { const n = SC.roster(e, sq).length; $("#sc-lane-row").hidden = true;
+    $("#sc-body").innerHTML = `<div class="panel"><h3>Check-in is still open for this squad</h3><p class="meta">The ${esc(e.squads[sq])} squad's bowlers load here once the Desk closes its check-in${n ? ` (${n} paid so far)` : ""}.</p>${n ? `<button type="button" class="btn btn-ghost" id="sc-early">Load the ${n} paid bowlers now</button>` : ""}</div>`;
+    const eb = $("#sc-early"); if (eb) eb.addEventListener("click", () => { SC.early[e.date + ":" + sq] = true; route(); });
+    document.querySelectorAll("#sc-squads [data-squad]").forEach(x => x.addEventListener("click", () => { SC.squad = +x.dataset.squad; SC.game = null; SC.lanes = null; route(); })); return; }
   if (!roster.length) { $("#sc-lane-row").hidden = true; $("#sc-body").innerHTML = `<div class="panel"><h3>No paid bowlers in this squad yet</h3><p class="meta">Bowlers show up here once they've checked in and the Desk has marked them paid (that's when they get a lane).${(() => { const n = CK.list(e).filter(r => r.squad === sq && !r.paid).length; return n ? ` ${n} checked in but not paid yet.` : ""; })()}</p></div>`;
     document.querySelectorAll("#sc-squads [data-squad]").forEach(x => x.addEventListener("click", () => { SC.squad = +x.dataset.squad; SC.game = null; SC.lanes = null; route(); })); return; }
   const got = (b, g) => typeof (state.scores[b.id] || [])[g] === "number";
@@ -3240,12 +3232,8 @@ function wireScores() {
   $("#sc-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-squad]"); if (!b) return; SC.squad = +b.dataset.squad; SC.game = null; SC.lanes = null; route(); });
   $("#sc-games").addEventListener("click", ev => { const b = ev.target.closest("[data-game]"); if (!b) return; SC.game = b.dataset.game === "board" ? "board" : +b.dataset.game; SC.lanes = null; body(); toTop(); });
   $("#sc-lanes").addEventListener("click", ev => { const b = ev.target.closest("[data-lanes]"); if (!b) return; SC.lanes = b.dataset.lanes; body(); toTop(); });
-  const rb = $("#sc-reset"); let armed = false;
-  rb.addEventListener("click", () => {
-    if (!armed) { armed = true; rb.textContent = "Tap again to reset this squad"; setTimeout(() => { armed = false; rb.textContent = "Reset sample squad"; }, 3000); return; }
-    try { localStorage.removeItem(SC.key(e, sq)); } catch (_) {} SC.game = null; route();
-  });
-  const ci = () => { const live = roster.filter(b => b.checkedIn).length; $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> checked in for the ${esc(e.squads[sq])} squad${live ? ` (${live} from today's check-in)` : ""} · ${pairs.length} lane pairs in use (lanes ${CFG.get(e).first}–${CFG.get(e).last})</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", () => route()); };
+
+  const ci = () => { const live = roster.filter(b => b.checkedIn).length; $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> paid for the ${esc(e.squads[sq])} squad · ${pairs.length} lane pairs in use (lanes ${CFG.get(e).first}–${CFG.get(e).last})</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", () => route()); };
   ci();
   body();
 }
