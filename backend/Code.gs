@@ -143,7 +143,8 @@ const ACTIONS = {
     const m = b.member || {};
     const full = m['Full name'] || [m['First name'], m['Last name']].filter(Boolean).join(' ');
     const rows = readTab('Members');
-    const hit = rows.find(r => m['Member #'] && String(r['Member #']) === String(m['Member #'])) || rows.find(r => r['Full name'] && r['Full name'].toLowerCase() === full.toLowerCase());
+    const was = String(b.was || '').trim().toLowerCase(); // the row's name before a rename on the site
+    const hit = (was && rows.find(r => String(r['Full name'] || '').trim().toLowerCase() === was)) || rows.find(r => m['Member #'] && String(r['Member #']) === String(m['Member #'])) || rows.find(r => r['Full name'] && r['Full name'].toLowerCase() === full.toLowerCase());
     m['Full name'] = full;
     if (hit) upsert('Members', 'Full name', hit['Full name'], m); else appendRows('Members', [m]);
     return {};

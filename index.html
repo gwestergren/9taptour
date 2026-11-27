@@ -800,6 +800,19 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 body.tv-mode .banner, body.tv-mode .site-head, body.tv-mode .site-foot, body.tv-mode .staff-head { display: none !important; }
 body.tv-mode { background: #0b1f26; }
+.dt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.dt-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.dt-grid th { text-align: left; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); position: sticky; top: 0; }
+.dt-grid td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+.dt-grid td small { display: block; color: var(--muted); font-size: .74rem; }
+.dt-grid input:not([type=checkbox]), .dt-grid select { min-height: 36px; width: 100%; min-width: 110px; padding: 4px 8px; font: inherit; }
+.dt-grid input.dt-n { min-width: 64px; max-width: 90px; }
+.dt-grid input[type=checkbox] { width: 20px; height: 20px; accent-color: #c7362b; }
+.dt-grid tr.unpaid td { background: #fff6f5; }
+.dt-grid tr.new td { background: color-mix(in srgb, var(--maple) 25%, transparent); }
+.dt-prog label { margin-right: 10px; display: inline-flex; gap: 4px; align-items: center; }
+.dt-wait { color: #b3261e; font-weight: 700; font-size: .8rem; }
+.dt-none { text-align: center; padding: 20px !important; color: var(--muted); }
 .bw-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
 .bw-top input { flex: 1 1 260px; min-height: 48px; }
 .bw-top .btn { min-height: 48px; }
@@ -1228,7 +1241,6 @@ const DATA = {
    Reads: the schedule (Tournaments rows with squad times), pots, saved venues and each day's Setup.
    Writes (staff, with the staff key entered once on Setup): Setup, venues and pots. */
 const SHEET = {
-  SHEET_LINK: "https://docs.google.com/spreadsheets/d/1uFFsYJEtcIdM9gO580G6o28YptwrWx-NVEOY3ouVycY/edit", // to look at; changes are made on the site
   URL: "https://script.google.com/macros/s/AKfycbzuDjIMQ3d9Jdg93WomFgMkF5gvRNQzla2Uvb9TC3gjpV7dNlwe0p2AYkBTHzA4aZgn/exec",
   CACHE: "9tap-sheet-cache", KEYK: "9tap-sheet-key",
   status: "offline", at: null, err: "",
@@ -1272,7 +1284,7 @@ const SHEET = {
         SHEET.status = "ok"; SHEET.at = new Date().toISOString(); SHEET.err = "";
         // The schedule is read once when the page opens; if the sheet's schedule changed, open the page again (once) to show it.
         const ev = SHEET.events(j.data); if (ev && JSON.stringify(ev) !== JSON.stringify(DATA.events)) { let n = 0; try { n = +sessionStorage.getItem("9tap-sheet-reload") || 0; } catch (_) {}
-          const v = (location.hash || "#home").slice(1).split("/")[0]; if (n < 2 && !["setup", "bowlers"].includes(v)) { try { sessionStorage.setItem("9tap-sheet-reload", n + 1); } catch (_) {} location.reload(); } }
+          const v = (location.hash || "#home").slice(1).split("/")[0]; if (n < 2 && !["setup", "bowlers", "data"].includes(v)) { try { sessionStorage.setItem("9tap-sheet-reload", n + 1); } catch (_) {} location.reload(); } }
         return before !== JSON.stringify(j.data);
       }).catch(e => { SHEET.status = "offline"; SHEET.err = String(e && e.message || e); return false; });
   },
@@ -1298,6 +1310,18 @@ const SHEET = {
   /* ---- Tournament day: members, check-ins, scores and Finalize day ----
      These switch on only when the Members tab holds the real member list (member numbers filled in, from Rob's import).
      Until then the site keeps its built-in sample bowlers for the demo, and none of them are ever sent to the sheet. */
+  // Staff edit a Members row on the site (#data). was = the row's full name before this edit (how the script finds it).
+  editMember(was, patch) {
+    const c = SHEET.get(SHEET.CACHE, {}); c.data = c.data || {}; const M = c.data.Members = c.data.Members || [];
+    let row = was ? M.find(r => String(r["Full name"] || "").trim().toLowerCase() === was.toLowerCase()) : null;
+    if (!row) { row = {}; M.push(row); }
+    Object.assign(row, patch); row["Full name"] = [row["First name"], row["Last name"]].map(x => String(x || "").trim()).filter(Boolean).join(" ");
+    SHEET.set(SHEET.CACHE, c);
+    const ed = CK.get("9tap-member-edits", {}); if (row["Member #"] && ed[row["Member #"]]) { delete ed[row["Member #"]]; CK.put("9tap-member-edits", ed); } // the sheet row is the truth now
+    const out = {}; ["Member #", "First name", "Last name", "Full name", "Nickname / other names", "City", "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
+    SHEET.send({ action: "saveMember", id: "mem:" + (was || row["Full name"]).toLowerCase(), was: was || "", member: out });
+    return row["Full name"];
+  },
   // Every name on the Members tab (with or without a member #), for the Desk's Bowl with list.
   names() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || [];
     return M.map(r => ({ member: String(r["Member #"] || "").trim(), first: String(r["First name"] || "").trim(), last: String(r["Last name"] || "").trim(), full: String(r["Full name"] || "").trim() }))
@@ -1349,7 +1373,7 @@ const SHEET = {
   },
   // Desk, check-in, scores, standings and TV keep the next (and last) tournament's check-ins and scores in step.
   startDay() { if (SHEET._day) return; const tick = () => { if (!SHEET.ready() || document.hidden) return; const v = (location.hash || "#home").slice(1).split("/")[0];
-      if (!["desk", "checkin", "scores", "standings", "live", "tv", "bowlers"].includes(v)) return;
+      if (!["desk", "checkin", "scores", "standings", "live", "tv", "bowlers", "data"].includes(v)) return;
       [CK.event(), SC.event()].filter((x, i, a) => x && a.findIndex(y => y.date === x.date) === i).forEach(SHEET.pullDay); };
     SHEET._day = setInterval(tick, 15000); window.addEventListener("hashchange", tick); tick(); },
   // Setup panel: connect this device to the sheet with the staff key (until staff sign-in carries it for us).
@@ -1601,6 +1625,20 @@ const VIEWS = {
 
   standings() { return VIEWS.live(true); },
 
+  data() {
+    return `
+    <section class="page-head sc-head"><div class="wrap"><h1>Check-ins &amp; members</h1><p>Edit the day's check-ins and the member list here. Every change saves to the Tour's data by itself.</p></div></section>
+    <div class="sc-bar"><div class="wrap"><div class="sc-row"><div class="sc-seg" id="dt-tabs"><button type="button" data-t="ck" aria-pressed="true">Check-ins</button><button type="button" data-t="mem" aria-pressed="false">Members</button></div></div></div></div>
+    <section class="wrap sc-main">
+      <div class="bw-top"><a class="btn btn-ghost" href="#desk">← Desk</a><input id="dt-q" type="search" placeholder="Search by name or member #" autocomplete="off"><button type="button" class="btn btn-primary" id="dt-add" hidden>+ Add member</button></div>
+      <p class="meta" id="dt-info"></p>
+      <div class="dt-wrap"><table class="dt-grid" id="dt-grid"></table></div>
+      <datalist id="dt-names"></datalist>
+      <div id="dt-msg" class="toast" hidden></div>
+      <p class="foot-note">Changes save as soon as you leave a box. Bowlers get a lane only once they're marked Paid. Phone and email aren't shown here.</p>
+    </section>`;
+  },
+
   bowlers() {
     return `
     <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>Look up a member to change their average, handicap or bonus pins, or add a new member.</p></div></section>
@@ -1779,7 +1817,7 @@ const VIEWS = {
     <section class="wrap sc-main">
       ${CKCTL.html()}
       <div class="dk-tools">
-        <a class="btn btn-ghost" id="dk-sheet" href="${SHEET.SHEET_LINK}" target="_blank" rel="noopener" title="Opens the Google Sheet. Make changes here on the Desk; they save to the sheet by themselves.">Open Google Sheet ↗</a>
+        <a class="btn btn-ghost" id="dk-data" href="#data">Edit check-ins &amp; members</a>
         <button type="button" class="btn btn-ghost" id="dk-csv">Download CSV</button>
         <button type="button" class="btn btn-ghost" id="dk-demo">Add sample check-ins</button>
       </div>
@@ -3808,8 +3846,80 @@ function wireBowlers() {
   });
   list();
 }
+function wireData() {
+  const e = CK.event(); let tab = "ck";
+  const msg = t => { const m = $("#dt-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 3500); };
+  const memRows = () => ((SHEET.get(SHEET.CACHE, {}).data || {}).Members || []).filter(r => String(r["Full name"] || r["First name"] || r["Last name"] || "").trim() || r._new);
+  const v = x => esc(x == null ? "" : String(x));
+  const draw = () => {
+    const q = $("#dt-q").value.trim().toLowerCase(), hit = t => !q || t.toLowerCase().includes(q);
+    $("#dt-add").hidden = tab !== "mem";
+    $("#dt-names").innerHTML = SHEET.names().map(n => `<option value="${v(n.full)}">`).join("");
+    if (tab === "ck") {
+      const L = CK.list(e), cf = CFG.get(e), rs = L.map((r, i) => ({ r, i })).filter(({ r }) => hit(`${r.first} ${r.last} ${r.member}`)).sort((a, b) => a.r.squad - b.r.squad || (a.r.lane || 99) - (b.r.lane || 99) || a.r.at - b.r.at);
+      $("#dt-info").textContent = `${longDate(e.date)} · ${e.center} · ${L.length} check-in${L.length === 1 ? "" : "s"}, ${L.filter(r => !r.paid).length} not paid`;
+      $("#dt-grid").innerHTML = `<thead><tr><th>Squad</th><th>Member #</th><th>Bowler</th><th>Avg</th><th>Paid</th><th>Lane</th><th>Jackpot $4</th><th>Progressive</th><th>Bowl with</th><th>Checked in</th><th></th></tr></thead><tbody>${rs.map(({ r, i }) => `
+        <tr data-i="${i}" class="${r.paid ? "" : "unpaid"}">
+          <td><select data-f="squad">${e.squads.map((t, k) => `<option value="${k}" ${k === r.squad ? "selected" : ""}>${v(CFG.normT(t))}</option>`).join("")}</select></td>
+          <td class="num">${v(r.member)}</td>
+          <td><b>${v(r.first)} ${v(r.last)}</b>${r.isNew ? "<small>New member</small>" : ""}</td>
+          <td><input data-f="avg" type="number" inputmode="numeric" value="${r.avg || ""}" class="dt-n"></td>
+          <td><input data-f="paid" type="checkbox" ${r.paid ? "checked" : ""}></td>
+          <td>${r.paid ? `<select data-f="lane">${CFG.order(cf).map(n => `<option value="${n}" ${n === r.lane ? "selected" : ""}>${n}</option>`).join("")}</select>` : `<span class="dt-wait">After paid</span>`}</td>
+          <td><input data-f="jackpot" type="checkbox" ${r.jackpot ? "checked" : ""}></td>
+          <td class="dt-prog">${[10, 20].map(p => `<label><input data-f="prog" data-v="${p}" type="checkbox" ${r.prog === p ? "checked" : ""} ${r.isNew && p > 10 ? "disabled" : ""}> $${p}</label>`).join("")}</td>
+          <td><input data-f="friend" list="dt-names" value="${v(r.friend)}" placeholder="Anyone"></td>
+          <td class="num">${r.at ? new Date(r.at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : ""}</td>
+          <td><button type="button" class="dk-del" data-del title="Remove this check-in" aria-label="Remove">✕</button></td>
+        </tr>`).join("") || `<tr><td colspan="11" class="dt-none">No check-ins${q ? " match" : " yet for this tournament"}.</td></tr>`}</tbody>`;
+      return;
+    }
+    const all = memRows().map((r, i) => ({ r, i })).filter(({ r }) => r._new || hit(`${r["Full name"]} ${r["Nickname / other names"] || ""} ${r["Member #"] || ""}`))
+      .sort((a, b) => (b.r._new ? 1 : 0) - (a.r._new ? 1 : 0) || String(a.r["Last name"] || "").localeCompare(String(b.r["Last name"] || "")) || String(a.r["First name"] || "").localeCompare(String(b.r["First name"] || "")));
+    $("#dt-info").textContent = `${memRows().length} members · ${memRows().filter(r => String(r["Member #"] || "").trim()).length} with a member #`;
+    const F = [["Member #", "num"], ["First name"], ["Last name"], ["Nickname / other names"], ["City"], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]];
+    $("#dt-grid").innerHTML = `<thead><tr>${F.map(([k]) => `<th>${k === "Handicap override" ? "Hdcp (by hand)" : k === "Nickname / other names" ? "Other names" : k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
+      <tr data-k="${v(r["Full name"] || "")}"${r._new ? ' class="new"' : ""}>${F.map(([k, t]) => `<td><input data-f="${v(k)}" value="${v(r[k])}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}></td>`).join("")}</tr>`).join("") || `<tr><td colspan="8" class="dt-none">No members match.</td></tr>`}</tbody>`;
+  };
+  // check-in edits
+  $("#dt-grid").addEventListener("change", ev => {
+    const el = ev.target, f = el.dataset.f; if (!f) return;
+    if (tab === "mem") {
+      const tr = el.closest("tr"), was = tr.dataset.k, patch = {}; tr.querySelectorAll("[data-f]").forEach(i => patch[i.dataset.f] = i.value.trim());
+      if (["Average", "Bonus pins", "Handicap override"].some(k => patch[k] !== "" && isNaN(+patch[k]))) { msg("Average, handicap and bonus pins must be numbers."); return; }
+      const num = patch["Member #"]; if (num && memRows().some(r => String(r["Member #"] || "").trim() === num && String(r["Full name"] || "") !== was)) { msg(`Member # ${num} already belongs to someone else.`); el.value = ""; return; }
+      if (!patch["First name"] || !patch["Last name"]) { msg("A member needs a first and last name. Nothing saved yet."); return; }
+      const c = SHEET.get(SHEET.CACHE, {}), nw = ((c.data || {}).Members || []).find(r => r._new); if (!was && nw) { delete nw._new; SHEET.set(SHEET.CACHE, c); }
+      const full = SHEET.editMember(was, patch); tr.dataset.k = full; tr.classList.remove("new"); msg(`Saved ${full}.`); return;
+    }
+    const L = CK.list(e), me = L[+el.closest("tr").dataset.i]; if (!me) return;
+    const nm = `${me.first} ${me.last}`;
+    if (f === "squad") { const to = +el.value; if (L.some(x => x !== me && x.member === me.member && x.squad === to)) { msg(`${nm} is already checked in for that squad.`); draw(); return; }
+      me.squad = to; me.lane = null; if (me.paid) CK.payIn(e, L, me); msg(`${nm} moved to the ${e.squads[to]} squad${me.lane ? `, lane ${me.lane}` : ""}.`); }
+    if (f === "avg") me.avg = Number(el.value) || null;
+    if (f === "paid") { if (el.checked) { const n = CK.payIn(e, L, me); msg(n ? `${nm} paid: lane ${n}.` : `${nm} paid, but every lane is full. Raise the limit in Setup.`); } else { CK.unpay(me); msg(`${nm} marked not paid. Lane released.`); } }
+    if (f === "lane") { me.lane = +el.value; msg(`${nm} moved to lane ${me.lane}.`); }
+    if (f === "jackpot") me.jackpot = el.checked;
+    if (f === "prog") me.prog = el.checked ? +el.dataset.v : 0;
+    if (f === "friend") me.friend = el.value.trim();
+    CK.save(e, L); draw();
+  });
+  $("#dt-grid").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-del]"); if (!b) return; const L = CK.list(e), me = L[+b.closest("tr").dataset.i];
+    if (!me || !confirm(`Remove ${me.first} ${me.last} from the ${e.squads[me.squad]} squad?`)) return;
+    CK.save(e, L.filter(x => x !== me)); msg(`Removed ${me.first} ${me.last}.`); draw();
+  });
+  $("#dt-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t; $("#dt-tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); $("#dt-q").value = ""; draw(); });
+  $("#dt-q").addEventListener("input", draw);
+  $("#dt-add").addEventListener("click", () => { const c = SHEET.get(SHEET.CACHE, {}); c.data = c.data || {}; const M = c.data.Members = c.data.Members || []; if (!M.some(r => r._new)) M.push({ _new: true }); SHEET.set(SHEET.CACHE, c); $("#dt-q").value = ""; draw(); const i = $("#dt-grid tr.new input[data-f='First name']"); if (i) i.focus(); });
+  draw(); SHEET.pullDay(e);
+  const onStore = ev => { if (!document.getElementById("dt-grid")) return window.removeEventListener("storage", onStore);
+    if (ev.key === CK.key(e) && tab === "ck" && !document.activeElement.closest("#dt-grid")) draw(); };
+  window.addEventListener("storage", onStore);
+}
 function wire(view) {
   if (view === "bowlers") wireBowlers();
+  if (view === "data") wireData();
   if (view === "scores") wireScores();
   if (view === "standings" || view === "live") wireLive();
   if (view === "tv") wireTV();
@@ -3893,7 +4003,7 @@ function wire(view) {
    When a data API is added (Google Sheet), its /api/staff/* routes get the same allowedRoles so data is protected
    on the server too. The demo PIN is a temporary fallback until staff invites are set up. */
 const STAFF = {
-  views: ["desk", "scores", "standings", "bowlers", "setup"],
+  views: ["desk", "scores", "standings", "bowlers", "setup", "data"],
   PIN: "987654321",
   me: null,
   load() { if (!/^https?:/.test(location.protocol)) return Promise.resolve(); return fetch("/.auth/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { STAFF.me = j && j.clientPrincipal; }).catch(() => {}); },
