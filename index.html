@@ -721,6 +721,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-setup dd { margin: 0; font-weight: 600; }
 .dk-setup ul { margin: 4px 0 10px; padding-left: 20px; color: #7a1a14; }
 .dk-setup .dk-set-act { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+#ckc.locked { border: 2px solid #0f2f3a; background: #eef3f4; }
 .dk-locked { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 2px solid #0f2f3a; background: #eef3f4; margin-bottom: 14px; }
 .dk-locked b { display: block; font-size: 1.05rem; } .dk-locked span { color: var(--muted); font-size: .9rem; }
 .dk-row.locked { opacity: .72; } .dk-row.locked .dk-del { visibility: hidden; }
@@ -3470,43 +3471,48 @@ const CK = {
 };
 
 /* ---- Squad check-in control (Desk): open the first squad, close each squad when bowling starts ---- */
+// Check-in control on the Desk, for the squad selected above it (Greg, Nov 27): a closed squad shows Reopen,
+// the open squad shows Close, the next squad shows when it opens, later squads wait their turn.
 const CKCTL = {
-  html() { return `<div class="panel dk-ctl-ck" id="ckc"><div class="su-state" id="ckc-state"></div><div class="ckc-btns"><button type="button" class="ck-back su-stop" id="ckc-undo" hidden></button><button type="button" class="ck-back su-stop" id="ckc-stop" hidden></button><button type="button" class="btn btn-primary" id="ckc-btn"></button></div></div>`; },
+  html() { return `<div class="panel dk-ctl-ck" id="ckc"><div class="su-state" id="ckc-state"></div><div class="ckc-btns"><button type="button" class="ck-back su-stop" id="ckc-stop" hidden></button><button type="button" class="btn btn-primary" id="ckc-btn"></button></div></div>`; },
   wire(e, say) {
     const draw = () => {
       if (!$("#ckc")) return false;
-      const c = CFG.get(e), st = CFG.status(c), nm = i => esc(c.squads[i] || "");
-      $("#ckc-state").innerHTML = { off: `<span class="su-dot"></span><span><b>Check-in is closed</b> · bowlers can't check in on their phones yet</span>`,
-        open: `<span class="su-dot on"></span><span><b>Check-in open: ${nm(st.k)} squad</b>${st.k < c.squads.length - 1 ? ` · close it when bowling starts; the ${nm(st.k + 1)} squad then opens at ${CFG.opensAt(c.squads[st.k + 1], c.openMins)}` : " · last squad"}</span>`,
-        waiting: `<span class="su-dot wait"></span><span><b>${nm(st.k - 1)} squad closed</b> · ${nm(st.k)} squad check-in opens on its own at ${st.at}</span>`,
-        done: `<span class="su-dot"></span><span><b>All squads closed</b> · check-in is done for the day</span>` }[st.state];
-      const b = $("#ckc-btn");
-      b.textContent = { off: "Open check-in", open: `Close ${c.squads[st.k]} squad check-in`, waiting: `Open ${c.squads[st.k]} squad now`, done: "Reopen last squad" }[st.state];
-      b.dataset.act = st.state; b.className = "btn " + (st.state === "open" ? "btn-dark" : "btn-primary");
-      const gate = st.state === "off" && !CFG.confirmed(e); b.disabled = gate;
-      if (gate) $("#ckc-state").innerHTML = `<span class="su-dot" style="background:#b3261e"></span><span><b>Setup not confirmed</b> · <a class="link-more" href="#setup">review and confirm the setup</a> for this tournament before opening check-in</span>`;
-      const cl = c.closed || [], last = cl[cl.length - 1], undo = $("#ckc-undo"); // reopen the squad closed most recently (by mistake, or for a late bowler)
-      undo.hidden = !c.open || !cl.length || st.state === "done"; if (!undo.hidden) undo.textContent = `Reopen ${c.squads[last]} squad`;
-      const stop = $("#ckc-stop"); stop.hidden = !c.open; stop.textContent = st.state === "done" ? "Start over" : "Turn off check-in";
+      const c = CFG.get(e), st = CFG.status(c), sq = CK.deskSq || 0, nm = i => esc(CFG.normT(c.squads[i] || "")), b = $("#ckc-btn");
+      let line = "", act = "", label = "";
+      if (st.state === "off") { act = "off"; label = "Open check-in";
+        line = CFG.confirmed(e) ? `<span class="su-dot"></span><span><b>Check-in is closed</b> · bowlers can't check in on their phones yet. Opening starts with the ${nm(0)} squad.</span>`
+          : `<span class="su-dot" style="background:#b3261e"></span><span><b>Setup not confirmed</b> · <a class="link-more" href="#setup">review and confirm the setup</a> for this tournament before opening check-in</span>`; }
+      else if ((c.closed || []).includes(sq)) { act = "reopen"; label = `Reopen ${CFG.normT(c.squads[sq])} squad`;
+        line = `<span aria-hidden="true">🔒</span><span><b>${nm(sq)} squad is closed</b> · its bowlers are locked. Reopen it to change lanes, payments, pots or anything else.</span>`; }
+      else if (st.state === "open" && st.k === sq) { act = "open"; label = `Close ${CFG.normT(c.squads[sq])} squad check-in`;
+        line = `<span class="su-dot on"></span><span><b>Check-in open: ${nm(sq)} squad</b>${sq < c.squads.length - 1 ? ` · close it when bowling starts; the ${nm(sq + 1)} squad then opens at ${CFG.opensAt(c.squads[sq + 1], c.openMins)}` : " · last squad"}</span>`; }
+      else if (st.state === "waiting" && st.k === sq) { act = "waiting"; label = `Open ${CFG.normT(c.squads[sq])} squad now`;
+        line = `<span class="su-dot wait"></span><span><b>${nm(sq)} squad: opens at ${st.at}</b> · check-in opens on its own then, or open it now</span>`; }
+      else line = `<span class="su-dot"></span><span><b>${nm(sq)} squad: not open yet</b> · it opens after the ${st.k != null && st.k < sq ? `${nm(st.k)} squad closes` : "earlier squads close"}</span>`;
+      $("#ckc-state").innerHTML = line;
+      $("#ckc").classList.toggle("locked", act === "reopen");
+      b.hidden = !act; b.textContent = label; b.dataset.act = act; b.className = "btn " + (act === "open" ? "btn-dark" : "btn-primary");
+      b.disabled = act === "off" && !CFG.confirmed(e);
+      const stop = $("#ckc-stop"); stop.hidden = !c.open || !(act === "open" || act === "waiting"); stop.textContent = "Turn off check-in";
       return true;
     };
+    CKCTL.redraw = draw;
     $("#ckc-btn").addEventListener("click", () => {
-      const c = CFG.get(e), st = CFG.status(c), act = $("#ckc-btn").dataset.act;
+      const c = CFG.get(e), st = CFG.status(c), act = $("#ckc-btn").dataset.act, sq = CK.deskSq || 0, nm = i => c.squads[i];
       c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
-      if (act === "off" && !CFG.confirmed(e)) { say("Confirm the setup first (Setup page), then open check-in."); return; }
-      if (act === "off") { c.open = true; c.closed = []; c.forced = []; c.saved = true; }
-      else if (act === "open") { const iss = CK.issues(e, st.k);
-        if (iss.length) { CK.deskSq = st.k; route(); say(`The ${c.squads[st.k]} squad can't close yet: ${iss.map(x => x.text).join("; ")}. Fix these (they're listed in red above the bowlers), then close.`); return; }
-        c.closed.push(st.k); }
-      else if (act === "waiting") c.forced.push(st.k);
-      else if (act === "done") { c.closed.pop(); c.forced.push(c.squads.length - 1); }
-      CFG.put(e, c); draw();
-      const now = CFG.status(c), nm = i => c.squads[i];
-      say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(st.k)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(now.k)} squad.`);
+      if (act === "off" && !CFG.confirmed(e)) { say("Confirm the setup first, then open check-in."); return; }
+      if (act === "reopen") { CK.reopen(e, sq); route(); say(`The ${nm(sq)} squad is open again. Close it again here when you're done.`); return; }
+      if (act === "off") { c.open = true; c.closed = []; c.forced = []; c.saved = true; CK.deskSq = 0; }
+      else if (act === "open") { const iss = CK.issues(e, sq);
+        if (iss.length) { say(`The ${nm(sq)} squad can't close yet: ${iss.map(x => x.text).join("; ")}. Fix these (they're listed in red above the bowlers), then close.`); return; }
+        c.closed.push(sq); }
+      else if (act === "waiting") c.forced.push(sq);
+      CFG.put(e, c); route();
+      const now = CFG.status(c);
+      say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(sq)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(sq)} squad.`);
     });
-    $("#ckc-undo").addEventListener("click", () => { const c = CFG.get(e), cl = (c.closed || []).slice(), j = cl.pop(); if (j == null) return;
-      c.closed = cl; c.forced = (c.forced || []).filter(x => x <= j).concat(j); CFG.put(e, c); draw(); say(`Check-in is open again for the ${c.squads[j]} squad.`); });
-    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; CFG.put(e, c); draw(); say("Check-in is off. Press Open check-in to start again with the first squad."); });
+    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; CFG.put(e, c); route(); say("Check-in is off. Press Open check-in to start again with the first squad."); });
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
 };
@@ -3884,7 +3890,7 @@ function wireDesk() {
     const iss = CK.issues(e, sq), sqn = esc(CFG.normT(e.squads[sq])), shut = CK.locked(e, sq);
     if (F.iss && !iss.some(x => x.k === F.iss)) F.iss = null;
     const ready = !rs.length ? "" : iss.length ? `<div class="dk-ready red" id="dk-ready"><b><span class="su-dot"></span>${shut ? `${sqn} squad was closed with things missing` : `Not ready to close the ${sqn} squad`}</b><ul>${iss.map(x => `<li>${x.k === "fee" ? `<a class="link-more" href="#setup">${esc(x.text)}</a>` : `<button type="button" data-iss="${x.k}" aria-pressed="${F.iss === x.k}">${esc(x.text)}</button>`}</li>`).join("")}</ul>${F.iss ? `<button type="button" class="dk-fpair" data-iss="">Show everyone ✕</button>` : ""}</div>`
-      : `<div class="dk-ready green" id="dk-ready"><b><span class="su-dot on"></span>${shut ? `${sqn} squad is closed` : `${sqn} squad is ready to close`}</b><span>All ${rs.length} bowler${rs.length === 1 ? " has" : "s have"} paid, ${rs.length === 1 ? "has a lane and an average" : "have lanes and averages"}.</span></div>`;
+      : shut ? "" : `<div class="dk-ready green" id="dk-ready"><b><span class="su-dot on"></span>${sqn} squad is ready to close</b><span>All ${rs.length} bowler${rs.length === 1 ? " has" : "s have"} paid, ${rs.length === 1 ? "has a lane and an average" : "have lanes and averages"}.</span></div>`;
     $("#dk-body").innerHTML = ready + payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-iss="${CK.rowIssues(e, l, r).join(" ")}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
@@ -3914,8 +3920,6 @@ function wireDesk() {
     if ($("#dk-find")) { $("#dk-find").addEventListener("input", ev => { F.q = ev.target.value; filt(); }); $("#dk-fp").addEventListener("change", ev => { F.paid = ev.target.checked; filt(); }); $("#dk-fu").addEventListener("change", ev => { F.unpaid = ev.target.checked; filt(); }); filt(); }
     if (CK.locked(e, sq)) {
       $("#dk-body").querySelectorAll(".dk-row").forEach(x => { x.classList.add("locked"); x.querySelectorAll("input, select, button").forEach(i => i.disabled = true); });
-      $("#dk-body").insertAdjacentHTML("afterbegin", `<div class="panel dk-locked"><div><b>🔒 The ${esc(CFG.normT(e.squads[sq]))} squad is closed</b><span>Its bowlers are locked. Reopen the squad to change lanes, payments, pots or anything else.</span></div><button type="button" class="btn btn-dark" id="dk-reopen">Reopen ${esc(CFG.normT(e.squads[sq]))} squad</button></div>`);
-      $("#dk-reopen").addEventListener("click", () => { CK.reopen(e, sq); msg(`The ${e.squads[sq]} squad is open again. Close it again on the check-in panel when you're done.`); route(); });
     }
     $("#dk-body").querySelectorAll(".dk-row:not(.locked)").forEach(row => {
       const r = () => { const L = CK.list(e); return [L, L.find(x => x.member === row.dataset.k && x.squad === sq)]; };
@@ -3963,7 +3967,7 @@ function wireDesk() {
   $("#dk-q").addEventListener("input", hits);
   $("#dk-hits").addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if (!b || b.disabled) return; const m = CK.members().find(x => x.member === b.dataset.m), { r } = CK.checkIn(e, m, CK.deskSq, { jackpot: false, prog: 0, friend: "", desk: true }); $("#dk-q").value = ""; hits(); msg(`${m.first} ${m.last} checked in for ${e.squads[CK.deskSq]}. Tick Paid when they pay to give them a lane.`); draw(); $("#dk-q").focus(); });
   $("#dk-new").addEventListener("click", () => { CK.ui = { step: "new", who: null, sq: null }; });
-  $("#dk-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; CK.deskSq = +b.dataset.sq; draw(); });
+  $("#dk-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; CK.deskSq = +b.dataset.sq; draw(); if (CKCTL.redraw) CKCTL.redraw(); });
   const tsv = () => CK.rows(e, CK.deskSq).map(r => r.join("\t")).join("\n");
   $("#dk-csv").addEventListener("click", () => { const csv = CK.rows(e, null).map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `checkins-${e.date}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
   $("#dk-demo").addEventListener("click", () => { if (CK.locked(e, CK.deskSq)) { msg(`The ${e.squads[CK.deskSq]} squad is closed. Reopen it to add sample bowlers.`); return; } const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear this squad's samples removes them again.`); draw(); });
