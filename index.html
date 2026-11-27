@@ -777,6 +777,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-vbox .btn { min-height: 44px; }
 .su-vbtns { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .su-del { color: #c7362b !important; }
+.su-fees { display: grid; gap: 8px; }
+.su-fees label { display: grid; grid-template-columns: 1fr auto 72px; align-items: center; gap: 8px; padding: 6px 10px 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.su-fees label span { font-weight: 600; }
+.su-fees .su-mini { width: 72px !important; }
+.su-feenote { margin-top: 8px; }
 .su-inl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .su-sqlist { display: grid; gap: 8px; margin-top: 6px; }
 .su-tw { position: relative; display: block; }
@@ -1772,8 +1777,12 @@ const VIEWS = {
             <h3>Squads and check-in</h3>
             <div class="su-q"><span class="sc-lbl">Later squads: check-in opens</span>
               <div class="su-inl">${step("su-open", c.openMins, "minutes")}<span>minutes before the squad time</span></div></div>
-            <div class="su-q"><label class="sc-lbl" for="su-fee">Entry fee</label>
-              <div class="su-inl"><span>$</span><input id="su-fee" type="number" inputmode="numeric" min="0" max="500" value="${c.fee != null ? c.fee : ""}" class="su-mini" placeholder="?"><span>per bowler, each squad. Side pots and new-member dues are added on top at the Desk.</span></div></div>
+            <div class="su-q"><span class="sc-lbl">Entry fee (per bowler)</span>
+              <div class="su-fees">
+                <label for="su-fee"><span>First squad</span><b>$</b><input id="su-fee" type="number" inputmode="numeric" min="0" max="500" value="${c.fee != null ? c.fee : ""}" class="su-mini" placeholder="?"></label>
+                <label for="su-fee2"><span>Each extra squad (re-entry)</span><b>$</b><input id="su-fee2" type="number" inputmode="numeric" min="0" max="500" value="${c.fee2 != null ? c.fee2 : ""}" class="su-mini" placeholder="?"></label>
+              </div>
+              <p class="meta su-feenote">Side pots and new-member dues are added on top at the Desk. A bowler's second and later squads that day are charged the re-entry fee.</p></div>
             <div class="su-sqlist" id="su-squads"></div>
             <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
           </div>
@@ -2932,7 +2941,8 @@ function openChamp(photo) {
 /* ---- Tournament setup (#setup): lanes, bowlers per lane, fill direction, games ---- */
 const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
-  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, fee: (() => { try { const f = JSON.parse(localStorage.getItem("9tap-fee")); return typeof f === "number" ? f : null; } catch (_) { return null; } })(), saved: false }; },
+  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, fee: CFG.lastFee("9tap-fee"), fee2: CFG.lastFee("9tap-fee2"), saved: false }; },
+  lastFee(k) { try { const f = JSON.parse(localStorage.getItem(k)); return typeof f === "number" ? f : null; } catch (_) { return null; } },
   get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
@@ -3302,7 +3312,9 @@ const CK = {
   payIn(e, l, r) { r.paid = true; if (!r.lane) { let f = CK.friendOf(l, r.squad, r.friend, r); if (!(f && f.paid && f.lane)) f = l.find(o => o !== r && o.squad === r.squad && o.paid && o.lane && CK.friendOf([r], r.squad, o.friend, o) === r) || null; r.lane = CK.pick(e, r.squad, l, r, f && f.paid && f.lane ? f : null); } return r.lane; },
   unpay(r) { r.paid = false; r.lane = null; },
   // What a bowler owes at the desk: entry fee (Setup; null = not set) + $4 jackpot + progressive + $25 dues for a new member.
-  owes(e, r) { const fee = CFG.get(e).fee, extra = (r.jackpot ? 4 : 0) + (+r.prog || 0) + (r.isNew ? 25 : 0); return { fee, extra, total: (fee || 0) + extra, known: fee != null }; },
+  // Re-entry: the bowler is also in an earlier squad today, so this squad gets the re-entry fee (falls back to the first-squad fee if not set).
+  reentry(e, r, l) { return (l || CK.list(e)).some(x => x !== r && x.member === r.member && x.squad < r.squad); },
+  owes(e, r, l) { const cf = CFG.get(e), re = CK.reentry(e, r, l), fee = re && cf.fee2 != null ? cf.fee2 : cf.fee, extra = (r.jackpot ? 4 : 0) + (+r.prog || 0) + (r.isNew ? 25 : 0); return { fee, extra, re, total: (fee || 0) + extra, known: fee != null }; },
   rows(e, sq) {
     const head = ["Date","Tournament","Squad","Member #","Last","First","Average","Handicap","Bonus pins","Lane","Jackpot","Progressive","New member","Paid","Checked in"];
     const t = d => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -3454,7 +3466,7 @@ function wireSetup() {
     if (c.count > c.games) c.count = c.games;
     c.overflow = $("#su-over").checked; c.overflowMax = Math.max(c.max, +$("#su-overmax").value || c.max);
     $("#su-overmax").disabled = !c.overflow;
-    { const f = $("#su-fee").value.trim(); c.fee = f === "" || !(+f >= 0) ? null : Math.round(+f); }
+    { const n = id => { const f = $(id).value.trim(); return f === "" || !(+f >= 0) ? null : Math.round(+f); }; c.fee = n("#su-fee"); c.fee2 = n("#su-fee2"); }
     $("#su-lo").textContent = c.first; $("#su-hi").textContent = c.last; $("#su-max").textContent = c.max; $("#su-open").textContent = c.openMins;
     [["su-dir", c.dir], ["su-fill", c.fill], ["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
     const n = c.last - c.first + 1, o = CFG.order(c), sq = squadsNow();
@@ -3479,7 +3491,7 @@ function wireSetup() {
     if (c.squads.some(t => CFG.parseT(t) == null)) { msg("Squad times should look like 1:30 PM or 10:00 AM."); return false; }
     c.squads = c.squads.map(CFG.normT);
     const live = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = live[k]); // check-in state belongs to the Desk
-    c.saved = true; CFG.put(e, c); if (c.fee != null) CK.put("9tap-fee", c.fee);
+    c.saved = true; CFG.put(e, c); if (c.fee != null) CK.put("9tap-fee", c.fee); if (c.fee2 != null) CK.put("9tap-fee2", c.fee2);
     const list = VEN.all(), v = list.find(x => x.id === c.venue); if (v) { v.fmt = VEN.fmt(c); VEN.put(list); } // the venue keeps this format for next time
     dirty = false; state(); vnote(); return true;
   };
@@ -3490,7 +3502,7 @@ function wireSetup() {
     else c.openMins = Math.min(180, Math.max(15, c.openMins + d * 15));
     sum(); touch();
   }));
-  ["su-first", "su-last", "su-over", "su-overmax", "su-fee"].forEach(id => $("#" + id).addEventListener("input", () => { sum(); touch(); }));
+  ["su-first", "su-last", "su-over", "su-overmax", "su-fee", "su-fee2"].forEach(id => $("#" + id).addEventListener("input", () => { sum(); touch(); }));
   $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); sum(); touch(); });
   $("#su-squads").addEventListener("input", () => { sum(); touch(); });
   /* squad time picker: list every 15 minutes from 7:00 AM, filtered as you type */
@@ -3679,16 +3691,16 @@ function wireDesk() {
       .filter(m => { const k = nm(m).toLowerCase(); if (!k || seenN.has(k)) return false; seenN.add(k); return true; }).sort((a, b) => (a.last || a.first).localeCompare(b.last || b.first) || a.first.localeCompare(b.first));
     const withOpts = r => { const want = (r.friend || "").trim().toLowerCase(), on = rs.filter(x => x !== r && x.lane && x.paid), onSet = new Set(on.map(x => x.member)), sel = x => want && nm(x).toLowerCase() === want ? "selected" : "";
       return `<option value="">${r.friend ? "No one" : "Pick a bowler…"}</option>${on.length ? `<optgroup label="On a lane now">${on.map(x => `<option value="${esc(x.member)}" ${sel(x)}>${esc(nm(x))} (lane ${x.lane})</option>`).join("")}</optgroup>` : ""}<optgroup label="All bowlers">${allM.filter(m => m.member !== r.member && !onSet.has(m.member)).map(m => `<option value="${esc(m.member)}" ${sel(m)}>${m.last ? `${esc(m.last)}, ${esc(m.first)}` : esc(m.first)}</option>`).join("")}</optgroup>`; };
-    const owe = r => { const o = CK.owes(e, r); return o.known ? money(o.total) : `entry fee${o.extra ? " + " + money(o.extra) : ""}`; };
+    const owe = r => { const o = CK.owes(e, r, l); return o.known ? money(o.total) : `entry fee${o.extra ? " + " + money(o.extra) : ""}`; };
     const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n}${c[n] >= CFG.cap(cf) && r.lane !== n ? " (full)" : ""}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
     const unpaid = rs.filter(r => !r.paid), paid = rs.filter(r => r.paid), feeSet = CFG.get(e).fee != null;
-    const cash = paid.reduce((t, r) => t + CK.owes(e, r).total, 0), due = unpaid.reduce((t, r) => t + CK.owes(e, r).total, 0);
+    const cash = paid.reduce((t, r) => t + CK.owes(e, r, l).total, 0), due = unpaid.reduce((t, r) => t + CK.owes(e, r, l).total, 0);
     const payBar = rs.length ? `<div class="dk-paybar${unpaid.length ? " warn" : ""}"><span><b>${unpaid.length ? `${unpaid.length} not paid` : "Everyone has paid"}</b>${unpaid.length ? ` · no lane and no scores until they pay${feeSet ? ` · ${money(due)} still due` : ""}` : ""}</span><span><b>${paid.length} paid</b>${feeSet ? ` · ${money(cash)} collected this squad` : ` · <a class="link-more" href="#setup">set the entry fee</a> to see totals`}</span></div>` : "";
     $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + (rs.length ? rs.map(r => `
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
-        <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
+        <div class="dk-who"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
           <small>#${esc(r.member)} · Avg ${r.avg || "<b>set it</b>"} · Hdcp ${CK.rh(r)}${r.bonus ? ` + ${r.bonus} bonus` : ""}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(r.friend)}` : "No friend request"}</small>
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
@@ -3698,7 +3710,7 @@ function wireDesk() {
           ${r.isNew ? `<label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" value="${r.avg || ""}" placeholder="Set"></label>` : ""}
           <div class="field dk-grp"><span>Progressive</span><div class="dk-boxes">${[10, 20].map(v => `<label class="dk-box"><input type="checkbox" data-act="prog" data-v="${v}" ${r.prog === v ? "checked" : ""} ${r.isNew && v > 10 ? "disabled title=\"New members: up to $10\"" : ""}>$${v}</label>`).join("")}</div></div>
           <div class="field dk-grp"><span>Jackpot</span><div class="dk-boxes"><label class="dk-box"><input type="checkbox" data-act="jp" ${r.jackpot ? "checked" : ""}>$4</label></div></div>
-          <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r).known ? " · " + owe(r) : ""}`}</label></div></div>
+          <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r, l).known ? " · " + owe(r) : ""}`}</label></div></div>
         </div>
       </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the poster below with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
     $("#dk-body").querySelectorAll(".dk-row").forEach(row => {
