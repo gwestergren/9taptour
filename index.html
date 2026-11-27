@@ -702,6 +702,15 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-set .field span { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #b3261e; }
 .dk-set input { width: 78px; min-height: 38px; padding: 4px 8px; }
 .dk-need { color: #b3261e; }
+.dk-ready { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--radius); margin-bottom: 12px; border: 2px solid; }
+.dk-ready b { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.dk-ready.green { background: #e8f5ec; border-color: #2e7d4f; color: #1d5434; }
+.dk-ready.red { background: #fdecea; border-color: #b3261e; color: #7a1a14; }
+.dk-ready.red .su-dot { background: #b3261e; }
+.dk-ready ul { margin: 0; padding-left: 22px; display: grid; gap: 2px; }
+.dk-ready li button { background: none; border: 0; padding: 4px 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; text-align: left; }
+.dk-ready li button[aria-pressed="true"] { font-weight: 700; }
+.dk-ready .dk-fpair { justify-self: start; }
 .dk-locked { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 2px solid #0f2f3a; background: #eef3f4; margin-bottom: 14px; }
 .dk-locked b { display: block; font-size: 1.05rem; } .dk-locked span { color: var(--muted); font-size: .9rem; }
 .dk-row.locked { opacity: .72; } .dk-row.locked .dk-del { visibility: hidden; }
@@ -1906,8 +1915,8 @@ const VIEWS = {
       <div class="dk-tools">
         <a class="btn btn-ghost" id="dk-data" href="#data">Edit check-ins &amp; members</a>
         <button type="button" class="btn btn-ghost" id="dk-csv">Download CSV</button>
-        <button type="button" class="btn btn-ghost" id="dk-demo">Add 20 sample check-ins</button>
-        <button type="button" class="btn btn-ghost" id="dk-clear">Clear sample check-ins</button>
+        <button type="button" class="btn btn-ghost" id="dk-demo">Add 20 samples to this squad</button>
+        <button type="button" class="btn btn-ghost" id="dk-clear">Clear this squad's samples</button>
       </div>
       <div class="panel dk-add">
         <label for="dk-q"><b>Check in at the desk</b> <span class="meta">for bowlers who don't use their phone</span></label>
@@ -3246,6 +3255,16 @@ const CK = {
   ui: { step: "find", who: null, sq: null },
   deskSq: null,
   // A squad the Desk has closed is locked: its check-ins can't be changed until the squad is reopened.
+  // What still has to be done before a squad's check-in can close (Greg, Nov 27). Each item: key, text, bowlers.
+  rowIssues(e, l, r) { const o = []; if (!r.paid) o.push("unpaid"); else if (!r.lane) o.push("nolane"); if (!r.avg) o.push("avg"); if (r.paid && r.lane && CK.repeatOf(e, l, r, r.lane)) o.push("repeat"); return o; },
+  issues(e, sq) {
+    const l = CK.list(e), rs = l.filter(r => r.squad === sq), n = k => rs.filter(r => CK.rowIssues(e, l, r).includes(k)).length, out = [], pl = (x, a, b) => `${x} ${x === 1 ? a : b}`;
+    if (rs.length && CFG.get(e).fee == null) out.push({ k: "fee", text: "Entry fee not set in Setup" });
+    [["unpaid", x => `${pl(x, "bowler", "bowlers")} not paid (take payment or remove them)`], ["nolane", x => `${pl(x, "paid bowler has", "paid bowlers have")} no lane`],
+     ["avg", x => `${pl(x, "bowler has", "bowlers have")} no Tour average`], ["repeat", x => `${pl(x, "bowler is", "bowlers are")} on a pair they already bowled today`]]
+      .forEach(([k, f]) => { const x = n(k); if (x) out.push({ k, text: f(x) }); });
+    return out;
+  },
   locked(e, sq) { return (CFG.get(e).closed || []).includes(sq); },
   reopen(e, sq) { const c = CFG.get(e); c.closed = (c.closed || []).filter(x => x !== sq); c.forced = (c.forced || []).filter(x => x !== sq).concat(sq); CFG.put(e, c); },
   CITIES: ["Tacoma","Puyallup","Lakewood","Olympia","Port Orchard","Federal Way","Kent","Auburn","Gig Harbor","Bremerton","Everett","Lynnwood","Spanaway","Renton","Sumner","Bonney Lake","Lacey","Kenmore","Arlington","Shelton"],
@@ -3366,8 +3385,9 @@ const CK = {
     if (sq > 0) [0, 8].forEach(i => { const o = Object.assign({}, mk[i], { squad: sq - 1, lane: null, paid: false, friend: "", at: mk[i].at - 3 * 3600000 }); L.push(o); CK.payIn(e, L, o); });
     CK.save(e, L); return mk.length;
   },
-  clearSamples(e) { CK.save(e, CK.list(e).filter(r => !r.sample));
-    e.squads.forEach((_, sq) => { const v = SC.load(e, sq), ids = Object.keys(v.scores || {}).filter(id => /^ck-S\d/.test(id)); if (ids.length) { ids.forEach(id => delete v.scores[id]); SC.save(e, sq, v); } }); CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => !/^S\d/.test(k))); },
+  // Removes one squad's sample check-ins (and their scores); other squads are left alone.
+  clearSamples(e, only) { CK.save(e, CK.list(e).filter(r => !(r.sample && r.squad === only)));
+    [only].forEach(sq => { const v = SC.load(e, sq), ids = Object.keys(v.scores || {}).filter(id => /^ck-S\d/.test(id)); if (ids.length) { ids.forEach(id => delete v.scores[id]); SC.save(e, sq, v); } }); CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => !(/^S\d/.test(k) && k.split(":")[1] === String(only)))); },
   // Marked paid at the Desk: now they get a lane (with their friend if possible). Unpaid: lane goes back.
   payIn(e, l, r) { r.paid = true; if (!r.lane) { let f = CK.friendOf(l, r.squad, r.friend, r); if (!(f && f.paid && f.lane)) f = l.find(o => o !== r && o.squad === r.squad && o.paid && o.lane && CK.friendOf([r], r.squad, o.friend, o) === r) || null; r.lane = CK.pick(e, r.squad, l, r, f && f.paid && f.lane ? f : null); } return r.lane; },
   unpay(r) { r.paid = false; r.lane = null; },
@@ -3417,7 +3437,9 @@ const CKCTL = {
       const c = CFG.get(e), st = CFG.status(c), act = $("#ckc-btn").dataset.act;
       c.closed = (c.closed || []).slice(); c.forced = (c.forced || []).slice();
       if (act === "off") { c.open = true; c.closed = []; c.forced = []; c.saved = true; }
-      else if (act === "open") c.closed.push(st.k);
+      else if (act === "open") { const iss = CK.issues(e, st.k);
+        if (iss.length) { CK.deskSq = st.k; route(); say(`The ${c.squads[st.k]} squad can't close yet: ${iss.map(x => x.text).join("; ")}. Fix these (they're listed in red above the bowlers), then close.`); return; }
+        c.closed.push(st.k); }
       else if (act === "waiting") c.forced.push(st.k);
       else if (act === "done") { c.closed.pop(); c.forced.push(c.squads.length - 1); }
       CFG.put(e, c); draw();
@@ -3744,9 +3766,9 @@ function wireDesk() {
   const msg = t => { const m = $("#dk-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 4000); };
   CKCTL.wire(e, msg);
   // Bowler list filter (search + paid / not paid). Only hides bowler cards; the lane report always counts everyone.
-  const F = { q: "", paid: false, unpaid: false, pair: null }; // neither box ticked = everyone
+  const F = { q: "", paid: false, unpaid: false, pair: null, iss: null }; // neither box ticked = everyone
   const filt = () => { const q = F.q.trim().toLowerCase().split(/\s+/).filter(Boolean); let n = 0, all = 0;
-    document.querySelectorAll("#dk-body .dk-row").forEach(row => { all++; const paid = !row.classList.contains("unpaid"), ok = (!F.paid && !F.unpaid || (paid ? F.paid : F.unpaid)) && (!F.pair || row.dataset.pair === String(F.pair)) && q.every(w => row.dataset.find.includes(w)); row.hidden = !ok; if (ok) n++; });
+    document.querySelectorAll("#dk-body .dk-row").forEach(row => { all++; const paid = !row.classList.contains("unpaid"), ok = (!F.paid && !F.unpaid || (paid ? F.paid : F.unpaid)) && (!F.pair || row.dataset.pair === String(F.pair)) && (!F.iss || row.dataset.iss.split(" ").includes(F.iss)) && q.every(w => row.dataset.find.includes(w)); row.hidden = !ok; if (ok) n++; });
     const fc = $("#dk-fcount"); if (fc) fc.textContent = n === all ? `${all} bowler${all === 1 ? "" : "s"}` : `Showing ${n} of ${all}`; };
   const draw = () => {
     const l = CK.list(e), sq = CK.deskSq, rs = l.filter(r => r.squad === sq).sort((a, b) => (a.lane || 99) - (b.lane || 99) || a.at - b.at);
@@ -3778,8 +3800,12 @@ function wireDesk() {
       <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
         return `<button type="button" class="dk-pair${t ? "" : " empty"}${full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small></button>`; }).join("")}</div>
       <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
-    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
-      <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
+    const iss = CK.issues(e, sq), sqn = esc(CFG.normT(e.squads[sq])), shut = CK.locked(e, sq);
+    if (F.iss && !iss.some(x => x.k === F.iss)) F.iss = null;
+    const ready = !rs.length ? "" : iss.length ? `<div class="dk-ready red" id="dk-ready"><b><span class="su-dot"></span>${shut ? `${sqn} squad was closed with things missing` : `Not ready to close the ${sqn} squad`}</b><ul>${iss.map(x => `<li>${x.k === "fee" ? `<a class="link-more" href="#setup">${esc(x.text)}</a>` : `<button type="button" data-iss="${x.k}" aria-pressed="${F.iss === x.k}">${esc(x.text)}</button>`}</li>`).join("")}</ul>${F.iss ? `<button type="button" class="dk-fpair" data-iss="">Show everyone ✕</button>` : ""}</div>`
+      : `<div class="dk-ready green" id="dk-ready"><b><span class="su-dot on"></span>${shut ? `${sqn} squad is closed` : `${sqn} squad is ready to close`}</b><span>All ${rs.length} bowler${rs.length === 1 ? " has" : "s have"} paid, ${rs.length === 1 ? "has a lane and an average" : "have lanes and averages"}.</span></div>`;
+    $("#dk-body").innerHTML = ready + payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
+      <div class="dk-row${r.paid ? "" : " unpaid"}" data-iss="${CK.rowIssues(e, l, r).join(" ")}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
         <div class="dk-who"><div class="dk-whomain"><b>${esc(r.first)} ${esc(r.last)}</b> ${r.paid ? "" : `<span class="tag dk-owe">Not paid · owes ${owe(r)}</span>`} ${r.sample ? `<span class="tag">Sample</span>` : ""} ${CK.reentry(e, r, l) ? `<span class="tag">Re-entry</span>` : ""} ${r.isNew ? `<span class="tag">New member</span>` : ""}
@@ -3802,6 +3828,7 @@ function wireDesk() {
     // Lane pair tiles: tap one to list just the bowlers on those two lanes (tap again, or the ✕ chip, to show everyone)
     $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
+    if ($("#dk-ready")) $("#dk-ready").addEventListener("click", ev => { const b = ev.target.closest("button[data-iss]"); if (!b) return; F.iss = b.dataset.iss && F.iss !== b.dataset.iss ? b.dataset.iss : null; draw(); if (F.iss) { const c = $(".dk-row:not([hidden])"); if (c) c.scrollIntoView({ behavior: "smooth", block: "center" }); } });
     if ($("#dk-find")) { $("#dk-find").addEventListener("input", ev => { F.q = ev.target.value; filt(); }); $("#dk-fp").addEventListener("change", ev => { F.paid = ev.target.checked; filt(); }); $("#dk-fu").addEventListener("change", ev => { F.unpaid = ev.target.checked; filt(); }); filt(); }
     if (CK.locked(e, sq)) {
       $("#dk-body").querySelectorAll(".dk-row").forEach(x => { x.classList.add("locked"); x.querySelectorAll("input, select, button").forEach(i => i.disabled = true); });
@@ -3857,8 +3884,10 @@ function wireDesk() {
   $("#dk-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; CK.deskSq = +b.dataset.sq; draw(); });
   const tsv = () => CK.rows(e, CK.deskSq).map(r => r.join("\t")).join("\n");
   $("#dk-csv").addEventListener("click", () => { const csv = CK.rows(e, null).map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `checkins-${e.date}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
-  $("#dk-demo").addEventListener("click", () => { if (CK.locked(e, CK.deskSq)) { msg(`The ${e.squads[CK.deskSq]} squad is closed. Reopen it to add sample bowlers.`); return; } const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear sample check-ins removes them again.`); draw(); });
-  $("#dk-clear").addEventListener("click", () => { const n = CK.list(e).filter(r => r.sample).length; if (!n) { msg("There are no sample check-ins to clear."); return; } if (!confirm(`Remove all ${n} sample check-ins (every squad)? Real check-ins stay.`)) return; CK.clearSamples(e); msg(`Cleared ${n} sample check-ins.`); draw(); });
+  $("#dk-demo").addEventListener("click", () => { if (CK.locked(e, CK.deskSq)) { msg(`The ${e.squads[CK.deskSq]} squad is closed. Reopen it to add sample bowlers.`); return; } const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear this squad's samples removes them again.`); draw(); });
+  $("#dk-clear").addEventListener("click", () => { const sq = CK.deskSq, nm = e.squads[sq], n = CK.list(e).filter(r => r.sample && r.squad === sq).length;
+    if (!n) { msg(`There are no sample check-ins in the ${nm} squad.`); return; } if (CK.locked(e, sq)) { msg(`The ${nm} squad is closed. Reopen it to clear its sample check-ins.`); return; }
+    if (!confirm(`Remove the ${n} sample check-ins from the ${nm} squad? Real check-ins and other squads stay.`)) return; CK.clearSamples(e, sq); msg(`Cleared ${n} sample check-ins from the ${nm} squad.`); draw(); });
 
   draw();
   const onStore = ev => { if (!document.getElementById("dk-body")) return window.removeEventListener("storage", onStore); if (ev.key === CK.key(e)) draw(); };
