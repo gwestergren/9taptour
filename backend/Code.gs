@@ -149,6 +149,7 @@ const ACTIONS = {
     const hit = (was && rows.find(r => String(r['Full name'] || '').trim().toLowerCase() === was)) || rows.find(r => m['Member #'] && String(r['Member #']) === String(m['Member #'])) || rows.find(r => r['Full name'] && r['Full name'].toLowerCase() === full.toLowerCase());
     m['Full name'] = full;
     if (hit) upsert('Members', 'Full name', hit['Full name'], m); else appendRows('Members', [m]);
+    sortMembers();
     return {};
   },
   // Staff change the pots on Setup. Adds a dated row; the "Current" formulas pick the newest one.
@@ -184,7 +185,7 @@ function isStaff(key) {
 function out(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function tz() { return SpreadsheetApp.getActive().getSpreadsheetTimeZone(); }
 function today() { return Utilities.formatDate(new Date(), tz(), 'yyyy-MM-dd'); }
-// One-time tidy of the Members tab: the City column is removed, header "Nickname / other names" becomes "Nicknames", and each cell keeps only
+// Tidy of the Members tab (one time): the City column is removed, header "Nickname / other names" becomes "Nicknames", and each cell keeps only
 // names that aren't already the bowler's first or last name ("Steve Nolan" for Steven Nolan -> "Steve").
 function nickClean(first, last, str) {
   const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ''), own = new Set((first + ' ' + last).split(/\s+/).map(k).filter(Boolean).concat(['jr', 'sr', 'ii', 'iii'])), seen = new Set();
@@ -200,6 +201,15 @@ function fixMembers() {
     s.getRange(1, c + 1).setValue('Nicknames');
   }
   const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1); // the Tour doesn't keep a member's city
+  sortMembers(s);
+}
+// Members stay A-Z by last name, then first name (only re-sorted when something is out of order).
+function sortMembers(s) {
+  s = s || sheet('Members'); const h = headers(s), li = h.indexOf('Last name'), fi = h.indexOf('First name'), n = s.getLastRow() - 1;
+  if (li < 0 || fi < 0 || n < 2) return;
+  const key = r => (String(r[li] || '').trim() + '\u0000' + String(r[fi] || '').trim()).toLowerCase(), rows = s.getRange(2, 1, n, h.length).getValues();
+  if (rows.every((r, i) => !i || key(rows[i - 1]) <= key(r))) return;
+  s.getRange(2, 1, n, h.length).sort([{ column: li + 1, ascending: true }, { column: fi + 1, ascending: true }]);
 }
 function sheet(name) { const s = SpreadsheetApp.getActive().getSheetByName(name); if (!s) throw new Error('No tab named ' + name); return s; }
 function headers(s) { return s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0].map(String); }
