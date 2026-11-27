@@ -154,6 +154,12 @@ const ACTIONS = {
     sortMembers();
     return {};
   },
+  // Setup's Tour tab (same for every tournament): one row per setting in the Settings tab.
+  saveSettings(b) {
+    const ss = SpreadsheetApp.getActive(); if (!ss.getSheetByName('Settings')) ss.insertSheet('Settings').getRange(1, 1, 1, 2).setValues([['Setting', 'Value']]);
+    Object.keys(b.settings || {}).forEach(k => upsert('Settings', 'Setting', k, { 'Setting': k, 'Value': b.settings[k] }));
+    return {};
+  },
   // Staff change the pots on Setup. Adds a dated row; the "Current" formulas pick the newest one.
   savePots(b) {
     appendRows('Pots', [{ 'Email sent': b.date || today(), 'For tournament': '', '9-Tap Jackpot': b.jackpot, 'Progressive Pot': b.progressive, 'Email subject': 'Set on the website by staff' }]);
