@@ -717,7 +717,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-pair:not(:disabled):hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); transform: translateY(-1px); }
 .dk-pair.sel { outline: 3px solid var(--ink, #0f2f3a); outline-offset: 1px; }
 .dk-fpair { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 0; background: #0f2f3a; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
-.dk-filter { scroll-margin-top: 140px; }
+.dk-lanes { scroll-margin-top: 130px; }
 .dk-pair { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .dk-pair-l { font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .dk-pair b { font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -3750,7 +3750,7 @@ function wireDesk() {
         </div>
       </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the poster below with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
     // Lane pair tiles: tap one to list just the bowlers on those two lanes (tap again, or the ✕ chip, to show everyone)
-    $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const f = $(".dk-filter"); if (F.pair && f) f.scrollIntoView({ behavior: "smooth", block: "start" }); }));
+    $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
     if ($("#dk-find")) { $("#dk-find").addEventListener("input", ev => { F.q = ev.target.value; filt(); }); $("#dk-fp").addEventListener("change", ev => { F.paid = ev.target.checked; filt(); }); $("#dk-fu").addEventListener("change", ev => { F.unpaid = ev.target.checked; filt(); }); filt(); }
     $("#dk-body").querySelectorAll(".dk-row").forEach(row => {
