@@ -714,6 +714,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-locked { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 2px solid #0f2f3a; background: #eef3f4; margin-bottom: 14px; }
 .dk-locked b { display: block; font-size: 1.05rem; } .dk-locked span { color: var(--muted); font-size: .9rem; }
 .dk-row.locked { opacity: .72; } .dk-row.locked .dk-del { visibility: hidden; }
+.dt-grid td.dt-act { display: flex; gap: 6px; align-items: center; }
+.dt-grid td.dt-act .ck-back { padding: 6px 4px; }
+.dt-grid .dt-delbtn { color: #b3261e; }
+.dt-grid .dt-btn { min-height: 36px; padding: 0 14px; }
+.dt-grid tr.editing td { background: color-mix(in srgb, var(--maple) 18%, transparent); }
 .dt-grid tr.locked td { background: #eef3f4; color: var(--muted); }
 .jump { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: grid; gap: 8px; }
 .jump[hidden] { display: none; }
@@ -1410,6 +1415,9 @@ const SHEET = {
   // Only names that aren't already the bowler's first or last name: "Steve Nolan" for Steven Nolan -> "Steve".
   nickClean(first, last, str) { const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ""), own = new Set((first + " " + last).split(/\s+/).map(k).filter(Boolean).concat(["jr", "sr", "ii", "iii"])), seen = new Set();
     return String(str || "").split(/[,;()\/]+/).map(p => p.split(/\s+/).filter(w => k(w) && !own.has(k(w))).join(" ").trim()).filter(p => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase())).join(", "); },
+  // Staff delete a member (Bowlers page). Removes the row here and on the Members tab.
+  deleteMember(name) { const c = SHEET.get(SHEET.CACHE, {}), k = x => String(x || "").trim().toLowerCase(); if (c.data && c.data.Members) { c.data.Members = c.data.Members.filter(r => k(r["Full name"]) !== k(name)); SHEET.set(SHEET.CACHE, c); }
+    SHEET.send({ action: "deleteMember", id: "del:" + k(name), name }); },
   // Every name on the Members tab (with or without a member #), for the Desk's Bowl with list.
   names() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || [];
     return M.map(r => ({ member: String(r["Member #"] || "").trim(), first: String(r["First name"] || "").trim(), last: String(r["Last name"] || "").trim(), full: String(r["Full name"] || "").trim() }))
@@ -1731,7 +1739,7 @@ const VIEWS = {
 
   bowlers() {
     return `
-    <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>The Tour's member list, the same as the Members tab of the Tour's data. Change a box and it saves by itself.</p></div></section>
+    <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>The Tour's member list, the same as the Members tab of the Tour's data. Press Edit next to a name to change it, then Save.</p></div></section>
     <section class="wrap sc-main">
       <div class="bw-top"><input id="dt-q" type="search" placeholder="Search by name or member #" autocomplete="off"><button type="button" class="btn btn-primary" id="dt-add">+ Add member</button><button type="button" class="btn btn-ghost" id="dt-csv">Download CSV</button></div>
       <p class="meta" id="dt-info"></p>
@@ -3975,7 +3983,7 @@ window.addEventListener("storage", ev => {
   if (ev.key && /^9tap-scores3:|^9tap-setup:|^9tap-checkins/.test(ev.key) && LIVE.redraw) LIVE.redraw();
 });
 function wireData(mode) {
-  const e = CK.event(); let tab = mode || "ck";
+  const e = CK.event(); let tab = mode || "ck", editK = null; // member row open for editing (its Full name, or "" for a new one)
   const msg = t => { const m = $("#dt-msg"); m.hidden = false; m.textContent = t; clearTimeout(msg.t); msg.t = setTimeout(() => m.hidden = true, 3500); };
   const memRows = () => ((SHEET.get(SHEET.CACHE, {}).data || {}).Members || []).filter(r => String(r["Full name"] || r["First name"] || r["Last name"] || "").trim() || r._new);
   const v = x => esc(x == null ? "" : String(x));
@@ -4008,22 +4016,39 @@ function wireData(mode) {
       .sort((a, b) => (b.r._new ? 1 : 0) - (a.r._new ? 1 : 0) || String(a.r["Last name"] || "").localeCompare(String(b.r["Last name"] || "")) || String(a.r["First name"] || "").localeCompare(String(b.r["First name"] || "")));
     $("#dt-info").textContent = `${memRows().length} members · ${memRows().filter(r => String(r["Member #"] || "").trim()).length} with a member #`;
     const F = [["Member #", "num"], ["First name"], ["Last name"], [SHEET.NICK], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]], cell = (r, k) => k === SHEET.NICK ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k];
-    $("#dt-grid").innerHTML = `<thead><tr>${F.map(([k]) => `<th>${k === "Handicap override" ? "Hdcp (by hand)" : k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
-      <tr data-k="${v(r["Full name"] || "")}"${r._new ? ' class="new"' : ""}>${F.map(([k, t]) => `<td><input data-f="${v(k)}" value="${v(cell(r, k))}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}${k === "Handicap override" && +r.Average ? ` placeholder="${CK.hcp(+r.Average)}" title="Empty = ${CK.hcp(+r.Average)} from the average"` : ""}></td>`).join("")}</tr>`).join("") || `<tr><td colspan="7" class="dt-none">No members match.</td></tr>`}</tbody>`;
+    const ed = r => r._new || editK === String(r["Full name"] || ""), cols = F.slice(0, 3).concat([["_act"]], F.slice(3));
+    $("#dt-grid").innerHTML = `<thead><tr>${cols.map(([k]) => `<th>${k === "_act" ? "" : k === "Handicap override" ? "Hdcp (by hand)" : k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
+      <tr data-k="${v(r["Full name"] || "")}" class="${r._new ? "new " : ""}${ed(r) ? "editing" : ""}">${cols.map(([k, t]) => k === "_act"
+        ? `<td class="dt-act">${ed(r) ? `<button type="button" class="btn btn-primary dt-btn" data-save>Save</button><button type="button" class="ck-back" data-cancel>Cancel</button>` : `<button type="button" class="ck-back" data-edit>Edit</button><button type="button" class="ck-back dt-delbtn" data-delm>Delete</button>`}</td>`
+        : ed(r) ? `<td><input data-f="${v(k)}" value="${v(cell(r, k))}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}${k === "Handicap override" && +r.Average ? ` placeholder="${CK.hcp(+r.Average)}" title="Empty = ${CK.hcp(+r.Average)} from the average"` : ""}></td>`
+        : `<td class="${t ? "num" : ""}">${k === "Handicap override" && (r[k] === "" || r[k] == null) ? (+r.Average ? `<span class="meta">${CK.hcp(+r.Average)}</span>` : "") : k === "Last name" || k === "First name" ? `<b>${v(cell(r, k))}</b>` : v(cell(r, k))}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="8" class="dt-none">No members match.</td></tr>`}</tbody>`;
   };
   // check-in edits
   $("#dt-grid").addEventListener("change", ev => {
     const el = ev.target, f = el.dataset.f; if (!f) return;
-    if (tab === "mem") {
-      const tr = el.closest("tr"), was = tr.dataset.k, patch = {}; tr.querySelectorAll("[data-f]").forEach(i => patch[i.dataset.f] = i.value.trim());
+    if (tab === "mem") return; // members save with the row's Save button
+  });
+  const saveMem = tr => {
+    { const was = tr.dataset.k, patch = {}, el = tr.querySelector("[data-f]"); tr.querySelectorAll("[data-f]").forEach(i => patch[i.dataset.f] = i.value.trim());
       if (["Average", "Bonus pins", "Handicap override"].some(k => patch[k] !== "" && isNaN(+patch[k]))) { msg("Average, handicap and bonus pins must be numbers."); return; }
       const num = patch["Member #"]; if (num && memRows().some(r => String(r["Member #"] || "").trim() === num && String(r["Full name"] || "") !== was)) { msg(`Member # ${num} already belongs to someone else.`); el.value = ""; return; }
       if (!patch["First name"] || !patch["Last name"]) { msg("A member needs a first and last name. Nothing saved yet."); return; }
       const nk = x => String(x || "").toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim(), dup = memRows().find(r => !r._new && String(r["Full name"] || "") !== was && nk(r["Full name"]) === nk(patch["First name"] + " " + patch["Last name"]));
       if (dup) { msg(`${dup["Full name"]} is already on the member list${dup["Member #"] ? ` (#${dup["Member #"]})` : ""}. Nothing saved.`); return; }
       const c = SHEET.get(SHEET.CACHE, {}), nw = ((c.data || {}).Members || []).find(r => r._new); if (!was && nw) { delete nw._new; SHEET.set(SHEET.CACHE, c); }
-      const full = SHEET.editMember(was, patch); tr.dataset.k = full; tr.classList.remove("new"); msg(`Saved ${full}.`);
-      const hb = tr.querySelector('[data-f="Handicap override"]'), av = +patch.Average; if (hb) { hb.placeholder = av ? String(CK.hcp(av)) : ""; hb.title = av ? `Empty = ${CK.hcp(av)} from the average` : ""; } return;
+      const full = SHEET.editMember(was, patch); editK = null; msg(`Saved ${full}.`); draw(); return; }
+  };
+  $("#dt-grid").addEventListener("click", ev => {
+    if (tab !== "mem") return; const tr = ev.target.closest("tr"); if (!tr) return;
+    if (ev.target.closest("[data-edit]")) { const c = SHEET.get(SHEET.CACHE, {}), M = (c.data || {}).Members || []; if (M.some(r => r._new)) { c.data.Members = M.filter(r => !r._new); SHEET.set(SHEET.CACHE, c); } editK = tr.dataset.k; draw(); const i = $("#dt-grid tr.editing input[data-f='First name']"); if (i) i.focus(); return; }
+    if (ev.target.closest("[data-cancel]")) { const c = SHEET.get(SHEET.CACHE, {}), M = (c.data || {}).Members || []; if (M.some(r => r._new)) { c.data.Members = M.filter(r => !r._new); SHEET.set(SHEET.CACHE, c); } editK = null; draw(); return; }
+    if (ev.target.closest("[data-save]")) { saveMem(tr); return; }
+    if (ev.target.closest("[data-delm]")) { const name = tr.dataset.k; if (!name || !confirm(`Delete ${name} from the member list? This removes their row from the Tour's data. Results and past check-ins keep the name.`)) return; SHEET.deleteMember(name); msg(`Deleted ${name}.`); draw(); }
+  });
+  $("#dt-grid").addEventListener("keydown", ev => { if (tab === "mem" && ev.key === "Enter" && ev.target.closest("tr.editing")) { ev.preventDefault(); saveMem(ev.target.closest("tr")); } });
+  $("#dt-grid").addEventListener("change", ev => {
+    const el = ev.target, f = el.dataset.f; if (!f || tab === "mem") return;
+    {
     }
     const L = CK.list(e), me = L[+el.closest("tr").dataset.i]; if (!me) return;
     const nm = `${me.first} ${me.last}`;

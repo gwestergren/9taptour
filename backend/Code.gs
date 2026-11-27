@@ -141,6 +141,8 @@ const ACTIONS = {
     return {};
   },
   // Staff edit a bowler (Bowlers page) or add a new member. Matched on Member #, then Full name.
+  // Staff delete a member on the Bowlers page (a mistake or a duplicate). Only the Members row goes; results keep the name.
+  deleteMember(b) { const k = rawKey(b.name); if (k) deleteWhere('Members', r => rawKey(r['Full name']) === k); return {}; },
   saveMember(b) {
     const m = b.member || {};
     const full = m['Full name'] || [m['First name'], m['Last name']].filter(Boolean).join(' ');
