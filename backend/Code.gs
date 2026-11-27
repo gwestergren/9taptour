@@ -87,6 +87,11 @@ const ACTIONS = {
     r['Checked in at'] = r['Checked in at'] || new Date().toISOString();
     const same = x => x['Date'] === r['Date'] && String(x['Squad']) === String(r['Squad']) &&
       (r['Member #'] ? String(x['Member #']) === String(r['Member #']) : (x['First name'] + ' ' + x['Last name']).toLowerCase() === (r['First name'] + ' ' + r['Last name']).toLowerCase());
+    // Only the Desk (staff key) marks a bowler paid, and lanes are given out only once paid.
+    // A repeat check-in from a phone never undoes a payment the Desk already took.
+    const prev = readTab('Check-ins').filter(same).find(x => String(x['Paid'] || '').trim());
+    r['Paid'] = prev ? prev['Paid'] : '';
+    r['Lane'] = prev ? prev['Lane'] : '';
     deleteWhere('Check-ins', same);
     appendRows('Check-ins', [r]);
     return {};
