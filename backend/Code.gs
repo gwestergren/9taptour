@@ -16,7 +16,7 @@
  *     Later the staff key will sit behind the website's staff sign-in, so it never reaches a browser.
  */
 
-const PUBLIC_TABS = ['Tournaments', 'Results', 'Members', 'Jackpot Winners', 'Pots', 'BOTY', 'Recaps', 'Venues', 'Check-ins', 'Scores', 'Settings'];
+const PUBLIC_TABS = ['Tournaments', 'Results', 'Members', 'Jackpot Winners', 'Pots', 'BOTY', 'Recaps', 'Venues', 'Check-ins', 'Scores', 'Settings', 'Schedule'];
 const PRIVATE_COLS = ['Phone', 'Email'];           // never sent out by doGet
 const SETUP_JSON = 'Setup (site data)';           // full Setup object, so the site gets back exactly what it saved
 const VENUE_JSON = 'Format (site data)';
@@ -42,7 +42,7 @@ function newStaffKey() {
 
 function doGet(e) {
   try {
-    fixMembers();
+    fixMembers(); fixSchedule();
     const p = (e && e.parameter) || {};
     if (p.ping) return out({ ok: true, now: new Date().toISOString() });
     const want = (p.tabs ? String(p.tabs).split(',') : PUBLIC_TABS).map(s => s.trim()).filter(t => PUBLIC_TABS.indexOf(t) >= 0);
@@ -50,7 +50,7 @@ function doGet(e) {
     want.forEach(t => {
       let rows = readTab(t);
       if (p.date && (t === 'Check-ins' || t === 'Scores' || t === 'Results')) rows = rows.filter(r => r['Date'] === p.date);
-      if (p.since && t === 'Tournaments') rows = rows.filter(r => r['Date'] >= p.since);
+      if (p.since && (t === 'Tournaments' || t === 'Schedule')) rows = rows.filter(r => r['Date'] >= p.since);
       data[t] = rows;
     });
     return out({ ok: true, data });
@@ -62,7 +62,7 @@ function doGet(e) {
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
-    fixMembers();
+    fixMembers(); fixSchedule();
     const body = JSON.parse(e.postData.contents || '{}');
     const act = body.action;
     if (act !== 'checkin' && !isStaff(body.key)) return out({ ok: false, error: 'Staff key needed' });
@@ -155,6 +155,15 @@ const ACTIONS = {
     sortMembers();
     return {};
   },
+  // Setup's Schedule tab: add or change an upcoming tournament date. A moved date drops its old row (never one with results).
+  // The schedule lives on the Schedule tab (one row per tournament date). Past dates are never changed from the site.
+  saveEvent(b) {
+    if (!b.date || b.date < today()) return { ok: false, error: 'Only upcoming dates can be changed.' };
+    if (b.was && b.was !== b.date && b.was >= today()) deleteWhere('Schedule', x => x['Date'] === b.was);
+    upsert('Schedule', 'Date', b.date, { 'Date': b.date, 'Venue': b.center, 'City': b.city || '', 'Squad times': b.squads || '', 'Event / note': b.note || '', 'Invite only': b.invite ? 'Yes' : '' });
+    return {};
+  },
+  removeEvent(b) { if (b.date && b.date >= today()) deleteWhere('Schedule', x => x['Date'] === b.date); return {}; },
   // Setup's Tour tab (same for every tournament): one row per setting in the Settings tab.
   saveSettings(b) {
     const ss = SpreadsheetApp.getActive(); if (!ss.getSheetByName('Settings')) ss.insertSheet('Settings').getRange(1, 1, 1, 2).setValues([['Setting', 'Value']]);
@@ -200,6 +209,15 @@ function nickClean(first, last, str) {
   const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ''), own = new Set((first + ' ' + last).split(/\s+/).map(k).filter(Boolean).concat(['jr', 'sr', 'ii', 'iii'])), seen = new Set();
   return String(str || '').split(/[,;()\/]+/).map(p => p.split(/\s+/).filter(w => k(w) && !own.has(k(w))).join(' ').trim())
     .filter(p => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase())).join(', ');
+}
+// One-time: the schedule moves from the Tournaments tab to its own Schedule tab (Greg, Nov 27). Tournaments keeps each
+// tournament's setup and results; Schedule is the list of dates the site shows.
+function fixSchedule() {
+  const ss = SpreadsheetApp.getActive(); if (ss.getSheetByName('Schedule')) return;
+  const sh = ss.insertSheet('Schedule'), H = ['Date', 'Venue', 'City', 'Squad times', 'Event / note', 'Invite only'];
+  sh.getRange(1, 1, 1, H.length).setValues([H]);
+  const rows = readTab('Tournaments').filter(r => r['Date'] && String(r['Squad times'] || '').trim()).sort((a, b) => String(a['Date']).localeCompare(String(b['Date'])));
+  if (rows.length) sh.getRange(2, 1, rows.length, H.length).setValues(rows.map(r => [r['Date'], r['Center'] || '', r['City'] || '', r['Squad times'], r['Event / note'] || '', r['Invite only'] || '']));
 }
 function fixMembers() {
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
