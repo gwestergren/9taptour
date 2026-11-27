@@ -631,6 +631,11 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .sc-main { padding-block: 16px 40px; }
 .sc-checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .85rem; color: var(--muted); margin-bottom: 14px; }
 .sc-checkin b { color: var(--ink); }
+.sc-demo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: -4px 0 16px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.sc-demo .sc-lbl { margin-right: 4px; }
+.sc-demo button { font: 700 .82rem var(--font-body); padding: 8px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.sc-demo button.clr { border-color: var(--accent); color: var(--accent); }
+.sc-demo small { color: var(--muted); font-size: .8rem; }
 .sc-checkin button { font: 600 .82rem var(--font-body); color: var(--accent); background: none; border: 0; padding: 6px 0; cursor: pointer; text-decoration: underline; }
 .sc-pair { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; scroll-margin-top: calc(var(--sc-top, 60px) + 140px); }
 .sc-pair-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; background: var(--deep); color: var(--on-deep); border-bottom: 4px solid var(--maple); }
@@ -1474,7 +1479,7 @@ const SHEET = {
   saveScores(e, sq, v) {
     if (!SHEET.ready()) return;
     const ros = SC.roster(e, sq), rows = Object.entries(v.scores || {}).map(([id, g]) => { const b = ros.find(x => x.id === id); if (!b) return null;
-      return { "Lane": b.lane, "Member #": b.member || "", "Bowler": b.name, "Entry id": id, "Game 1": g[0] ?? "", "Game 2": g[1] ?? "", "Game 3": g[2] ?? "", "Game 4": g[3] ?? "" }; }).filter(Boolean);
+      return { "Lane": b.lane, "Member #": b.member || "", "Bowler": b.name, "Entry id": id, "Game 1": g[0] ?? "", "Game 2": g[1] ?? "", "Game 3": g[2] ?? "", "Game 4": g[3] ?? "", "Sample games": ((v.sample || {})[id] || []).map(x => x + 1).join(", ") }; }).filter(Boolean);
     SHEET.send({ action: "saveScores", id: "sc" + e.date + ":" + sq, date: e.date, squad: sq + 1, squadTime: SHEET.sqTime(e, sq), rows, by: (STAFF.me && STAFF.me.userDetails) || "staff" });
   },
   finalize(e, r) { if (SHEET.ready() && !CK.list(e).some(x => x.sample)) SHEET.send({ action: "finalize", id: "fin" + e.date, date: e.date, result: { where: r.where, city: r.city, name: r.name, total: r.total, won: r.won, entries: r.entries, paid: r.paid, lowCash: r.lowCash, rows: r.rows } }); },
@@ -1486,7 +1491,8 @@ const SHEET = {
       if (!j || !j.ok) return; const q = SHEET.get(SHEET.QUEUE, []), changed = [];
       if (!q.some(x => x.action === "saveCheckins" && x.date === e.date)) { const k = CK.key(e), v = JSON.stringify((j.data["Check-ins"] || []).map(SHEET.ckIn));
         if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } }
-      const by = {}; (j.data.Scores || []).forEach(x => { const sq = Math.max(0, (+x.Squad || 1) - 1); (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null)); });
+      const by = {}; (j.data.Scores || []).forEach(x => { const sq = Math.max(0, (+x.Squad || 1) - 1); (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null));
+        const sg = String(x["Sample games"] || "").split(/[^0-9]+/).filter(Boolean).map(n => +n - 1); if (sg.length) (by[sq].sample = by[sq].sample || {})[x["Entry id"] || ("ck-" + x["Member #"])] = sg; });
       Object.keys(by).forEach(sq => { if (q.some(x => x.action === "saveScores" && x.date === e.date && String(x.squad - 1) === sq)) return; const k = SC.key(e, +sq), v = JSON.stringify(by[sq]);
         const v2 = v;
         if (localStorage.getItem(k) !== v2) { try { localStorage.setItem(k, v2); } catch (_) {} changed.push(k); } });
@@ -1741,6 +1747,7 @@ const VIEWS = {
     <section class="wrap sc-main">
       ${FIN.get(e.date) ? `<p class="toast">This tournament is final and on <a class="link-more" href="#results/${FIN.get(e.date).id}">Results</a>. Score changes here show up there after you press Update results on Standings.</p>` : ""}
       <p class="sc-checkin" id="sc-checkin"></p>
+      <div class="sc-demo" id="sc-demo" hidden></div>
       <div id="sc-body"></div>
       <p class="foot-note">Bowlers come from the Desk: everyone paid for this squad, on the lane they were given. A squad loads once the Desk closes its check-in. Scores save to the Tour's data as they're entered, so every rover, the Standings and the TV see them. Handicap shown is per game (90% of 220 minus average, plus bonus pins).</p>
     </section>`;
@@ -3251,7 +3258,7 @@ function wireScores() {
     $("#sc-lanes").innerHTML = pairs.map(p => `<button type="button" data-lanes="${p.p}" aria-pressed="${String(SC.lanes) === String(p.p)}">Lanes ${p.lanes.join("–")}<small></small></button>`).join("");
     const cur = $("#sc-lanes [aria-pressed=true]"); if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
   };
-  const body = () => {
+  let body = () => {
     lanesBar();
     if (SC.game === "board") {
       const rows = roster.map(b => ({ b, t: totals(b), arr: state.scores[b.id] || [] })).sort((x, y) => y.t.hd - x.t.hd || y.t.n - x.t.n);
@@ -3283,6 +3290,7 @@ function wireScores() {
         const f = row.querySelector(".sc-flag"); f.className = "sc-flag " + cls; f.textContent = msg; f.hidden = !msg;
         const arr = state.scores[b.id] = state.scores[b.id] || [];
         if (inp.value !== "" && cls !== "bad") arr[g] = Number(inp.value); else arr[g] = null;
+        if (state.sample && state.sample[b.id]) { state.sample[b.id] = state.sample[b.id].filter(x => x !== g); if (!state.sample[b.id].length) delete state.sample[b.id]; }
         SC.save(e, sq, state); row.querySelector(".sc-meta").innerHTML = metaHTML(b, g); counts();
         if (inp.value.length === 3 && cls === "") next();
       });
@@ -3299,6 +3307,18 @@ function wireScores() {
 
   const ci = () => { const live = roster.filter(b => b.checkedIn).length; $("#sc-checkin").innerHTML = `<span><b>${roster.length} bowlers</b> paid for the ${esc(e.squads[sq])} squad · ${pairs.length} lane pairs in use (lanes ${CFG.get(e).first}–${CFG.get(e).last})</span><button type="button" id="sc-sync">Refresh from check-in</button>`; $("#sc-sync").addEventListener("click", () => route()); };
   ci();
+  // Demo only (remove after the demo, with the Desk's sample check-ins): fill empty score boxes with made-up games near
+  // each bowler's average, for one lane pair, one game or the whole squad. "Clear" removes only those made-up games.
+  const nSample = () => Object.values(state.sample || {}).reduce((t, a) => t + a.length, 0);
+  const demo = () => { const d = $("#sc-demo"); d.hidden = false; const g = SC.game, pr = pairs.find(p => String(p.p) === String(SC.lanes)), n = nSample();
+    d.innerHTML = `<span class="sc-lbl">Demo</span>${g !== "board" && pr ? `<button type="button" data-fill="pair">Sample scores: lanes ${pr.lanes.join("–")}, game ${g + 1}</button><button type="button" data-fill="game">All lanes, game ${g + 1}</button>` : ""}<button type="button" data-fill="all">Whole squad, all ${ng} games</button>${n ? `<button type="button" class="clr" data-fill="clear">Clear this squad's sample scores</button><small>${n} sample game${n === 1 ? "" : "s"}</small>` : `<small>Fills only empty boxes. Typed scores are never changed.</small>`}`; };
+  const fake = b => { const a = +b.avg || 170, r = (Math.random() + Math.random() + Math.random() - 1.5) * 40; return Math.max(80, Math.min(299, Math.round(a + r))); };
+  $("#sc-demo").addEventListener("click", ev => { const k = (ev.target.closest("[data-fill]") || {}).dataset; if (!k || !k.fill) return; const f = k.fill;
+    if (f === "clear") { Object.entries(state.sample || {}).forEach(([id, gs]) => { const arr = state.scores[id]; if (!arr) return; gs.forEach(x => arr[x] = null); while (arr.length && arr[arr.length - 1] == null) arr.pop(); if (!arr.length) delete state.scores[id]; }); delete state.sample; }
+    else { const who = f === "pair" ? (pairs.find(p => String(p.p) === String(SC.lanes)) || { items: [] }).items : roster, gs = f === "all" ? Array.from({ length: ng }, (_, i) => i) : [SC.game];
+      state.sample = state.sample || {}; who.forEach(b => { const arr = state.scores[b.id] = state.scores[b.id] || []; gs.forEach(x => { if (typeof arr[x] === "number") return; arr[x] = fake(b); (state.sample[b.id] = state.sample[b.id] || []).push(x); }); }); }
+    SC.save(e, sq, state); body(); });
+  const body0 = body; body = () => { body0(); demo(); };
   body();
 }
 /* ---- Bowler self check-in (#checkin) and check-in desk (#desk) ---- */
