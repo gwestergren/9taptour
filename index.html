@@ -711,6 +711,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-ctl { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 12px; align-items: end; }
 .dk-ctl .field span { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .dk-ctl select, .dk-ctl input[type=number] { min-height: 44px; width: 100%; }
+.dk-prog > div { display: flex; gap: 14px; min-height: 44px; align-items: center; }
 .dk-poster { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-top: 26px; }
 .dk-poster img { background: #fff; padding: 8px; border-radius: 8px; }
 .dk-poster h3 { margin: 4px 0 8px; }
@@ -1297,6 +1298,10 @@ const SHEET = {
   /* ---- Tournament day: members, check-ins, scores and Finalize day ----
      These switch on only when the Members tab holds the real member list (member numbers filled in, from Rob's import).
      Until then the site keeps its built-in sample bowlers for the demo, and none of them are ever sent to the sheet. */
+  // Every name on the Members tab (with or without a member #), for the Desk's Bowl with list.
+  names() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || [];
+    return M.map(r => ({ member: String(r["Member #"] || "").trim(), first: String(r["First name"] || "").trim(), last: String(r["Last name"] || "").trim(), full: String(r["Full name"] || "").trim() }))
+      .map(r => Object.assign(r, { full: r.full || (r.first + " " + r.last).trim() })).filter(r => r.full); },
   members() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || [];
     return M.filter(r => String(r["Member #"] || "").trim()).map(r => ({ member: String(r["Member #"]).trim(), first: r["First name"] || "", last: r["Last name"] || "", city: r.City || "",
       avg: +r.Average || 0, bonus: +r["Bonus pins"] || 0, hcp: r["Handicap override"] === "" || r["Handicap override"] == null ? null : +r["Handicap override"], nick: r["Nickname / other names"] || "" })); },
@@ -3597,9 +3602,10 @@ function wireDesk() {
     $("#dk-squads").innerHTML = e.squads.map((s, i) => `<button type="button" data-sq="${i}" aria-pressed="${i === sq}">${esc(CFG.normT(s))}<small>${l.filter(r => r.squad === i).length} checked in${l.some(r => r.squad === i && !r.paid) ? ` · ${l.filter(r => r.squad === i && !r.paid).length} not paid` : ""}</small></button>`).join("");
     const c = CK.counts(e, sq, l), sample = SC.roster(e, sq, true).length;
     // Bowl with: bowlers already on a lane in this squad first, then every other member (they join this pair when they pay).
-    const allM = CK.members().slice().sort((a, b) => (a.last + a.first).localeCompare(b.last + b.first)), nm = m => `${m.first} ${m.last}`.trim();
+    const nm = m => `${m.first} ${m.last}`.trim(), seenN = new Set(), allM = CK.members().map(m => ({ member: m.member, first: m.first, last: m.last })).concat(SHEET.names().map(x => ({ member: x.member || "name:" + x.full, first: x.first || x.full, last: x.first ? x.last : "" })))
+      .filter(m => { const k = nm(m).toLowerCase(); if (!k || seenN.has(k)) return false; seenN.add(k); return true; }).sort((a, b) => (a.last || a.first).localeCompare(b.last || b.first) || a.first.localeCompare(b.first));
     const withOpts = r => { const want = (r.friend || "").trim().toLowerCase(), on = rs.filter(x => x !== r && x.lane && x.paid), onSet = new Set(on.map(x => x.member)), sel = x => want && nm(x).toLowerCase() === want ? "selected" : "";
-      return `<option value="">${r.friend ? "No one" : "Pick a bowler…"}</option>${on.length ? `<optgroup label="On a lane now">${on.map(x => `<option value="${esc(x.member)}" ${sel(x)}>${esc(nm(x))} (lane ${x.lane})</option>`).join("")}</optgroup>` : ""}<optgroup label="All bowlers">${allM.filter(m => m.member !== r.member && !onSet.has(m.member)).map(m => `<option value="${esc(m.member)}" ${sel(m)}>${esc(m.last)}, ${esc(m.first)}</option>`).join("")}</optgroup>`; };
+      return `<option value="">${r.friend ? "No one" : "Pick a bowler…"}</option>${on.length ? `<optgroup label="On a lane now">${on.map(x => `<option value="${esc(x.member)}" ${sel(x)}>${esc(nm(x))} (lane ${x.lane})</option>`).join("")}</optgroup>` : ""}<optgroup label="All bowlers">${allM.filter(m => m.member !== r.member && !onSet.has(m.member)).map(m => `<option value="${esc(m.member)}" ${sel(m)}>${m.last ? `${esc(m.last)}, ${esc(m.first)}` : esc(m.first)}</option>`).join("")}</optgroup>`; };
     const owe = r => { const o = CK.owes(e, r); return o.known ? money(o.total) : `entry fee${o.extra ? " + " + money(o.extra) : ""}`; };
     const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n}${c[n] >= CFG.cap(cf) && r.lane !== n ? " (full)" : ""}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
     const unpaid = rs.filter(r => !r.paid), paid = rs.filter(r => r.paid), feeSet = CFG.get(e).fee != null;
@@ -3617,7 +3623,7 @@ function wireDesk() {
           <label class="field"><span>Lane</span><select data-act="lane" ${r.paid ? "" : "disabled"}>${r.paid ? laneOpts(r) : `<option>After paid</option>`}</select></label>
           <label class="field"><span>Bowl with</span><select data-act="with">${withOpts(r)}</select></label>
           ${r.isNew ? `<label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" value="${r.avg || ""}" placeholder="Set"></label>` : ""}
-          <label class="field"><span>Progressive</span><select data-act="prog">${[0, 10, 20].map(v => `<option value="${v}" ${r.prog === v ? "selected" : ""} ${r.isNew && v > 10 ? "disabled" : ""}>$${v}</option>`).join("")}</select></label>
+          <div class="field dk-prog"><span>Progressive</span><div>${[10, 20].map(v => `<label class="ck-tog"><input type="checkbox" data-act="prog" data-v="${v}" ${r.prog === v ? "checked" : ""} ${r.isNew && v > 10 ? "disabled title=\"New members: up to $10\"" : ""}> $${v}</label>`).join("")}</div></div>
           <label class="ck-tog"><input type="checkbox" data-act="jp" ${r.jackpot ? "checked" : ""}> Jackpot $4</label>
           <label class="ck-tog dk-paid${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}> ${r.paid ? "Paid" : `Paid ${CK.owes(e, r).known ? owe(r) : ""}`}</label>
         </div>
@@ -3634,7 +3640,7 @@ function wireDesk() {
         const [L, me] = r(), act = el.dataset.act;
         if (act === "lane") { me.lane = +el.value; const rp = CK.repeatOf(e, L, me, me.lane); msg(rp ? `Heads up: ${me.first} ${me.last} already bowled lanes ${CK.pairName(CK.pair(me.lane))} in the ${rp} squad today. Moved to lane ${me.lane} anyway.` : `${me.first} ${me.last} moved to lane ${me.lane}.`); }
         if (act === "with" && !el.value) { me.friend = ""; msg(`${me.first} ${me.last} has no bowl-with request now.`); }
-        else if (act === "with") { const f = L.find(x => x.member === el.value && x.squad === sq), m = CK.members().find(x => x.member === el.value); me.friend = f ? `${f.first} ${f.last}` : m ? `${m.first} ${m.last}`.trim() : ""; }
+        else if (act === "with") { const f = L.find(x => x.member === el.value && x.squad === sq), m = CK.members().find(x => x.member === el.value) || SHEET.names().map(x => ({ member: x.member || "name:" + x.full, first: x.full, last: "" })).find(x => x.member === el.value); me.friend = f ? `${f.first} ${f.last}` : m ? `${m.first} ${m.last}`.trim() : ""; }
         if (act === "with" && el.value) { const f = L.find(x => x.member === el.value && x.squad === sq && x.paid && x.lane);
           if (!f) msg(`Noted: ${me.first} ${me.last} wants to bowl with ${me.friend}. They go on the same pair once both are checked in for this squad and paid.`);
           else if (!me.paid) msg(`Noted: ${me.first} ${me.last} goes on ${f.first} ${f.last}'s pair after paying.`);
@@ -3645,7 +3651,7 @@ function wireDesk() {
           else if (!confirm(`Mark ${me.first} ${me.last} as NOT paid? They lose lane ${me.lane || "–"} and any scores won't count until they pay.`)) { el.checked = true; return; }
           else { CK.unpay(me); msg(`${me.first} ${me.last} marked not paid. Lane released.`); }
         }
-        if (act === "prog") me.prog = +el.value;
+        if (act === "prog") me.prog = el.checked ? +el.dataset.v : 0; // one box at a time: $10 or $20
         if (act === "jp") me.jackpot = el.checked;
         CK.save(e, L); draw();
       }));
