@@ -804,7 +804,8 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-poster .btn { margin-top: 12px; }
 @media (max-width: 520px) { .dk-row { grid-template-columns: 1fr; } .dk-lane { grid-row: auto; } }
 @media print {
-  body.print-poster > *:not(main), body.print-poster .staff-head, body.print-poster #app > *:not(.sc-main):not(.su-main), body.print-poster .sc-main > *:not(.dk-poster), body.print-poster .su-main > *:not(.dk-poster) { display: none !important; }
+  body.print-poster > *:not(main), body.print-poster .staff-head, body.print-poster #app > *:not(.sc-main):not(.su-main), body.print-poster .sc-main > *:not(.dk-poster), body.print-poster .su-main > *:not(.dk-poster):not(#su-form), body.print-poster #su-form > *:not(.dk-poster) { display: none !important; }
+  body.print-poster #su-form { display: block; }
   body.print-poster .dk-poster { display: block; text-align: center; border: 0; margin: 0; padding-top: 40px; }
   body.print-poster .dk-poster img { width: 360px; height: 360px; }
   body.print-poster .dk-poster h3 { font-size: 2.6rem; }
@@ -831,6 +832,12 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 @media (min-width: 860px) { #su-form { grid-template-columns: 1fr 1fr; } .su-wide { grid-column: 1 / -1; } }
 .su-col { display: grid; gap: 16px; }
 .su-card h3 { margin: 0 0 12px; }
+.su-sec { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; padding-top: 18px; border-top: 3px solid var(--maple); }
+.su-sec:first-child { margin-top: 0; }
+.su-sec h2 { margin: 0 0 2px; font-size: 1.5rem; }
+.su-sec .meta { margin: 0; }
+.su-num { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #0f2f3a; color: #fff; font-weight: 800; font-size: 1.05rem; }
+.su-sec-ven .su-num { background: #c7362b; } .su-sec-tour .su-num { background: #6b5a2e; } .su-sec-ok .su-num { background: #2e7d4f; }
 .su-combo { position: relative; }
 .su-combo input { min-height: 52px; font: 700 1.05rem var(--font-body); padding-left: 40px; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 13px 50%; }
 .su-vlist { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); max-height: 300px; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 14px 30px -14px rgba(0,0,0,.45); padding: 4px; }
@@ -1824,7 +1831,8 @@ const VIEWS = {
     <section class="page-head sc-head su-head"><div class="wrap"><h1>Tournament Setup</h1></div></section>
     <section class="wrap su-main">
       <form id="su-form" novalidate>
-        <div class="panel su-card su-wide">
+        <div class="su-sec su-wide"><span class="su-num">1</span><div><h2>This tournament: ${esc(longDate(e.date))}</h2><p class="meta">Pick the venue for this date, check the games, then confirm the setup so the Desk can open check-in.</p></div></div>
+        <div class="panel su-card">
           <h3>Venue</h3>
           <div class="su-combo">
             <label class="sr-only" for="su-vq">Bowling center</label>
@@ -1846,7 +1854,13 @@ const VIEWS = {
             <p class="su-vnote" id="su-vbox-n"></p>
           </div>
         </div>
-
+          <div class="panel su-card">
+            <h3>Games</h3>
+            <p class="meta">Most tournaments are 3 games; some are Best 3 of 4.</p>
+            <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
+            <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div>
+          </div>
+        <div class="su-sec su-wide su-sec-ven"><span class="su-num">2</span><div><h2>Venue settings: <span id="su-vtitle">${esc(c.venueName || e.center)}</span></h2><p class="meta">Saved with each bowling center and loaded whenever you pick that venue. Change something and Save updates the venue too.</p></div></div>
         <div class="panel su-card">
           <h3>Lanes</h3>
           <div class="form-grid su-two">
@@ -1858,15 +1872,15 @@ const VIEWS = {
           <div class="su-q"><span class="sc-lbl">How to fill</span>${seg("su-fill", [["lane", "Fill each lane first"], ["spread", "One per lane, then wrap"]], c.fill)}</div>
           <label class="ck-tog"><input type="checkbox" id="su-over" ${c.overflow ? "checked" : ""}> <span>When every lane is full, allow up to <input id="su-overmax" type="number" inputmode="numeric" min="2" max="10" value="${c.overflowMax}" class="su-mini"> per lane</span></label>
         </div>
-
-        <div class="su-col">
-          <div class="panel su-card">
-            <h3>Games</h3>
-            <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
-            <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div>
-          </div>
-          <div class="panel su-card">
-            <h3>Squads and check-in</h3>
+        <div class="panel su-card">
+          <h3>Squad times</h3>
+          <p class="meta">This venue's usual squads. Change them here if this tournament is different.</p>
+            <div class="su-sqlist" id="su-squads"></div>
+            <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
+        </div>
+        <div class="su-sec su-wide su-sec-tour"><span class="su-num">3</span><div><h2>Tour settings: every tournament</h2><p class="meta">The same for every tournament until you change them.</p></div></div>
+        <div class="panel su-card">
+          <h3>Entry fees and check-in</h3>
             <div class="su-q"><span class="sc-lbl">Later squads: check-in opens</span>
               <div class="su-inl">${step("su-open", c.openMins, "minutes")}<span>minutes before the squad time</span></div></div>
             <div class="su-q"><span class="sc-lbl">Entry fee (per bowler)</span>
@@ -1875,12 +1889,8 @@ const VIEWS = {
                 <label for="su-fee2"><span>Each extra squad (re-entry)</span><b>$</b><input id="su-fee2" type="number" inputmode="numeric" min="0" max="500" value="${c.fee2 != null ? c.fee2 : ""}" class="su-mini" placeholder="?"></label>
               </div>
               <p class="meta su-feenote">Side pots and new-member dues are added on top at the Desk. A bowler's second and later squads that day are charged the re-entry fee.</p></div>
-            <div class="su-sqlist" id="su-squads"></div>
-            <button type="button" class="ck-back" id="su-add">+ Add a squad</button>
-          </div>
         </div>
-
-        <div class="panel su-card su-wide">
+        <div class="panel su-card">
           <h3>Jackpots</h3>
           <p class="meta">These amounts show on the home page and the printable schedule.</p>
           <div class="form-grid su-pots">
@@ -1889,13 +1899,16 @@ const VIEWS = {
             <div class="field"><label for="su-prog">Progressive Pot ($)</label><input id="su-prog" type="number" inputmode="numeric" min="0" step="1" value="${DATA.progressive}"></div>
           </div>
         </div>
-
         <div class="panel su-card su-wide" id="su-sheet"></div>
-
-        <div class="panel su-card su-wide su-sumcard"><h3>Summary</h3><div id="su-sum"></div></div>
-
+      <div class="panel dk-poster su-wide" id="poster">
+        <img src="img/checkin-qr.svg" alt="QR code that opens the bowler check-in page" width="180" height="180">
+        <div><p class="eyebrow">Check-in poster</p><h3>Check in on your phone</h3>
+          <p class="meta">Open your camera and scan. Find your name, pick your squad, then pay at the desk to get your lane. New to the Tour? You can sign up on the same page.</p>
+          <button type="button" class="btn btn-primary" id="su-print">Print poster</button><p class="meta su-hint">Print it once: the same code always opens check-in for the next tournament, whatever the venue or squad times.</p></div>
+      </div>
+        <div class="su-sec su-wide su-sec-ok"><span class="su-num">✓</span><div><h2>Check and confirm</h2><p class="meta">Everything above, together. Confirm it before check-in opens.</p></div></div>
+        <div class="panel su-card su-sumcard su-wide"><h3>Summary</h3><div id="su-sum"></div></div>
         <div class="panel su-card su-wide su-confirm" id="su-confirm"></div>
-
         <div class="su-bar su-wide">
           <div class="su-state" id="su-state"></div>
           <div id="su-msg" class="su-msg" role="status" hidden></div>
@@ -1904,14 +1917,8 @@ const VIEWS = {
           </div>
         </div>
       </form>
-      <div class="panel dk-poster" id="poster">
-        <img src="img/checkin-qr.svg" alt="QR code that opens the bowler check-in page" width="180" height="180">
-        <div><p class="eyebrow">Check-in poster</p><h3>Check in on your phone</h3>
-          <p class="meta">Open your camera and scan. Find your name, pick your squad, then pay at the desk to get your lane. New to the Tour? You can sign up on the same page.</p>
-          <button type="button" class="btn btn-primary" id="su-print">Print poster</button><p class="meta su-hint">Print it once: the same code always opens check-in for the next tournament, whatever the venue or squad times.</p></div>
-      </div>
 
-      <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. On a device connected to the Google Sheet (box above), Setup, venues and jackpots are saved to the sheet so every phone uses the same lanes and format; otherwise they stay on this device. The sample venues' lane numbers are placeholders.</p>
+      <p class="foot-note">Save keeps all three parts: this tournament's games, the venue's lanes and squad times (used next time you pick that venue), and the Tour settings. On a device connected to the Google Sheet, they're saved there so every phone uses the same setup. The sample venues' lane numbers are placeholders.</p>
     </section>`;
   },
 
@@ -3038,7 +3045,7 @@ function openChamp(photo) {
 /* ---- Tournament setup (#setup): lanes, bowlers per lane, fill direction, games ---- */
 const CFG = {
   key(e) { return `9tap-setup:${e.date}`; },
-  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: 60, fee: CFG.lastFee("9tap-fee"), fee2: CFG.lastFee("9tap-fee2"), saved: false }; },
+  defaults(e) { const four = /3 of 4/.test(e.tag || ""); return { first: 1, last: 32, dir: "up", max: 3, fill: "lane", overflow: true, overflowMax: 4, games: four ? 4 : 3, count: 3, squads: e.squads.slice(), openMins: CFG.lastFee("9tap-openmins") || 60, fee: CFG.lastFee("9tap-fee"), fee2: CFG.lastFee("9tap-fee2"), saved: false }; },
   lastFee(k) { try { const f = JSON.parse(localStorage.getItem(k)); return typeof f === "number" ? f : null; } catch (_) { return null; } },
   // Before check-in can open, staff confirm the tournament's setup (Greg, Nov 27). The confirmation is tied to these
   // values: change any of them afterwards and the setup needs confirming again.
@@ -3084,8 +3091,8 @@ const CFG = {
 /* ---- Saved venues: each bowling center's usual format, loaded into setup ---- */
 const VEN = {
   KEY: "9tap-venues",
-  FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "games", "count", "squads", "openMins"],
-  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); if (f.openMins == null) f.openMins = 60; f.squads = (f.squads || []).map(CFG.normT); return f; },
+  FIELDS: ["first", "last", "dir", "max", "fill", "overflow", "overflowMax", "squads"], // games are per tournament; fees and check-in minutes are Tour-wide
+  fmt(c) { const f = {}; VEN.FIELDS.forEach(k => f[k] = Array.isArray(c[k]) ? c[k].slice() : c[k]); f.squads = (f.squads || []).map(CFG.normT); return f; },
   same(a, b) { return JSON.stringify(VEN.fmt(a)) === JSON.stringify(VEN.fmt(b)); },
   seed() { // one sample venue per center on the schedule (lane numbers are placeholders)
     const seen = new Set(), out = [];
@@ -3556,7 +3563,7 @@ function wireSetup() {
   $("#su-vlist").addEventListener("click", ev => { const b = ev.target.closest("[data-id]"); if (b) choose(b.dataset.id); });
   $("#su-vq").addEventListener("blur", () => setTimeout(closeList, 120));
 
-  const drawVen = () => { $("#su-vq").value = label(VEN.find(c.venue)); vnote(); };
+  const drawVen = () => { $("#su-vq").value = label(VEN.find(c.venue)); const vt = $("#su-vtitle"); if (vt) vt.textContent = (VEN.find(c.venue) || {}).name || "pick a venue"; vnote(); };
   const vnote = () => {
     const v = VEN.find(c.venue), n = $("#su-vnote");
     $("#su-vedit").hidden = !v;
@@ -3633,7 +3640,7 @@ function wireSetup() {
     if (c.squads.some(t => CFG.parseT(t) == null)) { msg("Squad times should look like 1:30 PM or 10:00 AM."); return false; }
     c.squads = c.squads.map(CFG.normT);
     const live = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = live[k]); // check-in state belongs to the Desk
-    c.saved = true; CFG.put(e, c); if (c.fee != null) CK.put("9tap-fee", c.fee); if (c.fee2 != null) CK.put("9tap-fee2", c.fee2);
+    c.saved = true; CFG.put(e, c); if (c.fee != null) CK.put("9tap-fee", c.fee); if (c.fee2 != null) CK.put("9tap-fee2", c.fee2); CK.put("9tap-openmins", c.openMins);
     const list = VEN.all(), v = list.find(x => x.id === c.venue); if (v) { v.fmt = VEN.fmt(c); VEN.put(list); } // the venue keeps this format for next time
     dirty = false; state(); vnote(); return true;
   };
