@@ -1378,15 +1378,14 @@ const SHEET = {
   sqTime(e, i) { const c = CFG.get(e); return CFG.normT((c.squads || [])[i] || (e.squads || [])[i] || ""); },
   ckOut(r, e) { return { "Squad": r.squad + 1, "Squad time": e ? SHEET.sqTime(e, r.squad) : "", "Member #": r.member, "First name": r.first, "Last name": r.last, "City": r.city, "Average": r.avg || "", "Handicap": r.hcp == null ? "" : r.hcp,
     "Bonus pins": r.bonus || "", "New member": SHEET.yes(r.isNew), "Lane": r.lane || "", "9-Tap Jackpot": SHEET.yes(r.jackpot), "Progressive": r.prog || "", "Bowl with": r.friend || "",
-    "Checked in by": r.via || "", "Paid": SHEET.yes(r.paid), "Checked in at": r.at ? new Date(r.at).toISOString() : "" }; },
+    "Checked in by": r.via || "", "Paid": SHEET.yes(r.paid), "Sample": r.sample ? "Sample" : "", "Checked in at": r.at ? new Date(r.at).toISOString() : "" }; },
   ckIn(x) { return { member: String(x["Member #"]), first: x["First name"], last: x["Last name"], city: x.City, avg: +x.Average || 0, bonus: +x["Bonus pins"] || 0,
     hcp: x.Handicap === "" || x.Handicap == null ? null : +x.Handicap, isNew: !!x["New member"], squad: Math.max(0, (+x.Squad || 1) - 1), lane: +x.Lane || null, pos: "",
     jackpot: !!x["9-Tap Jackpot"], prog: x.Progressive === "" ? 0 : (isNaN(+x.Progressive) ? x.Progressive : +x.Progressive), friend: x["Bowl with"] || "",
-    via: x["Checked in by"] || "", paid: /^(y|yes|true|1|x|paid)/i.test(String(x.Paid || "").trim()), at: Date.parse(x["Checked in at"]) || Date.now() }; },
+    via: x["Checked in by"] || "", sample: !!String(x.Sample || "").trim(), paid: /^(y|yes|true|1|x|paid)/i.test(String(x.Paid || "").trim()), at: Date.parse(x["Checked in at"]) || Date.now() }; },
   // Check-in list saved on this device: staff send the whole day; a bowler's phone sends just its own new check-in.
   saveCheckins(e, l, old) {
     if (!SHEET.ready()) return;
-    l = (l || []).filter(r => !r.sample); old = (old || []).filter(r => !r.sample); // demo bowlers stay on this device
     // Staff send only what changed, so a bowler's phone check-in that just reached the sheet is never wiped out.
     if (SHEET.key()) { const out = r => SHEET.ckOut(r, e), was = new Map((old || []).map(r => [r.member + ":" + r.squad, JSON.stringify(out(r))]));
       const rows = l.filter(r => was.get(r.member + ":" + r.squad) !== JSON.stringify(out(r))).map(out);
@@ -1397,7 +1396,7 @@ const SHEET = {
   },
   saveScores(e, sq, v) {
     if (!SHEET.ready()) return;
-    const ros = SC.roster(e, sq), rows = Object.entries(v.scores || {}).map(([id, g]) => { const b = ros.find(x => x.id === id); if (!b || b.sample) return null;
+    const ros = SC.roster(e, sq), rows = Object.entries(v.scores || {}).map(([id, g]) => { const b = ros.find(x => x.id === id); if (!b) return null;
       return { "Lane": b.lane, "Member #": b.member || "", "Bowler": b.name, "Entry id": id, "Game 1": g[0] ?? "", "Game 2": g[1] ?? "", "Game 3": g[2] ?? "", "Game 4": g[3] ?? "" }; }).filter(Boolean);
     SHEET.send({ action: "saveScores", id: "sc" + e.date + ":" + sq, date: e.date, squad: sq + 1, squadTime: SHEET.sqTime(e, sq), rows, by: (STAFF.me && STAFF.me.userDetails) || "staff" });
   },
@@ -1408,11 +1407,11 @@ const SHEET = {
     if (!SHEET.ready() || !e) return Promise.resolve();
     return fetch(SHEET.URL + "?tabs=Check-ins,Scores&date=" + e.date, { cache: "no-store" }).then(r => r.json()).then(j => {
       if (!j || !j.ok) return; const q = SHEET.get(SHEET.QUEUE, []), changed = [];
-      if (!q.some(x => x.action === "saveCheckins" && x.date === e.date)) { const k = CK.key(e), v = JSON.stringify((j.data["Check-ins"] || []).map(SHEET.ckIn).concat(CK.get(k, []).filter(r => r.sample)));
+      if (!q.some(x => x.action === "saveCheckins" && x.date === e.date)) { const k = CK.key(e), v = JSON.stringify((j.data["Check-ins"] || []).map(SHEET.ckIn));
         if (localStorage.getItem(k) !== v) { try { localStorage.setItem(k, v); } catch (_) {} changed.push(k); } }
       const by = {}; (j.data.Scores || []).forEach(x => { const sq = Math.max(0, (+x.Squad || 1) - 1); (by[sq] = by[sq] || { scores: {}, savedOn: e.date }).scores[x["Entry id"] || ("ck-" + x["Member #"])] = [x["Game 1"], x["Game 2"], x["Game 3"], x["Game 4"]].map(g => g === "" || g == null ? null : +g).filter((g, i, a) => g != null || a.slice(i).some(y => y != null)); });
       Object.keys(by).forEach(sq => { if (q.some(x => x.action === "saveScores" && x.date === e.date && String(x.squad - 1) === sq)) return; const k = SC.key(e, +sq), v = JSON.stringify(by[sq]);
-        const mine = SHEET.get(k, {}).scores || {}; Object.keys(mine).forEach(id => { if (/^ck-S\d/.test(id)) by[sq].scores[id] = mine[id]; }); const v2 = JSON.stringify(by[sq]);
+        const v2 = v;
         if (localStorage.getItem(k) !== v2) { try { localStorage.setItem(k, v2); } catch (_) {} changed.push(k); } });
       changed.forEach(key => window.dispatchEvent(new StorageEvent("storage", { key })));
     }).catch(() => {});
@@ -3315,7 +3314,7 @@ const CK = {
     if (!opts.desk) { const mine = CK.mine(e); if (!mine.includes(m.member + ":" + sq)) mine.push(m.member + ":" + sq); CK.put(`9tap-mycheckin:${e.date}`, mine); }
     return { r, f: f && r.lane && CK.pair(r.lane) === CK.pair(f.lane) ? f : null, repeat };
   },
-  // Demo: 20 made-up bowlers (member # S01...), tagged sample. They live only on this device: never sent to the sheet, kept through sheet refreshes.
+  // Demo: 20 made-up bowlers (member # S01...), tagged sample. For the demo they go to the sheet with Sample in the Sample column; clearSamples removes them (and their scores) again. Remove all of this after the demo (Greg).
   addSamples(e, sq) {
     const L = CK.list(e), used = new Set(L.map(r => r.member)), mk = [], R = (a, b) => a + Math.floor(Math.random() * (b - a + 1)), pickA = a => a[Math.floor(Math.random() * a.length)];
     let k = 1; const nextId = () => { while (used.has("S" + String(k).padStart(2, "0"))) k++; const id = "S" + String(k).padStart(2, "0"); used.add(id); return id; };
@@ -3335,7 +3334,8 @@ const CK = {
     if (sq > 0) [0, 8].forEach(i => { const o = Object.assign({}, mk[i], { squad: sq - 1, lane: null, paid: false, friend: "", at: mk[i].at - 3 * 3600000 }); L.push(o); CK.payIn(e, L, o); });
     CK.save(e, L); return mk.length;
   },
-  clearSamples(e) { CK.save(e, CK.list(e).filter(r => !r.sample)); CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => !/^S\d/.test(k))); },
+  clearSamples(e) { CK.save(e, CK.list(e).filter(r => !r.sample));
+    e.squads.forEach((_, sq) => { const v = SC.load(e, sq), ids = Object.keys(v.scores || {}).filter(id => /^ck-S\d/.test(id)); if (ids.length) { ids.forEach(id => delete v.scores[id]); SC.save(e, sq, v); } }); CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => !/^S\d/.test(k))); },
   // Marked paid at the Desk: now they get a lane (with their friend if possible). Unpaid: lane goes back.
   payIn(e, l, r) { r.paid = true; if (!r.lane) { let f = CK.friendOf(l, r.squad, r.friend, r); if (!(f && f.paid && f.lane)) f = l.find(o => o !== r && o.squad === r.squad && o.paid && o.lane && CK.friendOf([r], r.squad, o.friend, o) === r) || null; r.lane = CK.pick(e, r.squad, l, r, f && f.paid && f.lane ? f : null); } return r.lane; },
   unpay(r) { r.paid = false; r.lane = null; },
@@ -3796,7 +3796,7 @@ function wireDesk() {
   $("#dk-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-sq]"); if (!b) return; CK.deskSq = +b.dataset.sq; draw(); });
   const tsv = () => CK.rows(e, CK.deskSq).map(r => r.join("\t")).join("\n");
   $("#dk-csv").addEventListener("click", () => { const csv = CK.rows(e, null).map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `checkins-${e.date}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
-  $("#dk-demo").addEventListener("click", () => { const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They stay on this device and never go to the sheet.`); draw(); });
+  $("#dk-demo").addEventListener("click", () => { const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear sample check-ins removes them again.`); draw(); });
   $("#dk-clear").addEventListener("click", () => { const n = CK.list(e).filter(r => r.sample).length; if (!n) { msg("There are no sample check-ins to clear."); return; } if (!confirm(`Remove all ${n} sample check-ins (every squad)? Real check-ins stay.`)) return; CK.clearSamples(e); msg(`Cleared ${n} sample check-ins.`); draw(); });
   $("#dk-print").addEventListener("click", () => { document.body.classList.add("print-poster"); window.print(); setTimeout(() => document.body.classList.remove("print-poster"), 500); });
   draw();
@@ -3949,7 +3949,7 @@ function wireData() {
         <tr data-i="${i}" class="${r.paid ? "" : "unpaid"}">
           <td><select data-f="squad">${e.squads.map((t, k) => `<option value="${k}" ${k === r.squad ? "selected" : ""}>${v(CFG.normT(t))}</option>`).join("")}</select></td>
           <td class="num">${v(r.member)}</td>
-          <td><b>${v(r.first)} ${v(r.last)}</b>${r.isNew ? "<small>New member</small>" : ""}${r.sample ? "<small>Sample (this device only)</small>" : ""}</td>
+          <td><b>${v(r.first)} ${v(r.last)}</b>${r.isNew ? "<small>New member</small>" : ""}${r.sample ? "<small>Sample</small>" : ""}</td>
           <td><input data-f="avg" type="number" inputmode="numeric" value="${r.avg || ""}" class="dt-n"></td>
           <td><input data-f="paid" type="checkbox" ${r.paid ? "checked" : ""}></td>
           <td>${r.paid ? `<select data-f="lane">${CFG.order(cf).map(n => `<option value="${n}" ${n === r.lane ? "selected" : ""}>${n}</option>`).join("")}</select>` : `<span class="dt-wait">After paid</span>`}</td>
