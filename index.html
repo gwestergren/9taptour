@@ -704,6 +704,18 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-paid { font-weight: 700; }
 .dk-row.unpaid .dk-paid { background: #c7362b; color: #fff; border-radius: 6px; padding: 6px 10px; }
 .dk-paid.on { color: var(--good); }
+.dk-lanes { margin-bottom: 12px; padding: 14px 16px; }
+.dk-lanes-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin-bottom: 10px; }
+.dk-lanes-head span { color: var(--muted); font-size: .9rem; }
+.dk-lanes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.dk-pair { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.dk-pair-l { font-size: .72rem; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.dk-pair b { font-size: 1.35rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.dk-pair small { font-size: .72rem; color: var(--muted); }
+.dk-pair:not(.empty) { border-color: #9fc7a8; background: color-mix(in srgb, var(--good) 8%, var(--surface)); }
+.dk-pair.full { border-color: #c7362b; background: #fdf0ee; }
+.dk-pair.empty b { color: var(--muted); opacity: .5; }
+.dk-lanes .meta { margin-top: 8px; font-size: .8rem; }
 .dk-paybar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 10px 14px; margin-bottom: 10px; border-radius: var(--radius); background: #eaf5ec; border: 1px solid #b9dcc0; }
 .dk-paybar.warn { background: #fff1ef; border-color: #e2a19a; }
 .dk-paybar.warn > span:first-child b { color: #b3261e; }
@@ -3698,7 +3710,14 @@ function wireDesk() {
     const unpaid = rs.filter(r => !r.paid), paid = rs.filter(r => r.paid), feeSet = CFG.get(e).fee != null;
     const cash = paid.reduce((t, r) => t + CK.owes(e, r, l).total, 0), due = unpaid.reduce((t, r) => t + CK.owes(e, r, l).total, 0);
     const payBar = rs.length ? `<div class="dk-paybar${unpaid.length ? " warn" : ""}"><span><b>${unpaid.length ? `${unpaid.length} not paid` : "Everyone has paid"}</b>${unpaid.length ? ` · no lane and no scores until they pay${feeSet ? ` · ${money(due)} still due` : ""}` : ""}</span><span><b>${paid.length} paid</b>${feeSet ? ` · ${money(cash)} collected this squad` : ` · <a class="link-more" href="#setup">set the entry fee</a> to see totals`}</span></div>` : "";
-    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + (rs.length ? rs.map(r => `
+    // Read-only lane report: every lane pair in the setup, how many bowlers are on each lane of it.
+    const pairs = []; for (let n = cf.first; n <= cf.last; n++) { const p = CK.pair(n); let g = pairs.find(x => x.p === p); if (!g) pairs.push(g = { p, lanes: [] }); g.lanes.push(n); }
+    const onLanes = pairs.reduce((t, g) => t + g.lanes.reduce((a, n) => a + c[n], 0), 0), used = pairs.filter(g => g.lanes.some(n => c[n])).length, cap = CFG.cap(cf);
+    const laneRep = rs.length || sample ? `<div class="panel dk-lanes"><div class="dk-lanes-head"><b>Lane pairs</b><span>${onLanes} bowler${onLanes === 1 ? "" : "s"} on ${used} of ${pairs.length} pairs${unpaid.length ? ` · ${unpaid.length} waiting to pay (no lane yet)` : ""}</span></div>
+      <div class="dk-lanes-grid">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max);
+        return `<div class="dk-pair${t ? "" : " empty"}${full ? " full" : ""}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small></div>`; }).join("")}</div>
+      <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
+    $("#dk-body").innerHTML = payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} self check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad, plus ${sample} sample bowlers already on the rover page.</span></p>` + laneRep + (rs.length ? rs.map(r => `
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-k="${esc(r.member)}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
