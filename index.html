@@ -774,12 +774,13 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .dk-poster .btn { margin-top: 12px; }
 @media (max-width: 520px) { .dk-row { grid-template-columns: 1fr; } .dk-lane { grid-row: auto; } }
 @media print {
-  body.print-poster > *:not(main), body.print-poster .staff-head, body.print-poster #app > *:not(.sc-main), body.print-poster .sc-main > *:not(.dk-poster) { display: none !important; }
+  body.print-poster > *:not(main), body.print-poster .staff-head, body.print-poster #app > *:not(.sc-main):not(.su-main), body.print-poster .sc-main > *:not(.dk-poster), body.print-poster .su-main > *:not(.dk-poster) { display: none !important; }
   body.print-poster .dk-poster { display: block; text-align: center; border: 0; margin: 0; padding-top: 40px; }
   body.print-poster .dk-poster img { width: 360px; height: 360px; }
   body.print-poster .dk-poster h3 { font-size: 2.6rem; }
   body.print-poster .dk-poster .meta { font-size: 1.2rem; max-width: 40ch; margin-inline: auto; }
   body.print-poster .dk-poster .btn { display: none; }
+  body.print-poster .dk-poster .su-hint { display: none; }
 }
 .su-form h3 { margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
 .su-form h3:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
@@ -1855,6 +1856,13 @@ const VIEWS = {
           </div>
         </div>
       </form>
+      <div class="panel dk-poster" id="poster">
+        <img src="img/checkin-qr.svg" alt="QR code that opens the bowler check-in page" width="180" height="180">
+        <div><p class="eyebrow">Check-in poster</p><h3>Check in on your phone</h3>
+          <p class="meta">Open your camera and scan. Find your name, pick your squad, then pay at the desk to get your lane. New to the Tour? You can sign up on the same page.</p>
+          <button type="button" class="btn btn-primary" id="su-print">Print poster</button><p class="meta su-hint">Print it once: the same code always opens check-in for the next tournament, whatever the venue or squad times.</p></div>
+      </div>
+
       <p class="foot-note">Save keeps the setup for this tournament and as the venue's format. Saved venues keep each bowling center's usual format (lanes, fill, games, squads and check-in time) so you can load it next time and only change what's different. On a device connected to the Google Sheet (box above), Setup, venues and jackpots are saved to the sheet so every phone uses the same lanes and format; otherwise they stay on this device. The sample venues' lane numbers are placeholders.</p>
     </section>`;
   },
@@ -1897,12 +1905,6 @@ const VIEWS = {
       </div>
       <div id="dk-msg" class="toast" hidden></div>
       <div id="dk-body"></div>
-      <div class="panel dk-poster" id="poster">
-        <img src="img/checkin-qr.svg" alt="QR code that opens the bowler check-in page" width="180" height="180">
-        <div><p class="eyebrow">Desk poster</p><h3>Check in on your phone</h3>
-          <p class="meta">Open your camera and scan. Find your name, pick your squad, then pay at the desk to get your lane. New to the Tour? You can sign up on the same page.</p>
-          <button type="button" class="btn btn-primary" id="dk-print">Print poster</button></div>
-      </div>
       <p class="foot-note">A bowler gets a lane automatically when you tick <b>Paid</b> (never before), following the <a class="link-more" href="#setup">tournament setup</a> (start lane, direction and bowlers per lane), next to a friend when they name one. Change a lane here, or use <b>Bowl with</b> to put friends on the same pair. Every change shows up on the rovers' score entry. Everything you change here saves to the Google Sheet by itself, so there is no need to edit the sheet directly.</p>
     </section>`;
   },
@@ -3428,6 +3430,7 @@ const CKCTL = {
 let setup_tick = 0;
 function wireSetup() {
   clearInterval(setup_tick);
+  { const pp = $("#su-print"); if (pp) pp.addEventListener("click", () => { document.body.classList.add("print-poster"); window.print(); setTimeout(() => document.body.classList.remove("print-poster"), 500); }); }
   const e = nextEvent, c = CFG.get(e);
   // Venue: the tournament remembers its venue; a new setup starts from the venue's saved format.
   if (c.venueName && (!VEN.find(c.venue) || VEN.find(c.venue).name !== c.venueName)) { const v = VEN.byName(c.venueName); if (v) c.venue = v.id; }
@@ -3792,7 +3795,7 @@ function wireDesk() {
           <div class="field dk-grp"><span>Jackpot</span><div class="dk-boxes"><label class="dk-box"><input type="checkbox" data-act="jp" ${r.jackpot ? "checked" : ""}>$4</label></div></div>
           <div class="field dk-grp"><span>Payment</span><div class="dk-boxes"><label class="dk-box dk-paybox${r.paid ? " on" : ""}"><input type="checkbox" data-act="paid" ${r.paid ? "checked" : ""}>${r.paid ? "Paid" : `Not paid${CK.owes(e, r, l).known ? " · " + owe(r) : ""}`}</label></div></div>
         </div>
-      </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the poster below with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
+      </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the check-in poster (printed from Setup) with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
     // Lane pair tiles: tap one to list just the bowlers on those two lanes (tap again, or the ✕ chip, to show everyone)
     $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
@@ -3847,7 +3850,7 @@ function wireDesk() {
   $("#dk-csv").addEventListener("click", () => { const csv = CK.rows(e, null).map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `checkins-${e.date}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); });
   $("#dk-demo").addEventListener("click", () => { const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear sample check-ins removes them again.`); draw(); });
   $("#dk-clear").addEventListener("click", () => { const n = CK.list(e).filter(r => r.sample).length; if (!n) { msg("There are no sample check-ins to clear."); return; } if (!confirm(`Remove all ${n} sample check-ins (every squad)? Real check-ins stay.`)) return; CK.clearSamples(e); msg(`Cleared ${n} sample check-ins.`); draw(); });
-  $("#dk-print").addEventListener("click", () => { document.body.classList.add("print-poster"); window.print(); setTimeout(() => document.body.classList.remove("print-poster"), 500); });
+
   draw();
   const onStore = ev => { if (!document.getElementById("dk-body")) return window.removeEventListener("storage", onStore); if (ev.key === CK.key(e)) draw(); };
   window.addEventListener("storage", onStore);
