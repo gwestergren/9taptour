@@ -42,6 +42,7 @@ function newStaffKey() {
 
 function doGet(e) {
   try {
+    fixMembers();
     const p = (e && e.parameter) || {};
     if (p.ping) return out({ ok: true, now: new Date().toISOString() });
     const want = (p.tabs ? String(p.tabs).split(',') : PUBLIC_TABS).map(s => s.trim()).filter(t => PUBLIC_TABS.indexOf(t) >= 0);
@@ -61,6 +62,7 @@ function doGet(e) {
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
+    fixMembers();
     const body = JSON.parse(e.postData.contents || '{}');
     const act = body.action;
     if (act !== 'checkin' && !isStaff(body.key)) return out({ ok: false, error: 'Staff key needed' });
@@ -182,6 +184,20 @@ function isStaff(key) {
 function out(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function tz() { return SpreadsheetApp.getActive().getSpreadsheetTimeZone(); }
 function today() { return Utilities.formatDate(new Date(), tz(), 'yyyy-MM-dd'); }
+// One-time tidy of the Members tab: header "Nickname / other names" becomes "Nicknames", and each cell keeps only
+// names that aren't already the bowler's first or last name ("Steve Nolan" for Steven Nolan -> "Steve").
+function nickClean(first, last, str) {
+  const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ''), own = new Set((first + ' ' + last).split(/\s+/).map(k).filter(Boolean).concat(['jr', 'sr', 'ii', 'iii'])), seen = new Set();
+  return String(str || '').split(/[,;()\/]+/).map(p => p.split(/\s+/).filter(w => k(w) && !own.has(k(w))).join(' ').trim())
+    .filter(p => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase())).join(', ');
+}
+function fixMembers() {
+  const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
+  const h = headers(s), c = h.indexOf('Nickname / other names'); if (c < 0) return;
+  const n = s.getLastRow() - 1, fi = h.indexOf('First name'), li = h.indexOf('Last name');
+  if (n > 0) { const v = s.getRange(2, 1, n, h.length).getValues(); s.getRange(2, c + 1, n, 1).setValues(v.map(r => [nickClean(r[fi], r[li], r[c])])); }
+  s.getRange(1, c + 1).setValue('Nicknames');
+}
 function sheet(name) { const s = SpreadsheetApp.getActive().getSheetByName(name); if (!s) throw new Error('No tab named ' + name); return s; }
 function headers(s) { return s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0].map(String); }
 
