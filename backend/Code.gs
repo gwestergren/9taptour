@@ -202,13 +202,66 @@ function fixMembers() {
   }
   const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1); // the Tour doesn't keep a member's city
   dedupeMembers(s);
+  drivePhotos(s);
   sortMembers(s);
 }
 // Same person twice ("Charles Daughery Jr" / "Charles Daughery Jr."): names that match once case, punctuation and spacing
 // are ignored. Keeps one row (the one with a Member #), fills its blanks from the others, joins Nicknames / Found in / Notes,
 // and renames the dropped spelling on the other tabs so the title counts still add up. Jr and Sr stay different people.
 // Two different Member #s are never merged.
-function nameKey(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
+function rawKey(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim(); }
+function nameKey(n) { const k = rawKey(n); return SAME_PERSON[k] || k; }
+// Different spellings Greg confirmed are one person (name key -> the key of the name to keep).
+const SAME_PERSON = { 'jay panette': 'jay pannette' };
+// Member photos live in Greg's Drive folder 9taptour/images/members (copied there Nov 27), one per bowler, named
+// <first-last>.jpg (a member # is added on the end if two members share a name). Photo links that still point
+// at the website's img/ folder are switched to the Drive file.
+const PHOTO_FOLDER = 'https://drive.google.com/drive/folders/1FUGpwZD3BHdoAtrH9wQgizEeJ4WF8CY5';
+const DRIVE_PHOTOS = {
+  'alex-cady': '18wuPSCjEHbKmhzRhN1IYFl_CRlSEUSTs',
+  'ashley-kochel': '10CDIVYUVqBMzzsL_zc9RqKhAQhv1PpJM',
+  'austin-forrest': '1YUNMWSr7g-Dfw3AdHtMPta5TAhMtxiuV',
+  'brandon-parker': '1GqX0aaPLw-APiShBwWFsDFfaHsvOEiyd',
+  'brian-ward': '18vWWYuPVq6gbmrApEs_Jor_QdD_CgmVy',
+  'chandra-martinez': '15bv51Ff8s0o1h5tQFpl58TCjjUts1Fmp',
+  'chanyn-pauole': '1J3Iwx5yVBHVVvSw1Csr8bXcYJb5ObKb0',
+  'charles-daughery-jr': '1r-94mCEEIAs9SE08Iejf7RXe0mV84UOr',
+  'david-pettengill': '1Sou0YmaY2-470M3Cx0CNlhtiaiOPe_EE',
+  'david-sims': '1BY-MjhSJiJl3yn2zIcXYTu_X4nNHJQv0',
+  'david-suom': '1oGerKUlJ6TqSuFBbgwLc9j10gEkwIoNz',
+  'dean-hale-jr': '1QQAb8YQVt5MdVoxEZQOY5WaOHJQ_u5Dv',
+  'dennis-latham': '1ZwF9pwtTm0PDH_HhAWKoF6Td2Md-dItE',
+  'eddie-burdsall': '1H_1qCQYFy7fq_LsoqqxkWxMUbgYAdGXs',
+  'eric-arkoncel': '1CYpcf_z6QwSLq1wDei1zAtAxwaGWpDjz',
+  'james-mitchell': '1GGw91TlOAfb0reC80CbOWOeUVVWB4K0P',
+  'joe-fincher-jr': '1mWUynxcPFUC77U7LTN9tbTA-_gXInLcu',
+  'joel-brown': '1g5ne9bGSB-1Uqw0T2jakQ-es64IO3UkU',
+  'kim-pohlot': '1uZtycYkg0Onuxl4Sa2PO0kv3r9hRJEZi',
+  'lii-kalima-marion': '1VEgu8_QgrOnoxFu5F6UqEWFsxHSfe2pF',
+  'marilyn-mateo': '1tF7Gn6O5-6GccBcxgVpekulC7-4ZOdoH',
+  'michael-miller': '1g57-ufvr1cw6rUA4erk69MBroYGpTOVN',
+  'miles-nerona': '1uZMtawq7eH60KVgN74IzMIiNxtQR1PLJ',
+  'montana-xaysana': '1tfXk7G-sNSn2raWRFjpmg5rQzXXZHj72',
+  'paul-kelly': '1oHvo-C_qHqOvT1XCaj9-BwgyPbf-ixJR',
+  'remi-serrano': '1RANvyQcQQxlffHaHydXudDIsuQ66lj-_',
+  'rene-malicdan': '107-uXAsmhKQK5MShrNNoaMkd0NBOD4We',
+  'rob-hess': '1lYK1dnvQoot32lB0iUs8phpe3KReiCeO',
+  'ruta-hert': '1wv7-cRTut5WWV-pqSAzXzKEoBlvdcmCL',
+  'samson-ibale': '1NIs3o-RmdjiYsR8lgpwuDo63mdn1LSJU',
+  'serina-reese': '1oxGQ--sG-vTKK_AK3QnLnsm5AEjuezYL',
+  'skip-shear-jr': '1hr6ll023R0ZUNRj1fV0tzCqDm9r0Gwt0',
+  'stephanie-perrine': '1ZiUoaQq7y85fgQ3ddIJA55unuS9_JNRW',
+  'steve-nolan': '1CLEdAWfgUI1ANCqh1kg62raitmxtnHat',
+  'william-poole': '1OJ-42NzoUvy0k7Gphzlvz0sIivAX0fcF',
+  'yoel-green': '1DhEnxj3zHtccdzKmPDnsScIlICBqa-EP'
+};
+function drivePhotos(s) {
+  const h = headers(s), c = h.indexOf('Photo link'), n = s.getLastRow() - 1; if (c < 0 || n < 1) return;
+  const r = s.getRange(2, c + 1, n, 1), v = r.getValues(); let ch = false;
+  v.forEach(x => { const m = String(x[0] || '').match(/\/img\/(?:members\/)?(?:champ-)?([a-z0-9-]+?)(?:-\d{4}-\d\d-\d\d)?\.jpg/i), id = m && (DRIVE_PHOTOS[m[1].toLowerCase()] || (m[1].toLowerCase() === 'skip-shear' && DRIVE_PHOTOS['skip-shear-jr']));
+    if (id) { x[0] = 'https://drive.google.com/file/d/' + id + '/view'; ch = true; } });
+  if (ch) r.setValues(v);
+}
 function dedupeMembers(s) {
   s = s || sheet('Members'); const h = headers(s), n = s.getLastRow() - 1, fu = h.indexOf('Full name'), mi = h.indexOf('Member #');
   if (n < 2 || fu < 0) return;
@@ -218,13 +271,15 @@ function dedupeMembers(s) {
   Object.keys(groups).forEach(k => {
     const g = groups[k]; if (g.length < 2 || new Set(g.map(num).filter(Boolean)).size > 1) return;
     g.sort((a, b) => (num(b) ? 1 : 0) - (num(a) ? 1 : 0));
-    const keep = g[0], row = vals[keep].slice(), names = g.map(i => String(vals[i][fu]).trim()), best = g[Math.max(0, names.findIndex(x => x.indexOf('.') < 0))];
+    const keep = g[0], row = vals[keep].slice(), names = g.map(i => String(vals[i][fu]).trim()), best = g[[x => rawKey(x) === k && x.indexOf('.') < 0, x => rawKey(x) === k, x => x.indexOf('.') < 0, () => true].map(f => names.findIndex(f)).find(x => x >= 0)];
     g.slice(1).forEach(i => h.forEach((col, c) => {
       if (forms[keep][c] || forms[i][c] || blank(vals[i][c])) return;
       if (blank(row[c])) row[c] = vals[i][c];
       else if (/^(Nicknames|Nickname \/ other names|Found in|Notes)$/.test(col)) row[c] = [...new Set(String(row[c]).split(/\s*,\s*/).concat(String(vals[i][c]).split(/\s*,\s*/)).filter(Boolean))].join(', ');
     }));
     ['First name', 'Last name', 'Full name'].forEach(col => { const c = h.indexOf(col); if (c >= 0) row[c] = vals[best][c]; });
+    const nc = h.indexOf('Nicknames') >= 0 ? h.indexOf('Nicknames') : h.indexOf('Nickname / other names'), other = names.filter(x => rawKey(x) !== rawKey(vals[best][fu])); // a different spelling stays findable
+    if (nc >= 0 && other.length && !forms[keep][nc]) row[nc] = nickClean(row[h.indexOf('First name')], row[h.indexOf('Last name')], [row[nc]].concat(other).filter(Boolean).join(', '));
     h.forEach((col, c) => { if (!forms[keep][c] && row[c] !== vals[keep][c]) s.getRange(keep + 2, c + 1).setValue(row[c]); });
     names.forEach(x => { if (x !== String(vals[best][fu]).trim()) ren[x] = String(vals[best][fu]).trim(); });
     kill.push(...g.slice(1));
