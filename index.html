@@ -838,6 +838,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-col { display: grid; gap: 16px; }
 .su-card h3 { margin: 0 0 12px; }
 .su-intro h2 { margin: 0 0 2px; font-size: 1.6rem; } .su-intro .meta { margin: 0; }
+.su-evrow { display: grid; gap: 6px; } .su-evpick select { min-height: 52px; font: 700 1.05rem var(--font-body); max-width: 520px; width: 100%; }
 .su-tabs button { flex: 1 1 0; }
 .su-main .dk-poster { margin-top: 16px; }
 .su-sec { display: flex; gap: 14px; align-items: flex-start; margin-top: 22px; padding-top: 18px; border-top: 3px solid var(--maple); }
@@ -1579,6 +1580,7 @@ const mapsUrl = e => "https://www.google.com/maps/dir/?api=1&destination=" + enc
 
 function eventRow(e, withMaps) {
   const st = eventStatus(e), isNext = e === nextEvent, d = parse(e.date);
+  if (st !== "past") e = CK.eventFor(e); // staff Setup (Tournament tab) can change an upcoming tournament's venue and squads
   const side = st === "past"
     ? `<span class="tag muted">Completed</span><a class="link-more" href="#results">Results</a>`
     : e.invite ? `<span class="tag">Invitation only</span>`
@@ -1836,7 +1838,7 @@ const VIEWS = {
   },
 
   setup() {
-    const e = nextEvent, c = CFG.get(e), t = TOUR.get(), tab = SU.tab;
+    const e = SU.event(), c = CFG.get(e), t = TOUR.get(), tab = SU.tab, ups = SU.list();
     const seg = (id, opts, cur) => `<div class="sc-seg" id="${id}">${opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
     const step = (id, v, lbl) => `<div class="su-step" data-step="${id}"><button type="button" data-d="-1" aria-label="Fewer ${lbl}">−</button><output id="${id}">${v}</output><button type="button" data-d="1" aria-label="More ${lbl}">+</button></div>`;
     const combo = (id, ph) => `<div class="su-combo"><label class="sr-only" for="${id}-q">Bowling center</label><input id="${id}-q" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}-list" placeholder="${ph}" autocomplete="off" enterkeyhint="search"><div class="su-vlist" id="${id}-list" role="listbox" hidden></div></div>`;
@@ -1844,13 +1846,14 @@ const VIEWS = {
     return `
     <section class="page-head sc-head su-head"><div class="wrap"><h1>Setup</h1></div></section>
     <div class="sc-bar"><div class="wrap"><div class="sc-row"><div class="sc-seg su-tabs" id="su-tabs">
-      <button type="button" data-tab="t" aria-pressed="${tab === "t"}">Tournament<small>venue, games, squads</small></button>
+      <button type="button" data-tab="t" aria-pressed="${tab === "t"}">Tournaments<small>venue, games, squads</small></button>
       <button type="button" data-tab="v" aria-pressed="${tab === "v"}">Venues<small>lanes and filling</small></button>
       <button type="button" data-tab="o" aria-pressed="${tab === "o"}">Tour<small>every tournament</small></button>
     </div></div></div></div>
     <section class="wrap su-main">
       <form id="su-t" class="su-pane" novalidate ${tab === "t" ? "" : "hidden"}>
-        <div class="su-intro su-wide"><h2>Tournament: ${esc(longDate(e.date))}</h2><p class="meta">The next tournament on the schedule. Pick its venue, games and squad times, then confirm it so the Desk can open check-in.</p></div>
+        <div class="su-intro su-wide su-evrow"><div class="field su-evpick"><label for="su-ev">Tournament</label><select id="su-ev">${ups.map(x => `<option value="${x.date}" ${x.date === e.date ? "selected" : ""}>${esc(new Date(x.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${esc(CK.eventFor(x).center)}${x === nextEvent ? " (next)" : ""}</option>`).join("")}</select></div>
+          <p class="meta">Every upcoming tournament on the schedule. Each one keeps its own venue, games and squad times, saved to the Tour's data. The Desk uses the next one${e === nextEvent ? "" : `; this is a later one, so check-in for it opens on its own day`}.</p></div>
         <div class="panel su-card"><h3>Venue</h3>${combo("su-tv", "Type a bowling center name")}<p class="su-vnote" id="su-tv-note"></p></div>
         <div class="panel su-card"><h3>Games</h3>
           <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
@@ -3047,7 +3050,7 @@ const CFG = {
   sig(c) { return JSON.stringify([(c.venue && VEN.find(c.venue) || {}).name || c.venueName || "", c.first, c.last, c.dir, c.max, c.fill, !!c.overflow, c.overflowMax, c.games, c.count, (c.squads || []).map(CFG.normT), c.openMins, c.fee, c.fee2]); },
   confirmed(e) { const c = CFG.get(e); return !!c.confirmedSig && c.confirmedSig === CFG.sig(c); },
   problems(c) { const o = [], sq = c.squads || [], t = sq.map(CFG.parseT);
-    if (!c.venueName && !(c.venue && VEN.find(c.venue))) o.push("Pick the venue (Tournament tab)");
+    if (!c.venueName && !(c.venue && VEN.find(c.venue))) o.push("Pick the venue (Tournaments tab)");
     if (!(c.first >= 1) || !(c.last > c.first)) o.push("Lane range doesn't look right (Venues tab)");
     if (!(c.max >= 1)) o.push("Set bowlers per lane (Venues tab)");
     if (!sq.length) o.push("Add at least one squad time");
@@ -3345,7 +3348,9 @@ const CK = {
   event() { return CK.eventFor(nextEvent); },
   // The venue is matched by name first (venue ids differ from device to device), then by this device's id.
   eventFor(base) { const c = CFG.get(base), v = (c.venueName && VEN.byName(c.venueName)) || (!c.venueName && c.venue && VEN.find(c.venue));
-    return Object.assign({}, base, { squads: c.squads }, v ? { center: v.name, city: v.city || base.city } : c.venueName ? { center: c.venueName } : {}); },
+    const o = Object.assign({}, base, { squads: c.squads }, v ? { center: v.name, city: v.city || base.city } : c.venueName ? { center: c.venueName } : {});
+    if (o.center !== base.center) { const same = DATA.events.find(x => x.center === o.center && x.addr); o.addr = same ? same.addr : ""; o.phone = same ? same.phone : ""; } // the venue changed: use its own address
+    return o; },
   members() {
     if (!CK._m) {
       let s = 29547; const rnd = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
@@ -3533,15 +3538,17 @@ const CKCTL = {
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
 };
-const SU = { tab: "t" };
+const SU = { tab: "t", date: null,
+  list() { return DATA.events.filter(x => eventStatus(x) !== "past"); },
+  event() { return SU.list().find(x => x.date === SU.date) || nextEvent; } };
 let setup_tick = 0;
 // Setup has three tabs, each saved on its own (Greg, Nov 27): Tournament (venue, games, squads, jackpots, confirm),
 // Venues (each center's lanes and how check-in fills them) and Tour (entry fees, check-in timing, sheet, poster).
 function wireSetup() {
   clearInterval(setup_tick);
   { const pp = $("#su-print"); if (pp) pp.addEventListener("click", () => { document.body.classList.add("print-poster"); window.print(); setTimeout(() => document.body.classList.remove("print-poster"), 500); }); }
-  const e = nextEvent, c = CFG.get(e);
-  const dirty = { t: false, v: false, o: false }, NAMES = { t: "Tournament", v: "Venues", o: "Tour" };
+  const e = SU.event(), c = CFG.get(e);
+  const dirty = { t: false, v: false, o: false }, NAMES = { t: "Tournaments", v: "Venues", o: "Tour" };
   const say = (k, t) => { const m = $("#su-" + k + "-msg"); m.hidden = !t; m.innerHTML = t || ""; };
   const st = k => { $("#su-" + k + "-state").innerHTML = `<span class="su-dot${dirty[k] ? " wait" : " on"}"></span><span><b>${dirty[k] ? "Unsaved changes" : "Saved"}</b>${k === "t" ? ` · open and close check-in on the <a class="link-more" href="#desk">Desk</a>` : ""}</span>`;
   };
@@ -3550,6 +3557,7 @@ function wireSetup() {
   const flash = k => { const b = $("#su-" + k + "-save"), t0 = b.textContent; b.textContent = "Saved ✓"; b.classList.add("ok"); setTimeout(() => { if (b.isConnected) { b.textContent = t0; b.classList.remove("ok"); } }, 2500); };
   const tabs = () => { document.querySelectorAll("#su-tabs [data-tab]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tab === SU.tab))); ["t", "v", "o"].forEach(k => $("#su-" + k).hidden = SU.tab !== k); $("#poster").hidden = SU.tab !== "o"; if (SU.tab === "t") tSum(); };
   const go = k => { SU.tab = k; tabs(); scrollTo(0, 0); };
+  $("#su-ev").addEventListener("change", ev => { if (dirty.t && !confirm("Drop your unsaved changes to this tournament?")) { ev.target.value = e.date; return; } SU.date = ev.target.value; SU.tab = "t"; route(); });
   $("#su-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-tab]"); if (b) go(b.dataset.tab); });
 
   /* venue search box (both tabs use one) */
@@ -3650,7 +3658,7 @@ function wireSetup() {
     n.innerHTML = v ? `${esc(fmtLine(VEN.fmt(Object.assign({}, DEF, v.fmt))))}. <button type="button" class="ck-back" id="su-tv-edit">Change in Venues →</button>` : "Type the bowling center's name. New center? Add it on the Venues tab.";
     const b = $("#su-tv-edit"); if (b) b.addEventListener("click", () => { if (vid !== c.venue && (!dirty.v || confirm("Drop your unsaved venue changes?"))) vLoad(c.venue); go("v"); }); };
   const tRedraw = combo("su-tv", () => c.venue, id => { const v = VEN.find(id); c.venue = id; c.venueName = v ? v.name : ""; // the venue is saved the moment it's picked
-    const y = CFG.get(e); y.venue = id; y.venueName = c.venueName; y.saved = true; CFG.put(e, y); tNote(); tSum(); say("t", v ? `Venue set to ${esc(v.name)} and saved. Its lanes come from the Venues tab.` : ""); }, name => box("add", name));
+    const y = CFG.get(e); y.venue = id; y.venueName = c.venueName; y.saved = true; CFG.put(e, y); tNote(); tSum(); { const o = $("#su-ev").selectedOptions[0]; if (o && v) o.textContent = o.textContent.replace(/ · .*?( \(next\))?$/, (m, n) => ` · ${v.name}${n || ""}`); } say("t", v ? `Venue set to ${esc(v.name)} and saved. Its lanes come from the Venues tab.` : ""); }, name => box("add", name));
   const tPick = (id, key) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b || b.disabled) return; c[key] = +b.dataset.v; if (key === "games") c.count = Math.min(3, c.games); touch("t"); });
   tPick("su-games", "games"); tPick("su-count", "count");
   function tSum() {
@@ -3668,7 +3676,7 @@ function wireSetup() {
     const other = ["v", "o"].filter(k => dirty[k]).map(k => NAMES[k]);
     box.className = "panel su-card su-wide su-confirm " + (ok ? "green" : pr.length ? "red" : "amber");
     box.innerHTML = `<h3>Confirm setup for check-in</h3>${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing the tournament, its venue's lanes or the Tour settings means confirming again.</p>`
-      : pr.length ? `<p><b>Not ready.</b> Fix these, then confirm. The Desk can't open check-in until you do.</p><ul>${pr.map(t => { const m = /\((Tour|Venues|Tournament) tab\)$/.exec(t); return `<li>${esc(t.replace(/ \(\w+ tab\)$/, ""))}${m ? ` · <button type="button" class="ck-back" data-go="${{ Tour: "o", Venues: "v", Tournament: "t" }[m[1]]}">${m[1]} tab →</button>` : ""}</li>`; }).join("")}</ul>`
+      : pr.length ? `<p><b>Not ready.</b> Fix these, then confirm. The Desk can't open check-in until you do.</p><ul>${pr.map(t => { const m = /\((Tour|Venues|Tournaments) tab\)$/.exec(t); return `<li>${esc(t.replace(/ \(\w+ tab\)$/, ""))}${m ? ` · <button type="button" class="ck-back" data-go="${{ Tour: "o", Venues: "v", Tournaments: "t" }[m[1]]}">${m[1]} tab →</button>` : ""}</li>`; }).join("")}</ul>`
       : `<p>Check the summary above: venue and lanes, games, squads and entry fees. When it's right, confirm it. The Desk can't open check-in until you do.</p>`}
       ${other.length ? `<p class="meta">Unsaved changes on the ${other.join(" and ")} tab${other.length > 1 ? "s" : ""} don't count until you save them.</p>` : ""}
       ${ok ? "" : `<button type="button" class="btn btn-primary" id="su-ok" ${pr.length ? "disabled" : ""}>Confirm setup${dirty.t ? " (saves the tournament)" : ""}</button>`}`;
