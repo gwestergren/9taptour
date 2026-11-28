@@ -1978,7 +1978,7 @@ const VIEWS = {
           <p class="meta">Open your camera and scan. Find your name, pick your squad, then pay at the desk to get your lane. New to the Tour? You can sign up on the same page.</p>
           <button type="button" class="btn btn-primary" id="su-print">Print poster</button><p class="meta su-hint">Print it once: the same code always opens check-in for the next tournament, whatever the venue or squad times.</p></div>
       </div>
-      <p class="foot-note">Each tab saves on its own. On a device connected to the Google Sheet, every save goes to the sheet so all phones use the same setup. The sample venues' lane numbers are placeholders.</p>
+      <p class="foot-note" style="max-width:none">Each tab saves on its own. On a device connected to the Google Sheet, every save goes to the sheet so all phones use the same setup.</p>
     </section>`;
   },
 
@@ -3661,6 +3661,13 @@ function wireSetup() {
     if (!v || (x.center === v.name && x.squads.map(CFG.normT).join() === sq.join())) return;
     const nev = Object.assign({}, x, { center: v.name, city: v.city || x.city, squads: sq }); sPut(x.date, { ev: nev }); DATA.events = schedApply(DATA.events);
     SHEET.send({ action: "saveEvent", date: x.date, was: "", center: nev.center, city: nev.city, squads: sq.join(", "), note: x.tag || "", invite: !!x.invite }); };
+  // Put a removed tournament back on the schedule (Undo, and the one-time Dec 13 restore below).
+  let sGone = null;
+  function sBack(x) { sPut(x.date, { ev: x }); DATA.events = schedApply(DATA.events.filter(y => y.date !== x.date).concat(x));
+    SHEET.send({ action: "saveEvent", date: x.date, was: "", center: x.center, city: x.city || "", squads: (x.squads || []).join(", "), note: x.tag || "", invite: !!x.invite }); }
+  // Nov 28: the Dec 13 Year End Championship went missing from the sheet's Schedule tab. Put it back once, from a sheet-connected device.
+  try { if (SHEET.key() && SHEET.ready() && !localStorage.getItem("9tap-fix-1213") && TODAY_ISO <= "2026-12-13" && !DATA.events.some(x => x.date === "2026-12-13")) {
+    sBack({ date: "2026-12-13", center: "Bowlero Lanes", city: "Lakewood", addr: "", phone: "", squads: ["9:00 AM"], tag: "Year End Championship", invite: true }); localStorage.setItem("9tap-fix-1213", "1"); setTimeout(() => { sList(); $("#su-ev").innerHTML = SU.opts(e.date); }); } } catch (_) {}
   $("#su-s-add").addEventListener("click", () => sOpen(null));
   $("#su-s-cancel").addEventListener("click", () => { $("#su-s-form").hidden = true; });
   $("#su-s-list").addEventListener("click", ev => {
@@ -3672,7 +3679,8 @@ function wireSetup() {
       sPut(x.date, { del: true }); DATA.events = DATA.events.filter(y => y.date !== x.date); SHEET.send({ action: "removeEvent", date: x.date });
       if (SU.date === x.date) SU.date = null;
       if (x.date === e.date || x.date === nextEvent.date) { location.reload(); return; } // the open or next tournament went: redraw everything
-      sList(); $("#su-ev").innerHTML = SU.opts(e.date); $("#su-s-list").insertAdjacentHTML("afterbegin", `<p class="toast">Removed ${esc(sFmt(x.date))}.</p>`); }
+      sGone = x; sList(); $("#su-ev").innerHTML = SU.opts(e.date); $("#su-s-list").insertAdjacentHTML("afterbegin", `<p class="toast">Removed ${esc(sFmt(x.date))} · ${esc(x.center)}. <button type="button" class="ck-back" data-sundo>Undo</button></p>`); }
+    if (ev.target.closest("[data-sundo]") && sGone) { const x = sGone; sGone = null; sBack(x); sList(); $("#su-ev").innerHTML = SU.opts(e.date); $("#su-s-list").insertAdjacentHTML("afterbegin", `<p class="toast">Put back ${esc(sFmt(x.date))} · ${esc(x.center)}.</p>`); }
   });
   $("#su-s-form").addEventListener("submit", ev => { ev.preventDefault();
     const d = $("#su-s-date").value, name = $("#su-s-ven").value, v = VEN.byName(name), sq = SSQ.now();
