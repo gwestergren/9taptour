@@ -4303,7 +4303,7 @@ function wireData(mode) {
     $("#dt-info").textContent = `${memRows().length} members · ${memRows().filter(r => String(r["Member #"] || "").trim()).length} with a member #`;
     const F = [["Member #", "num"], ["First name"], [SHEET.NICK], ["Last name"], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]], cell = (r, k) => k === SHEET.NICK ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k];
     const ed = r => r._new || editK === String(r["Full name"] || ""), cols = F.slice(0, 4).concat([["_act"]], F.slice(4));
-    $("#dt-grid").innerHTML = `<thead><tr>${cols.map(([k]) => `<th>${k === "_act" ? "" : ({ "Handicap override": "Hdcp", "Average": "Avg" })[k] || k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
+    $("#dt-grid").innerHTML = `<thead><tr>${cols.map(([k]) => `<th>${k === "_act" ? "" : ({ "Handicap override": "Hdcp" })[k] || k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
       <tr data-k="${v(r["Full name"] || "")}" class="${r._new ? "new " : ""}${ed(r) ? "editing" : ""}">${cols.map(([k, t]) => k === "_act"
         ? `<td class="dt-act">${ed(r) ? `<button type="button" class="btn btn-primary dt-btn" data-save>Save</button><button type="button" class="ck-back" data-cancel>Cancel</button>` : `<button type="button" class="ck-back" data-edit>Edit</button><button type="button" class="ck-back dt-delbtn" data-delm>Delete</button>`}</td>`
         : ed(r) ? `<td><input data-f="${v(k)}" value="${v(cell(r, k))}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}${k === "Handicap override" && +r.Average ? ` placeholder="${CK.hcp(+r.Average)}" title="Empty = ${CK.hcp(+r.Average)} from the average"` : ""}></td>`

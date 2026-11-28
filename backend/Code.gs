@@ -20,8 +20,10 @@ const PUBLIC_TABS = ['Tournaments', 'Results', 'Members', 'Jackpot Winners', 'Po
 const PRIVATE_COLS = ['Phone', 'Email'];           // never sent out by doGet
 // Old JSON copy columns (removed Nov 28: every value now has its own column, and the site rebuilds the setup from them).
 const SETUP_JSON = 'Setup (site data)', VENUE_JSON = 'Format (site data)';
-// Members tab column names (Greg, Nov 28): "Avg" and "Hdcp" (blank Hdcp = worked out from Avg). The site sends the old names.
-const MEM_ALIAS = { 'Average': 'Avg', 'Handicap override': 'Hdcp' };
+// Members tab (Greg, Nov 28): columns Member #, First name, Nickname, Last name, Full name, Average, Hdcp, Bonus pins, then the rest.
+// "Hdcp" is the handicap set by hand (blank = worked out from Average). The site still sends "Handicap override".
+const MEM_ALIAS = { 'Handicap override': 'Hdcp' };
+const MEM_ORDER = ['Member #', 'First name', 'Nickname', 'Last name', 'Full name', 'Average', 'Hdcp', 'Bonus pins'];
 // Tabs with dates are kept oldest at the top, newest at the bottom (Greg, Nov 28). Sort keys per tab, in order.
 const DATE_SORT = { 'Tournaments': ['Date'], 'Schedule': ['Date'], 'Results': ['Date', 'Place'], 'Jackpot Winners': ['Date'], 'Check-ins': ['Date'], 'Scores': ['Date'],
   'Pots': ['Email sent'], 'Recaps': ['Tournament date'], 'BOTY': ['Season', 'Rank'] };
@@ -257,7 +259,7 @@ function fixDates() {
 // One-time tidy-ups. Each runs on its own, so one failing never stops the site from reading or saving.
 // They run once per FIX_VER, and only one request at a time: two requests tidying at once (no lock) is how the Members
 // tab lost its Average column on Nov 28 (both removed "the City column", so the second one removed Average).
-const FIX_VER = 'fix-2026-11-28d';
+const FIX_VER = 'fix-2026-11-28e';
 function runFixes() {
   let lock = null;
   try {
@@ -286,21 +288,16 @@ function fixSetupCols() {
   });
   P.setProperty('setupCols1', '1');
 }
-// One-time (Nov 28): Members gets an "Avg" column just left of the handicap column, which is renamed "Hdcp".
-// An "Average" column (added at the far right by an older save) moves into Avg.
+// One-time (Nov 28): Members gets an "Average" column (lost Nov 28) and "Hdcp" (was "Handicap override"), header "Nickname",
+// and the columns go in Greg's order (MEM_ORDER). Columns are moved whole, so the formulas follow them; everything reads by header.
 function fixMemberCols() {
-  const P = PropertiesService.getScriptProperties(); if (P.getProperty('memCols2')) return;
+  const P = PropertiesService.getScriptProperties(); if (P.getProperty('memCols3')) return;
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
-  let h = headers(s); const hi = h.indexOf('Handicap override') >= 0 ? h.indexOf('Handicap override') : h.indexOf('Hdcp');
-  if (hi >= 0) s.getRange(1, hi + 1).setValue('Hdcp');
-  { const ni = h.indexOf('Nicknames'); if (ni >= 0) s.getRange(1, ni + 1).setValue('Nickname'); } // Greg: "Nickname", one word
-  if (h.indexOf('Avg') < 0) {
-    if (hi >= 0) { s.insertColumnBefore(hi + 1); s.getRange(1, hi + 1).setValue('Avg'); s.getRange(1, hi + 1).setFontWeight('bold'); }
-    else ensureCols(s, ['Avg', 'Hdcp']);
-  }
-  h = headers(s); const ai = h.indexOf('Average'), vi = h.indexOf('Avg'), n = s.getLastRow() - 1;
-  if (ai >= 0) { if (n > 0) { const a = s.getRange(2, ai + 1, n, 1).getValues(), v = s.getRange(2, vi + 1, n, 1).getValues(); s.getRange(2, vi + 1, n, 1).setValues(v.map((r, i) => [r[0] !== '' ? r[0] : a[i][0]])); } s.deleteColumn(ai + 1); }
-  P.setProperty('memCols2', '1');
+  const ren = { 'Handicap override': 'Hdcp', 'Avg': 'Average', 'Nicknames': 'Nickname', 'Nickname / other names': 'Nickname' };
+  headers(s).forEach((k, i) => { if (ren[k] && headers(s).indexOf(ren[k]) < 0) s.getRange(1, i + 1).setValue(ren[k]); });
+  ensureCols(s, MEM_ORDER);
+  MEM_ORDER.forEach((k, i) => { const at = headers(s).indexOf(k); if (at >= 0 && at !== i) s.moveColumns(s.getRange(1, at + 1, s.getMaxRows(), 1), i + 1); });
+  P.setProperty('memCols3', '1');
 }
 // One-time (Nov 28): the Check-ins tab has no City column (the Tour doesn't keep a bowler's city).
 function fixCheckinCity() {
