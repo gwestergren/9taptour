@@ -3110,7 +3110,7 @@ const CFG = {
   lastFee(k) { try { const f = JSON.parse(localStorage.getItem(k)); return typeof f === "number" ? f : null; } catch (_) { return null; } },
   // Before check-in can open, staff confirm the tournament's setup (Greg, Nov 27). The confirmation is tied to these
   // values: change any of them afterwards and the setup needs confirming again.
-  sig(c) { return JSON.stringify([(c.venue && VEN.find(c.venue) || {}).name || c.venueName || "", c.first, c.last, c.dir, c.max, c.fill, !!c.overflow, c.overflowMax, c.games, c.count, (c.squads || []).map(CFG.normT), c.openMins, c.fee, c.fee2]); },
+  sig(c) { return JSON.stringify([(c.venue && VEN.find(c.venue) || {}).name || c.venueName || "", c.first, c.last, c.dir, c.max, c.fill, !!c.overflow, c.overflowMax, c.games, c.count, (c.squads || []).map(CFG.normT), c.openMins, c.fee, c.fee2, CFG.down(c)]); },
   confirmed(e) { const c = CFG.get(e); return !!c.confirmedSig && c.confirmedSig === CFG.sig(c); },
   problems(c) { const o = [], sq = c.squads || [], t = sq.map(CFG.parseT);
     if (!c.venueName && !(c.venue && VEN.find(c.venue))) o.push("Pick the venue (Tournaments tab)");
@@ -3612,7 +3612,7 @@ const CKCTL = {
       const now = CFG.status(c);
       say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(sq)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(sq)} squad.`);
     });
-    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; if (!CK.list(e).length) { delete c.confirmedSig; delete c.confirmedAt; } CFG.put(e, c); route(); say(CK.list(e).length ? "Check-in is off. Press Open check-in to start again with the first squad." : "Check-in is off. Confirm the setup again before opening it."); });
+    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; delete c.confirmedSig; delete c.confirmedAt; CFG.put(e, c); route(); say("Check-in is off. Confirm the setup again, then press Open check-in to start with the first squad."); });
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
 };
@@ -4116,7 +4116,7 @@ function wireDesk() {
       d.querySelectorAll("[data-down]").forEach(b => b.addEventListener("click", () => { const L = b.dataset.down.split(",").map(Number), y = CFG.get(e), on = L.some(n => CFG.down(y).includes(n));
         const who = CK.list(e).filter(r => r.paid && L.includes(r.lane) && !CK.locked(e, r.squad)).length;
         if (!on && who && !confirm(`${who} bowler${who === 1 ? " is" : "s are"} on lanes ${L.join("–")}. Take the pair out of service anyway? You'll need to move them to another pair.`)) return;
-        CFG.toggleDown(y, b.dataset.down); CFG.put(e, y); F.downOpen = true; draw(); })); }
+        CFG.toggleDown(y, b.dataset.down); CFG.put(e, y); F.downOpen = true; setupBox(); draw(); })); }
     $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
     if ($("#dk-ready")) $("#dk-ready").addEventListener("click", ev => { const b = ev.target.closest("button[data-iss]"); if (!b) return; F.iss = b.dataset.iss && F.iss !== b.dataset.iss ? b.dataset.iss : null; draw(); if (F.iss) { const c = $(".dk-row:not([hidden])"); if (c) c.scrollIntoView({ behavior: "smooth", block: "center" }); } });
@@ -4177,9 +4177,9 @@ function wireDesk() {
   $("#dk-clear").addEventListener("click", () => { const sq = CK.deskSq, nm = e.squads[sq], n = CK.list(e).filter(r => r.sample && r.squad === sq).length;
     if (!n) { msg(`There are no sample check-ins in the ${nm} squad.`); return; } if (CK.locked(e, sq)) { msg(`The ${nm} squad is closed. Reopen it to clear its sample check-ins.`); return; }
     if (!confirm(`Remove the ${n} sample check-ins from the ${nm} squad? Real check-ins and other squads stay.`)) return; CK.clearSamples(e, sq);
-    // Nothing left checked in for the day: start over, so the setup needs confirming again (Greg, Nov 28)
-    if (!CK.list(e).length) { const y = CFG.get(e); delete y.confirmedSig; delete y.confirmedAt; y.open = false; y.closed = []; y.forced = []; CK.deskSq = 0; CFG.put(e, y); route(); msg(`Cleared ${n} sample check-ins. Nobody is checked in now, so the setup needs confirming again before check-in opens.`); return; }
-    msg(`Cleared ${n} sample check-ins from the ${nm} squad.`); draw(); });
+    // Clearing samples starts the demo over: the setup needs confirming again (Greg, Nov 28). With nobody left, check-in goes back to off too.
+    { const y = CFG.get(e), none = !CK.list(e).length; delete y.confirmedSig; delete y.confirmedAt; if (none) { y.open = false; y.closed = []; y.forced = []; CK.deskSq = 0; } CFG.put(e, y); route();
+      msg(`Cleared ${n} sample check-ins from the ${nm} squad. The setup needs confirming again${none ? " before check-in opens" : ""}.`); } });
 
   draw();
   const onStore = ev => { if (!document.getElementById("dk-body")) return window.removeEventListener("storage", onStore); if (ev.key === CK.key(e)) draw(); };
