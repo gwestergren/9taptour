@@ -235,7 +235,7 @@ const BOTY_2026 = [["Yanis Green", 482], ["Johnny Seng", 468], ["Dale Roberts Jr
 function fixBoty() {
   const s = SpreadsheetApp.getActive().getSheetByName('BOTY'); if (!s) return;
   if (readTab('BOTY').some(r => String(r['Season']) === '2026')) return;
-  appendRows('BOTY', BOTY_2026.map((x, i) => ({ 'Season': 2026, 'Rank': i + 1, 'Bowler': x[0], 'Points': x[1], 'As of': '2026-08-04', 'Source': 'Tour BOTY standings image (8/4/2026)' })));
+  appendRows('BOTY', BOTY_2026.slice().sort((a, b) => b[1] - a[1]).map((x, i, A) => ({ 'Season': 2026, 'Rank': A.findIndex(y => y[1] === x[1]) + 1, 'Bowler': x[0], 'Points': x[1], 'As of': '2026-08-04', 'Source': 'Tour BOTY standings image (8/4/2026)' })));
 }
 function fixMembers() {
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;

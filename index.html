@@ -2007,7 +2007,7 @@ const VIEWS = {
 
   "bowler-of-the-year"() {
     const years = HIST.years(), y = years.includes(+location.hash.split("/")[1]) ? +location.hash.split("/")[1] : Math.max(...years);
-    const boy = BOY.get(y), max = boy[0][1];
+    const boy = BOY.get(y).slice().sort((a, b) => b[1] - a[1]), max = boy[0][1]; // largest total first; ties share a rank
     let prev = null, rank = 0;
     const rows = boy.map(([n, p], i) => { if (p !== prev) rank = i + 1; prev = p; return `
       <tr class="${rank <= 3 ? "top3" : ""}" data-name="${esc(n.toLowerCase())}"><td class="place">${rank}${boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
