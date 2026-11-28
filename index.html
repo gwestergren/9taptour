@@ -925,6 +925,10 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 body.staff .banner, body.staff .site-head, body.staff .site-foot { display: none; }
 body.tv-mode .banner, body.tv-mode .site-head, body.tv-mode .site-foot, body.tv-mode .staff-head { display: none !important; }
 body.tv-mode { background: #0b1f26; }
+/* Bowlers: the search bar stays put, and the list scrolls under its own column headings (Greg, Nov 28) */
+.bw-stick { position: sticky; top: var(--sh, 64px); z-index: 12; background: var(--bg); padding-top: 8px; }
+.bw-stick .meta { margin: 6px 0 8px; }
+@media (min-width: 900px) { .dt-wrap.bw-scroll { overflow: visible; } .bw-scroll .dt-grid th { position: sticky; top: calc(var(--sh, 64px) + var(--bwh, 90px)); z-index: 11; background: var(--surface); box-shadow: inset 0 -1px 0 var(--line); } }
 .dt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .dt-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .dt-grid th { text-align: left; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); position: sticky; top: 0; }
@@ -1820,11 +1824,11 @@ const VIEWS = {
     return `
     <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>The Tour's member list, the same as the Members tab of the Tour's data. Press Edit next to a name to change it, then Save.</p></div></section>
     <section class="wrap sc-main">
-      <div class="bw-top"><input id="dt-q" type="search" placeholder="Search by name or member #" autocomplete="off"><button type="button" class="btn btn-primary" id="dt-add">+ Add member</button><button type="button" class="btn btn-ghost" id="dt-csv">Download CSV</button></div>
-      <p class="meta" id="dt-info"></p>
-      <div class="dt-wrap"><table class="dt-grid" id="dt-grid"></table></div>
+      <div class="bw-stick"><div class="bw-top"><input id="dt-q" type="search" placeholder="Search by name or member #" autocomplete="off"><button type="button" class="btn btn-primary" id="dt-add">+ Add member</button><button type="button" class="btn btn-ghost" id="dt-csv">Download CSV</button></div>
+      <p class="meta" id="dt-info"></p></div>
+      <div class="dt-wrap bw-scroll"><table class="dt-grid" id="dt-grid"></table></div>
       <div id="dt-msg" class="toast" hidden></div>
-      <p class="foot-note">Leave Hdcp (by hand) empty to use 90% of the difference between the average and 220 (averages under 125 count as 125); the grey number shows that. Bonus pins (0 to 5) are added on top. Changes reach the Desk, check-in, scores and standings right away. Phone and email aren't shown here.</p>
+      <p class="foot-note">Leave Hdcp empty to use 90% of the difference between the average and 220 (averages under 125 count as 125); the grey number shows that. Bonus pins (0 to 5) are added on top. Changes reach the Desk, check-in, scores and standings right away. Phone and email aren't shown here.</p>
     </section>`;
   },
 
@@ -4368,7 +4372,7 @@ function wireData(mode) {
   window.addEventListener("storage", onStore);
 }
 function wire(view) {
-  if (view === "bowlers") wireData("mem");
+  if (view === "bowlers") { const h = document.querySelector(".staff-head"); if (h) document.documentElement.style.setProperty("--sh", h.offsetHeight + "px"); wireData("mem"); const k = document.querySelector(".bw-stick"); if (k) { const set = () => document.documentElement.style.setProperty("--bwh", k.offsetHeight + "px"); set(); if (window.ResizeObserver) new ResizeObserver(set).observe(k); } }
   if (view === "data") wireData();
   if (view === "scores") wireScores();
   if (view === "standings" || view === "live") wireLive();
