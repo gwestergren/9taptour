@@ -836,7 +836,8 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-pane { display: grid; gap: 16px; align-items: start; } .su-pane[hidden], .dk-poster[hidden] { display: none; }
 @media (min-width: 860px) { .su-pane { grid-template-columns: 1fr 1fr; } .su-wide { grid-column: 1 / -1; } }
 .su-col { display: grid; gap: 16px; }
-#su-o { align-items: stretch; } #su-o > .su-intro, #su-o > .su-bar { align-self: start; }
+#su-o { align-items: stretch; }
+.su-hct { border-collapse: collapse; margin: 4px 0 10px; font-size: .95rem; } .su-hct th { text-align: left; font: 600 .95rem var(--font-body, inherit); text-transform: none; letter-spacing: 0; background: none; color: inherit; padding: 6px 12px 6px 0; white-space: nowrap; } .su-hct td { text-align: center; padding: 6px 10px; font-family: var(--font-num); border-left: 1px solid var(--line, #ddd); } .su-hct tr + tr { border-top: 1px solid var(--line, #ddd); } #su-o > .su-intro, #su-o > .su-bar { align-self: start; }
 .su-card h3 { margin: 0 0 12px; }
 .su-intro h2 { margin: 0 0 2px; font-size: 1.6rem; } .su-intro .meta { margin: 0; }
 .su-evtop { display: grid; gap: 6px; } .su-evtop select { min-height: 54px; font: 700 1.1rem var(--font-body); width: 100%; }
@@ -2004,7 +2005,7 @@ const VIEWS = {
         <div class="panel su-card"><h3>Handicap</h3>
           <div class="su-hcf"><span>Handicap =</span><input id="su-hcpct" type="number" inputmode="numeric" min="0" max="100" value="${t.hcpPct}" class="su-mini" aria-label="Percent"><span>% of (</span><input id="su-hcbase" type="number" inputmode="numeric" min="100" max="300" value="${t.hcpBase}" class="su-mini" aria-label="Base average"><span>− average)</span></div>
           <div class="su-hcf"><label for="su-hcmin">Lowest average used</label><input id="su-hcmin" type="number" inputmode="numeric" min="0" max="300" value="${t.hcpMin}" class="su-mini"></div>
-          <p class="meta" id="su-hcex"></p>
+          <div id="su-hcex"></div>
           <p class="meta">Used for every bowler unless they have their own Hdcp on the Bowlers page. Bonus pins are added on top.</p></div>
         <div class="panel su-card su-wide"><h3>Next squad's check-in</h3>
           <div class="su-q"><span class="sc-lbl">Later squads: check-in opens</span><div class="su-inl">${step("su-open", t.openMins, "minutes")}<span>minutes before the squad time</span></div></div>
@@ -3850,7 +3851,7 @@ function wireSetup() {
   const oSum = () => { const n = id => { const f = $(id).value.trim(); return f === "" || !(+f >= 0) ? null : Math.round(+f); }; T.fee = n("#su-fee"); T.fee2 = n("#su-fee2"); $("#su-open").textContent = T.openMins;
     const hb = n("#su-hcbase"), hp = n("#su-hcpct"), hm = n("#su-hcmin"); T.hcpBase = hb || 220; T.hcpPct = hp == null ? 90 : Math.min(100, hp); T.hcpMin = hm == null ? 0 : hm;
     const f = a => Math.trunc((T.hcpBase - Math.max(T.hcpMin || 0, a)) * T.hcpPct / 100), sg = x => x < 0 ? "−" + -x : String(x);
-    $("#su-hcex").innerHTML = "Average " + [150, 180, 200, T.hcpBase + 10].map(a => `${a} → <b class="num">${sg(f(a))}</b>`).join(" · ") + ` a game.`; };
+    const A = [150, 180, 200, T.hcpBase + 10]; $("#su-hcex").innerHTML = `<table class="su-hct"><tr><th>Bowler's average</th>${A.map(a => `<td>${a}</td>`).join("")}</tr><tr><th>Handicap per game</th>${A.map(a => `<td><b>${sg(f(a))}</b></td>`).join("")}</tr></table>`; };
   ["su-hcbase", "su-hcpct", "su-hcmin"].forEach(id => $("#" + id).addEventListener("input", () => { oSum(); touch("o"); }));
   oSum();
   ["su-fee", "su-fee2"].forEach(id => $("#" + id).addEventListener("input", () => { oSum(); touch("o"); }));
