@@ -844,6 +844,8 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-evbtns { display: flex; gap: 16px; flex-wrap: wrap; } .su-evbox { margin-top: 12px; } .su-evbox .meta { margin: 6px 0 0; }
 .su-confirm #su-sum { margin-bottom: 12px; color: var(--ink); }
 .su-tabs button { flex: 1 1 0; }
+.su-hcf { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; font-weight: 600; }
+.su-hcf .su-mini { width: 5.5em; }
 .su-downs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .su-downs button { font: inherit; font-weight: 700; min-width: 64px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); color: inherit; cursor: pointer; }
 .su-downs button[aria-pressed="true"] { background: #c7362b; border-color: #c7362b; color: #fff; text-decoration: line-through; }
@@ -929,6 +931,13 @@ body.tv-mode { background: #0b1f26; }
 .bw-stick { position: sticky; top: var(--sh, 64px); z-index: 12; background: var(--bg); padding-top: 8px; }
 .bw-stick .meta { margin: 6px 0 8px; }
 @media (min-width: 900px) { .dt-wrap.bw-scroll { overflow: visible; } .bw-scroll .dt-grid th { position: sticky; top: calc(var(--sh, 64px) + var(--bwh, 90px)); z-index: 11; background: var(--surface); box-shadow: inset 0 -1px 0 var(--line); } }
+.im-step { margin-bottom: 16px; } .im-step h3 { margin-top: 0; }
+.im-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px 16px; }
+.im-map .field select.need { border-color: #c7362b; }
+.im-opts { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 10px 0; }
+.im-prev { max-height: 420px; overflow: auto; margin-bottom: 12px; }
+.im-prev td.dup { color: var(--muted); } .im-prev td.bad { color: #b3261e; font-weight: 700; }
+.im-go { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .dt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .dt-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .dt-grid th { text-align: left; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); position: sticky; top: 0; }
@@ -1244,6 +1253,7 @@ main:has(> .dash) + .site-foot{margin-top:0}
       <a href="#standings">Standings</a>
       <a href="#bowlers">Bowlers</a>
       <a href="#setup">Setup</a>
+      <a href="#import">Import</a>
     </nav>
     <div class="staff-end"><a href="#home">Public site</a><button type="button" id="staff-lock">Lock</button></div>
   </div>
@@ -1378,6 +1388,9 @@ const SHEET = {
   status: "offline", at: null, err: "",
   get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (_) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
+  // Settings tab rows <-> Setup's Tour tab (one row per setting)
+  TOURSET: { "Entry fee (first squad)": "fee", "Re-entry fee (each extra squad)": "fee2", "Check-in opens (min before squad)": "openMins",
+    "Handicap: base average": "hcpBase", "Handicap: percent": "hcpPct", "Handicap: lowest average": "hcpMin" },
   key() { try { return localStorage.getItem(SHEET.KEYK) || ""; } catch (_) { return ""; } },
   setKey(v) { try { v ? localStorage.setItem(SHEET.KEYK, v) : localStorage.removeItem(SHEET.KEYK); } catch (_) {} },
   iso(d) { return /^\d{4}-\d\d-\d\d/.test(d || "") ? String(d).slice(0, 10) : ""; },
@@ -1411,7 +1424,8 @@ const SHEET = {
     if (V.length && !SHEET.get(SHEET.QUEUE, []).some(x => x.action === "saveVenues")) { const old = SHEET.get("9tap-venues", []); SHEET.set("9tap-venues", V.map((r, i) => ({ id: (old.find(o => o.name === r.Venue) || {}).id || "s" + i, name: r.Venue, city: r.City || "", fmt: Object.assign({}, typeof r["Format (site data)"] === "object" ? r["Format (site data)"] : {}, fmtOf(r, "Lanes (first)", "Lanes (last)")) }))); }
     const waiting = SHEET.get(SHEET.QUEUE, []); // a save that hasn't reached the sheet yet wins over the sheet's older copy
     { const m = {}; (data.Settings || []).forEach(r => { if (r.Setting) m[r.Setting] = r.Value; }); const n = x => x === "" || x == null || !(+x >= 0) ? null : +x;
-      if ("Entry fee (first squad)" in m && !waiting.some(x => x.action === "saveSettings")) SHEET.set("9tap-tour", { fee: n(m["Entry fee (first squad)"]), fee2: n(m["Re-entry fee (each extra squad)"]), openMins: +m["Check-in opens (min before squad)"] || 60 }); }
+      if (!waiting.some(x => x.action === "saveSettings") && Object.keys(m).some(k => SHEET.TOURSET[k])) { const t = SHEET.get("9tap-tour", {}) || {};
+        Object.keys(SHEET.TOURSET).forEach(k => { if (!(k in m)) return; const f = SHEET.TOURSET[k]; t[f] = f === "fee" || f === "fee2" ? n(m[k]) : n(m[k]) == null ? undefined : n(m[k]); }); SHEET.set("9tap-tour", t); } }
     (data.Tournaments || []).forEach(r => { const d = SHEET.iso(r.Date), old = r["Setup (site data)"] && typeof r["Setup (site data)"] === "object" ? r["Setup (site data)"] : null;
       if (!d || !(r["Setup saved at"] || old) || waiting.some(x => x.action === "saveSetup" && x.date === d)) return;
       const s = Object.assign({}, old || {}, fmtOf(r, "First lane", "Last lane"), { saved: true }), k1 = x => list(x).map(n => +n - 1).filter(n => n >= 0);
@@ -1800,7 +1814,7 @@ const VIEWS = {
       <p class="sc-checkin" id="sc-checkin"></p>
       <div class="sc-demo" id="sc-demo" hidden></div>
       <div id="sc-body"></div>
-      <p class="foot-note">Bowlers come from the Desk: everyone paid for this squad, on the lane they were given. A squad loads once the Desk closes its check-in. Scores save to the Tour's data as they're entered, so every rover, the Standings and the TV see them. Handicap shown is per game (90% of 220 minus average, plus bonus pins).</p>
+      <p class="foot-note">Bowlers come from the Desk: everyone paid for this squad, on the lane they were given. A squad loads once the Desk closes its check-in. Scores save to the Tour's data as they're entered, so every rover, the Standings and the TV see them. Handicap shown is per game (${TOUR.hcText()}, plus bonus pins).</p>
     </section>`;
   },
 
@@ -1820,6 +1834,22 @@ const VIEWS = {
     </section>`;
   },
 
+  // Staff Import (Greg, Nov 28): bring the old site's data into the Google Sheet. Upload, match columns, preview, import.
+  import() {
+    return `
+    <section class="page-head sc-head"><div class="wrap"><h1>Import</h1><p>Bring data from the Tour's old site into the Google Sheet. Upload a CSV or Excel file, match its columns, check the preview, then import. Rows already in the sheet are found and skipped (or updated, if you choose).</p></div></section>
+    <section class="wrap sc-main im-main">
+      <div class="panel im-step"><h3>1 · What's in the file?</h3>
+        <div class="form-grid su-two"><div class="field"><label for="im-type">Data</label><select id="im-type">${Object.keys(IMP.T).map(k => `<option value="${esc(k)}">${esc(IMP.T[k].label)}</option>`).join("")}</select></div>
+        <div class="field"><label for="im-file">File (CSV or Excel)</label><input id="im-file" type="file" accept=".csv,.txt,.xlsx,.xls,text/csv"></div></div>
+        <p class="meta" id="im-help"></p></div>
+      <div class="panel im-step" id="im-map-card" hidden><h3>2 · Match the columns</h3><p class="meta">Each column in the sheet, and which column of your file fills it. Leave one as "Not in file" to keep it blank.</p><div class="im-map" id="im-map"></div></div>
+      <div class="panel im-step" id="im-prev-card" hidden><h3>3 · Check and import</h3><div id="im-sum"></div>
+        <div class="im-opts"><label><input type="radio" name="im-dup" value="skip" checked> Skip rows already in the sheet</label><label><input type="radio" name="im-dup" value="update"> Update rows already in the sheet with the file's values</label></div>
+        <div class="dt-wrap im-prev"><table class="dt-grid" id="im-prev"></table></div>
+        <div class="im-go"><button type="button" class="btn btn-primary" id="im-go">Import</button><span class="meta" id="im-status"></span></div></div>
+    </section>`;
+  },
   bowlers() {
     return `
     <section class="page-head sc-head"><div class="wrap"><h1>Bowlers</h1><p>The Tour's member list, the same as the Members tab of the Tour's data. Press Edit next to a name to change it, then Save.</p></div></section>
@@ -1828,7 +1858,7 @@ const VIEWS = {
       <p class="meta" id="dt-info"></p></div>
       <div class="dt-wrap bw-scroll"><table class="dt-grid" id="dt-grid"></table></div>
       <div id="dt-msg" class="toast" hidden></div>
-      <p class="foot-note">Leave Hdcp empty to use 90% of the difference between the average and 220 (averages under 125 count as 125); the grey number shows that. Bonus pins (0 to 5) are added on top. Changes reach the Desk, check-in, scores and standings right away. Phone and email aren't shown here.</p>
+      <p class="foot-note">Leave Hdcp empty to use ${TOUR.hcText()} (set on Setup → Tour); the grey number shows that. Bonus pins (0 to 5) are added on top. Changes reach the Desk, check-in, scores and standings right away. Phone and email aren't shown here.</p>
     </section>`;
   },
 
@@ -1973,6 +2003,11 @@ const VIEWS = {
         <div class="panel su-card"><h3>Next squad's check-in</h3>
           <div class="su-q"><span class="sc-lbl">Later squads: check-in opens</span><div class="su-inl">${step("su-open", t.openMins, "minutes")}<span>minutes before the squad time</span></div></div>
           <p class="meta">The first squad opens when the Desk presses Open check-in.</p></div>
+        <div class="panel su-card"><h3>Handicap</h3>
+          <div class="su-hcf"><span>Handicap =</span><input id="su-hcpct" type="number" inputmode="numeric" min="0" max="100" value="${t.hcpPct}" class="su-mini" aria-label="Percent"><span>% of (</span><input id="su-hcbase" type="number" inputmode="numeric" min="100" max="300" value="${t.hcpBase}" class="su-mini" aria-label="Base average"><span>− average)</span></div>
+          <div class="su-hcf"><label for="su-hcmin">Lowest average used</label><input id="su-hcmin" type="number" inputmode="numeric" min="0" max="300" value="${t.hcpMin}" class="su-mini"></div>
+          <p class="meta" id="su-hcex"></p>
+          <p class="meta">Every bowler's handicap is worked out from this (Desk, Bowlers, check-in, scores, standings), except a bowler with their own Hdcp on the Bowlers page. Averages over the base get a negative handicap; fractions are dropped. Bonus pins are added on top.</p></div>
         <div class="panel su-card su-wide" id="su-sheet"></div>
         ${bar("o", "Save Tour settings")}
       </form>
@@ -2093,7 +2128,7 @@ const VIEWS = {
     <section class="wrap section"><div class="two-col">
       <div>
         <div class="section-head"><h2>Your handicap</h2></div>
-        <p class="meta" style="max-width:52ch">Handicap is 90% of the difference between your 9-Tap average and 220, per game. Averages over 220 get a negative handicap. The lowest average used is 125.</p>
+        <p class="meta" style="max-width:52ch">Handicap is ${TOUR.hc().pct}% of the difference between your 9-Tap average and ${TOUR.hc().base}, per game. Averages over ${TOUR.hc().base} get a negative handicap.${TOUR.hc().min ? ` The lowest average used is ${TOUR.hc().min}.` : ""}</p>
         <div class="panel" style="margin-top:18px">
           <div class="calc">
             <div class="field"><label for="avg">9-Tap average</label><input id="avg" type="number" inputmode="numeric" min="100" max="260" value="185"></div>
@@ -2101,7 +2136,7 @@ const VIEWS = {
           </div>
           <p class="foot-note" style="margin-top:8px">Bonus pins: you earn 1 for every 3 tournaments you bowl without cashing, up to 5. They're added to your handicap every game and come off when you cash (<a class="link-more" href="#rules" data-rule="14">Rule 14</a>).</p>
           <dl class="hc-steps" aria-live="polite">
-            <div><dt>Handicap <span id="hc-why">90% of (220 − 185)</span></dt><dd id="hc-base">31</dd></div>
+            <div><dt>Handicap <span id="hc-why"></span></dt><dd id="hc-base">31</dd></div>
             <div><dt>Bonus pins</dt><dd id="hc-bonus">+ 1</dd></div>
             <div class="hc-total"><dt>Total per game</dt><dd><output id="hdcp-out">32</output></dd></div>
             <div class="hc-series"><dt>Series when best 3 count</dt><dd id="hc-s3">96</dd></div>
@@ -3175,9 +3210,15 @@ const CFG = {
 const TOUR = {
   KEY: "9tap-tour",
   get() { let v = null; try { v = JSON.parse(localStorage.getItem(TOUR.KEY)); } catch (_) {} v = v || {}; const L = k => CFG.lastFee(k);
-    return { fee: "fee" in v ? v.fee : L("9tap-fee"), fee2: "fee2" in v ? v.fee2 : L("9tap-fee2"), openMins: +v.openMins || L("9tap-openmins") || 60 }; },
-  put(t) { try { localStorage.setItem(TOUR.KEY, JSON.stringify(t)); } catch (_) {}
-    SHEET.send({ action: "saveSettings", settings: { "Entry fee (first squad)": t.fee == null ? "" : t.fee, "Re-entry fee (each extra squad)": t.fee2 == null ? "" : t.fee2, "Check-in opens (min before squad)": t.openMins } }); }
+    const H = (k, d) => v[k] != null && v[k] !== "" && isFinite(+v[k]) ? +v[k] : d;
+    return { fee: "fee" in v ? v.fee : L("9tap-fee"), fee2: "fee2" in v ? v.fee2 : L("9tap-fee2"), openMins: +v.openMins || L("9tap-openmins") || 60,
+      hcpBase: H("hcpBase", 220), hcpPct: H("hcpPct", 90), hcpMin: H("hcpMin", 125) }; },
+  // Handicap formula (Rule 12): pct% of (base - average), averages under the lowest count as the lowest; fractions dropped.
+  hc() { let raw = null; try { raw = localStorage.getItem(TOUR.KEY); } catch (_) {} if (TOUR._raw !== raw || !TOUR._hc) { TOUR._raw = raw; const t = TOUR.get(); TOUR._hc = { base: t.hcpBase, pct: t.hcpPct, min: t.hcpMin }; } return TOUR._hc; },
+  hcText() { const h = TOUR.hc(); return `${h.pct}% of the difference between the average and ${h.base}${h.min ? ` (averages under ${h.min} count as ${h.min})` : ""}`; },
+  put(t) { try { localStorage.setItem(TOUR.KEY, JSON.stringify(t)); } catch (_) {} TOUR._hc = null;
+    const S = {}; Object.keys(SHEET.TOURSET).forEach(k => { const v = t[SHEET.TOURSET[k]]; S[k] = v == null ? "" : v; });
+    SHEET.send({ action: "saveSettings", settings: S }); }
 };
 const VEN = {
   KEY: "9tap-venues",
@@ -3451,7 +3492,7 @@ const CK = {
       return SHEET.members().concat(CK.newMembers().filter(n => !SHEET.members().some(m => m.member === n.member))).map(m => ed[m.member] && q.has("m" + m.member) ? Object.assign({}, m, ed[m.member]) : m); }
     return CK._m.concat(CK.newMembers()).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
   },
-  // Handicap: a staff-set handicap wins; otherwise 90% of (220 - average). Bonus pins are added on top.
+  // Handicap: a staff-set handicap wins; otherwise the Tour formula (Setup -> Tour, Settings tab; 90% of 220 - average). Bonus pins are added on top.
   rh(x) { return x && x.hcp != null && x.hcp !== "" ? +x.hcp : CK.hcp(x && x.avg); },
   // Save a member's details (staff Bowlers page). Sample members get an override; added members are edited in place.
   // Today's check-ins (and the last tournament's) pick up the change so the Desk, scores and standings agree.
@@ -3467,7 +3508,7 @@ const CK = {
   get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (_) { return d; } },
   put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
   newMembers() { return CK.get("9tap-newmembers", []); },
-  hcp(avg) { return avg ? Math.trunc((220 - Math.max(125, avg)) * 0.9) : 0; },
+  hcp(avg) { if (!avg) return 0; const h = TOUR.hc(); return Math.trunc((h.base - Math.max(h.min || 0, avg)) * h.pct / 100); },
   key(e) { return `9tap-checkins:${e.date}`; },
   list(e) { return CK.get(CK.key(e), []).map(r => { if (!r.paid) r.lane = null; return r; }); }, // no lane until paid
   save(e, l) { const old = CK.list(e); CK.letters(e, l); CK.put(CK.key(e), l); SHEET.saveCheckins(e, l, old); },
@@ -3800,7 +3841,12 @@ function wireSetup() {
 
   /* ---------- Tour tab ---------- */
   const T = TOUR.get();
-  const oSum = () => { const n = id => { const f = $(id).value.trim(); return f === "" || !(+f >= 0) ? null : Math.round(+f); }; T.fee = n("#su-fee"); T.fee2 = n("#su-fee2"); $("#su-open").textContent = T.openMins; };
+  const oSum = () => { const n = id => { const f = $(id).value.trim(); return f === "" || !(+f >= 0) ? null : Math.round(+f); }; T.fee = n("#su-fee"); T.fee2 = n("#su-fee2"); $("#su-open").textContent = T.openMins;
+    const hb = n("#su-hcbase"), hp = n("#su-hcpct"), hm = n("#su-hcmin"); T.hcpBase = hb || 220; T.hcpPct = hp == null ? 90 : Math.min(100, hp); T.hcpMin = hm == null ? 0 : hm;
+    const f = a => Math.trunc((T.hcpBase - Math.max(T.hcpMin || 0, a)) * T.hcpPct / 100), sg = x => x < 0 ? "−" + -x : String(x);
+    $("#su-hcex").innerHTML = "Examples: " + [150, 180, 200, T.hcpBase + 10].map(a => `average ${a} → <b class="num">${sg(f(a))}</b>`).join(" · ") + ` per game.`; };
+  ["su-hcbase", "su-hcpct", "su-hcmin"].forEach(id => $("#" + id).addEventListener("input", () => { oSum(); touch("o"); }));
+  oSum();
   ["su-fee", "su-fee2"].forEach(id => $("#" + id).addEventListener("input", () => { oSum(); touch("o"); }));
   $("#su-o").querySelector('[data-step="su-open"]').addEventListener("click", ev => { const b = ev.target.closest("[data-d]"); if (!b) return; T.openMins = Math.min(180, Math.max(15, T.openMins + +b.dataset.d * 15)); oSum(); touch("o"); });
   $("#su-o").addEventListener("submit", ev => { ev.preventDefault(); oSum(); TOUR.put(Object.assign({}, T)); SU.list().forEach(x => { const y = CFG.get(x); if (y.saved || x === e) CFG.put(x, y); }); clean("o"); flash("o");
@@ -4007,7 +4053,7 @@ function wireCheckin() {
         $("#n-avg").disabled = $("#n-games").disabled = none;
         let t;
         if (none) t = `You'll start with a scratch average, so no handicap until a director sets your Tour average.`;
-        else if (!a) t = `Your Tour average is your book average plus 20 pins. Handicap is 90% of the difference from 220.`;
+        else if (!a) t = `Your Tour average is your book average plus 20 pins. Handicap is ${TOUR.hc().pct}% of the difference from ${TOUR.hc().base}.`;
         else if (a > 210) t = `<b>The maximum book average to join is 210.</b> Talk to a director at the desk.`;
         else if (g && g < 15) t = `A book average needs at least 15 games. A director will review it at the desk.`;
         else t = `Starting Tour average <b class="num">${Math.max(125, a + 20)}</b> (${a} + 20) · Handicap <b class="num">${CK.hcp(a + 20)}</b> per game. A director confirms this at the desk.`;
@@ -4371,9 +4417,106 @@ function wireData(mode) {
     if (ev.key === CK.key(e) && tab === "ck" && !document.activeElement.closest("#dt-grid")) draw(); };
   window.addEventListener("storage", onStore);
 }
+/* ---- Import: old site's data -> Google Sheet ---- */
+const IMP = {
+  // Each kind of data: its sheet tab, the columns to fill, and the columns that say "this row is already there".
+  T: {
+    Members: { label: "Members", cols: ["Member #", "First name", "Nickname", "Last name", "Full name", "Average", "Hdcp", "Bonus pins", "Phone", "Email", "Notes"], key: ["Member #|Full name"], need: ["Full name"] },
+    Schedule: { label: "Schedule (tournament dates)", cols: ["Date", "Venue", "City", "Squad times", "Event / note", "Invite only"], key: ["Date"], need: ["Date", "Venue"] },
+    Results: { label: "Results (places and prizes)", cols: ["Date", "Center", "Place", "Bowler", "Total", "Handicap", "Bonus pins", "Prize"], key: ["Date", "Bowler"], need: ["Date", "Bowler"] },
+    Tournaments: { label: "Tournaments (winner, entries, payout)", cols: ["Date", "Center", "City", "Event / note", "Winner", "Winning total", "1st prize", "Entries", "Total paid", "Cut (last cash)"], key: ["Date"], need: ["Date"] },
+    BOTY: { label: "Bowler of the Year standings", cols: ["Season", "Rank", "Bowler", "Points", "As of"], key: ["Season", "Bowler"], need: ["Season", "Bowler"] },
+    "Jackpot Winners": { label: "Jackpot winners", cols: ["Date", "Center", "Bowler", "Jackpot", "Amount"], key: ["Date", "Bowler", "Jackpot"], need: ["Date", "Bowler"] },
+    "Check-ins": { label: "Check-ins (who bowled which squad)", cols: ["Date", "Squad", "Member #", "First name", "Last name", "Average", "Handicap", "Bonus pins", "Lane", "Paid"], key: ["Date", "Squad", "First name", "Last name"], need: ["Date", "Last name"] },
+    Scores: { label: "Scores (games by squad)", cols: ["Date", "Squad", "Lane", "Member #", "Bowler", "Game 1", "Game 2", "Game 3", "Game 4"], key: ["Date", "Squad", "Bowler"], need: ["Date", "Bowler"] }
+  },
+  DATE: /^(Date|As of)$/, NUM: /^(Member #|Average|Hdcp|Handicap|Bonus pins|Place|Total|Prize|Season|Rank|Points|Amount|Lane|Squad|Game \d|Winning total|1st prize|Entries|Total paid|Cut \(last cash\))$/,
+  // Column names the old site might use for each sheet column (compared without case, spaces or punctuation).
+  SYN: { "Member #": ["member", "memberno", "membernumber", "memberid", "mem", "memno", "id", "number", "usbc", "usbcid"], "First name": ["first", "fname", "firstname", "given"], "Last name": ["last", "lname", "lastname", "surname"],
+    "Full name": ["name", "fullname", "bowler", "bowlername", "member name"], "Nickname": ["nick", "nickname", "aka", "othernames", "nicknames"], "Average": ["avg", "average", "touravg", "touraverage"], "Hdcp": ["hdcp", "hcp", "handicap", "handicapoverride"],
+    "Handicap": ["hdcp", "hcp", "handicap"], "Bonus pins": ["bonus", "bonuspins"], "Phone": ["phone", "cell", "mobile", "phonenumber"], "Email": ["email", "emailaddress", "mail"], "Notes": ["notes", "note", "comments"],
+    "Date": ["date", "eventdate", "tournamentdate", "day", "when"], "Venue": ["venue", "center", "centre", "house", "location", "bowlingcenter", "alley"], "Center": ["center", "centre", "venue", "house", "location", "bowlingcenter"],
+    "City": ["city", "town"], "Squad times": ["squads", "squadtimes", "times", "squad"], "Squad": ["squad", "squadno", "flight"], "Event / note": ["event", "note", "notes", "eventname", "tournament", "title"], "Invite only": ["invite", "inviteonly", "invitational"],
+    "Place": ["place", "pos", "position", "finish", "rank"], "Bowler": ["bowler", "name", "bowlername", "fullname", "player", "winner"], "Total": ["total", "score", "series", "pinfall", "totalpins"], "Prize": ["prize", "won", "payout", "winnings", "cash", "amount"],
+    "Winner": ["winner", "champion", "1st", "first place"], "Winning total": ["winningtotal", "winningscore", "score", "total"], "1st prize": ["1stprize", "firstprize", "topprize"], "Entries": ["entries", "entrants", "bowlers"], "Total paid": ["totalpaid", "paidout", "payouttotal"], "Cut (last cash)": ["cut", "lastcash", "cutscore"],
+    "Season": ["season", "year"], "Rank": ["rank", "place", "pos", "position"], "Points": ["points", "pts", "botypoints"], "As of": ["asof", "updated", "date"], "Jackpot": ["jackpot", "type", "pot", "kind"], "Amount": ["amount", "won", "prize", "payout"],
+    "Lane": ["lane", "lanes"], "Paid": ["paid"], "Game 1": ["game1", "g1", "gm1"], "Game 2": ["game2", "g2", "gm2"], "Game 3": ["game3", "g3", "gm3"], "Game 4": ["game4", "g4", "gm4"] },
+  norm(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); },
+  // CSV text -> rows (handles quotes, commas and line breaks inside quotes)
+  csv(t) { const out = []; let row = [], f = "", q = false; t = t.replace(/^\ufeff/, "");
+    for (let i = 0; i < t.length; i++) { const ch = t[i];
+      if (q) { if (ch === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+      else if (ch === '"') q = true; else if (ch === ",") { row.push(f); f = ""; } else if (ch === "\n" || ch === "\r") { if (ch === "\r" && t[i + 1] === "\n") i++; row.push(f); out.push(row); row = []; f = ""; } else f += ch; }
+    if (f !== "" || row.length) { row.push(f); out.push(row); } return out.filter(r => r.some(x => String(x).trim() !== "")); },
+  xlsxLib() { return window.XLSX ? Promise.resolve(window.XLSX) : new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = () => ok(window.XLSX); sc.onerror = () => no(new Error("Couldn't load the Excel reader. Save the file as CSV and try again.")); document.head.appendChild(sc); }); },
+  read(file) { if (/\.(xlsx|xls)$/i.test(file.name)) return file.arrayBuffer().then(buf => IMP.xlsxLib().then(X => { const wb = X.read(buf, { type: "array", cellDates: true }), ws = wb.Sheets[wb.SheetNames[0]]; return X.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: "yyyy-mm-dd", defval: "" }).map(r => r.map(x => String(x))).filter(r => r.some(x => x.trim() !== "")); }));
+    return file.text().then(IMP.csv); },
+  // "1/25/2025", "2025-01-25", "Jan 25, 2025", "25-Jan-2025" -> "2025-01-25"; "" if it isn't a date
+  date(v) { v = String(v || "").trim(); if (!v) return ""; let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v); const p = n => String(n).padStart(2, "0");
+    if (m) return `${m[1]}-${p(m[2])}-${p(m[3])}`;
+    m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/.exec(v); if (m) { let y = +m[3]; if (y < 100) y += y < 70 ? 2000 : 1900; return `${y}-${p(m[1])}-${p(m[2])}`; }
+    const d = new Date(v); return isNaN(d) || d.getFullYear() < 1990 ? "" : `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; },
+  num(v) { const t = String(v == null ? "" : v).replace(/[$,\s]/g, ""); return t === "" ? "" : isNaN(+t) ? null : +t; },
+  // Best guess at which file column fills each sheet column
+  guess(type, head) { const H = head.map(IMP.norm), out = {}, used = new Set();
+    IMP.T[type].cols.forEach(c => { const want = [IMP.norm(c)].concat((IMP.SYN[c] || []).map(IMP.norm)); const i = want.map(w => H.findIndex((h, j) => h === w && !used.has(j))).find(j => j >= 0); if (i != null && i >= 0) { out[c] = i; used.add(i); } });
+    return out; },
+  // One file row -> one sheet row (dates and numbers cleaned up). problems: what's wrong with it
+  build(type, map, r) { const o = {}, bad = [];
+    IMP.T[type].cols.forEach(c => { if (map[c] == null) return; let v = String(r[map[c]] == null ? "" : r[map[c]]).trim(); if (v === "") return;
+      if (IMP.DATE.test(c)) { const d = IMP.date(v); if (!d) bad.push(`${c} "${v}" isn't a date`); else v = d; }
+      else if (IMP.NUM.test(c) && c !== "Member #" && c !== "Squad") { const n = IMP.num(v); if (n === null) bad.push(`${c} "${v}" isn't a number`); else v = n; }
+      o[c] = v; });
+    if (type === "Members") { if (!o["Full name"] && (o["First name"] || o["Last name"])) o["Full name"] = [o["First name"], o["Last name"]].filter(Boolean).join(" ");
+      if (o["Full name"] && !o["First name"] && !o["Last name"]) { const w = String(o["Full name"]).split(/\s+/); o["First name"] = w.shift(); o["Last name"] = w.join(" "); } }
+    if ((type === "Results" || type === "Scores" || type === "BOTY" || type === "Jackpot Winners") && !o.Bowler && map._first != null) o.Bowler = [r[map._first], r[map._last]].filter(Boolean).join(" ").trim();
+    IMP.T[type].need.forEach(c => { if (!String(o[c] == null ? "" : o[c]).trim()) bad.push(`no ${c}`); });
+    return { o, bad }; },
+  key(type, o) { const k = IMP.T[type].key; if (type === "Members") { const n = String(o["Member #"] || "").trim(); return n ? "#" + n : "n:" + IMP.norm(o["Full name"]); }
+    return k.map(c => IMP.norm(o[c] instanceof Date ? o[c].toISOString().slice(0, 10) : o[c])).join("|"); }
+};
+function wireImport() {
+  let head = [], data = [], map = {}, have = null, built = [];
+  const type = () => $("#im-type").value, T = () => IMP.T[type()];
+  const help = () => { $("#im-help").innerHTML = `Goes to the <b>${esc(type())}</b> tab. Columns it can fill: ${T().cols.map(esc).join(", ")}. A row needs ${T().need.map(esc).join(" and ")}.${SHEET.key() ? "" : ` <b>This device isn't connected to the Google Sheet</b>, so you can preview but not import (Setup → connect with the staff key).`}`; };
+  const existing = () => { have = null; const t = type();
+    return fetch(SHEET.URL + "?tabs=" + encodeURIComponent(t), { cache: "no-store" }).then(r => r.json()).then(j => { if (type() !== t) return; const rows = (j && j.data && j.data[t]) || [];
+      have = new Set(); rows.forEach(r => { if (t === "Members") { if (String(r["Member #"] || "").trim()) have.add("#" + String(r["Member #"]).trim()); have.add("n:" + IMP.norm(r["Full name"])); } else have.add(IMP.key(t, r)); }); preview(); })
+      .catch(() => { have = new Set(); preview(); }); };
+  const isDup = o => { if (!have) return false; if (type() === "Members") return (String(o["Member #"] || "").trim() && have.has("#" + String(o["Member #"]).trim())) || have.has("n:" + IMP.norm(o["Full name"])); return have.has(IMP.key(type(), o)); };
+  const drawMap = () => { const opts = sel => `<option value="">Not in file</option>` + head.map((h, i) => `<option value="${i}" ${sel === i ? "selected" : ""}>${esc(h || `Column ${i + 1}`)}</option>`).join("");
+    $("#im-map").innerHTML = T().cols.map(c => `<div class="field"><label>${esc(c)}${T().need.includes(c) ? " *" : ""}</label><select data-col="${esc(c)}" class="${T().need.includes(c) && map[c] == null ? "need" : ""}">${opts(map[c])}</select></div>`).join("");
+    $("#im-map").querySelectorAll("select").forEach(sl => sl.addEventListener("change", () => { map[sl.dataset.col] = sl.value === "" ? null : +sl.value; drawMap(); preview(); })); };
+  const preview = () => { if (!data.length) return; const t = type(); built = data.map(r => IMP.build(t, map, r)); const seen = new Set();
+    built.forEach(b => { const k = t === "Members" ? (String(b.o["Member #"] || "").trim() ? "#" + String(b.o["Member #"]).trim() : "n:" + IMP.norm(b.o["Full name"])) : IMP.key(t, b.o); b.dupFile = seen.has(k); seen.add(k); b.dup = !b.bad.length && isDup(b.o); });
+    const ok = built.filter(b => !b.bad.length && !b.dupFile), nNew = ok.filter(b => !b.dup).length, nDup = ok.filter(b => b.dup).length, nBad = built.filter(b => b.bad.length).length, nTwice = built.filter(b => b.dupFile && !b.bad.length).length;
+    $("#im-prev-card").hidden = false;
+    $("#im-sum").innerHTML = `<p><b>${data.length} rows</b> in the file: <b>${nNew} new</b>, ${have ? `${nDup} already in the sheet` : "checking the sheet…"}${nTwice ? `, ${nTwice} repeated in the file (only the first is used)` : ""}${nBad ? `, <b class="dk-warn">${nBad} with problems</b> (left out)` : ""}.</p>`;
+    const cols = T().cols.filter(c => map[c] != null || (t === "Members" && /name/.test(c)));
+    $("#im-prev").innerHTML = `<thead><tr><th>Row</th><th>Status</th>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${built.slice(0, 200).map((b, i) => `<tr><td>${i + 2}</td><td class="${b.bad.length ? "bad" : b.dup || b.dupFile ? "dup" : ""}">${b.bad.length ? esc(b.bad.join("; ")) : b.dupFile ? "Repeated in file" : b.dup ? "Already in sheet" : "New"}</td>${cols.map(c => `<td>${esc(b.o[c] == null ? "" : b.o[c])}</td>`).join("")}</tr>`).join("")}</tbody>`;
+    $("#im-go").disabled = !SHEET.key() || !ok.length || !have; };
+  const load = () => { const f = $("#im-file").files[0]; if (!f) return; $("#im-status").textContent = "";
+    IMP.read(f).then(rows => { if (rows.length < 2) { $("#im-help").textContent = "That file has no rows under its heading row."; return; } head = rows[0].map(x => String(x).trim()); data = rows.slice(1);
+      map = IMP.guess(type(), head); const H = head.map(IMP.norm); map._first = H.findIndex(h => ["first", "firstname", "fname"].includes(h)); map._last = H.findIndex(h => ["last", "lastname", "lname", "surname"].includes(h)); if (map._first < 0) map._first = null; if (map._last < 0) map._last = null;
+      $("#im-map-card").hidden = false; drawMap(); preview(); existing(); }).catch(err => { $("#im-help").textContent = String(err.message || err); }); };
+  $("#im-type").addEventListener("change", () => { help(); if (data.length) { map = Object.assign(IMP.guess(type(), head), { _first: map._first, _last: map._last }); drawMap(); preview(); existing(); } });
+  $("#im-file").addEventListener("change", load);
+  $("#im-go").addEventListener("click", () => { const t = type(), rows = built.filter(b => !b.bad.length && !b.dupFile).map(b => b.o), mode = document.querySelector('input[name="im-dup"]:checked').value;
+    const todo = mode === "update" ? rows : rows.filter(o => !isDup(o)); if (!todo.length) { $("#im-status").textContent = "Nothing new to import."; return; }
+    if (!confirm(`Import ${todo.length} row${todo.length === 1 ? "" : "s"} into the ${t} tab of the Google Sheet?`)) return;
+    const btn = $("#im-go"); btn.disabled = true; const tot = { added: 0, updated: 0, skipped: 0 }, parts = []; for (let i = 0; i < todo.length; i += 250) parts.push(todo.slice(i, i + 250));
+    const next = k => { if (k >= parts.length) { $("#im-status").innerHTML = `<b>Done.</b> ${tot.added} added${tot.updated ? `, ${tot.updated} updated` : ""}${tot.skipped ? `, ${tot.skipped} already there` : ""}. Reload a page to see it.`; existing(); return; }
+      $("#im-status").textContent = `Importing ${Math.min((k + 1) * 250, todo.length)} of ${todo.length}…`;
+      fetch(SHEET.URL, { method: "POST", body: JSON.stringify({ action: "importRows", key: SHEET.key(), tab: t, mode, rows: parts[k] }) }).then(r => r.json()).then(j => { if (!j || !j.ok) throw new Error(j && j.error || "No answer");
+        tot.added += j.added || 0; tot.updated += j.updated || 0; tot.skipped += j.skipped || 0; next(k + 1); })
+        .catch(err => { btn.disabled = false; $("#im-status").innerHTML = `<b class="dk-warn">Stopped:</b> ${esc(String(err.message || err))}. ${tot.added} added so far. Press Import again to carry on (rows already in are skipped).`; }); };
+    next(0); });
+  help();
+}
 function wire(view) {
   if (view === "bowlers") { const h = document.querySelector(".staff-head"); if (h) document.documentElement.style.setProperty("--sh", h.offsetHeight + "px"); wireData("mem"); const k = document.querySelector(".bw-stick"); if (k) { const set = () => document.documentElement.style.setProperty("--bwh", k.offsetHeight + "px"); set(); if (window.ResizeObserver) new ResizeObserver(set).observe(k); } }
   if (view === "data") wireData();
+  if (view === "import") wireImport();
   if (view === "scores") wireScores();
   if (view === "standings" || view === "live") wireLive();
   if (view === "tv") wireTV();
@@ -4422,9 +4565,9 @@ function wire(view) {
   }
   if (view === "rules") {
     const calc = () => {
-      const a = Math.max(125, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
-      const base = Math.trunc((220 - a) * 0.9), h = base + b, sg = n => (n < 0 ? "−" + -n : String(n));
-      $("#hc-why").textContent = `90% of (220 − ${a})${a > 220 ? ", negative over 220" : ""}`;
+      const H = TOUR.hc(), a = Math.max(H.min || 0, Number($("#avg").value) || 0), b = Math.min(5, Math.max(0, Number($("#bonus").value) || 0));
+      const base = Math.trunc((H.base - a) * H.pct / 100), h = base + b, sg = n => (n < 0 ? "−" + -n : String(n));
+      $("#hc-why").textContent = `${H.pct}% of (${H.base} − ${a})${a > H.base ? `, negative over ${H.base}` : ""}`;
       $("#hc-base").textContent = sg(base);
       $("#hc-bonus").textContent = "+ " + b;
       $("#hdcp-out").textContent = sg(h);
@@ -4457,7 +4600,7 @@ function wire(view) {
    When a data API is added (Google Sheet), its /api/staff/* routes get the same allowedRoles so data is protected
    on the server too. The demo PIN is a temporary fallback until staff invites are set up. */
 const STAFF = {
-  views: ["desk", "scores", "standings", "bowlers", "setup", "data"],
+  views: ["desk", "scores", "standings", "bowlers", "setup", "data", "import"],
   PIN: "987654321",
   me: null,
   load() { if (!/^https?:/.test(location.protocol)) return Promise.resolve(); return fetch("/.auth/me", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(j => { STAFF.me = j && j.clientPrincipal; }).catch(() => {}); },

@@ -25,6 +25,9 @@ const SETUP_JSON = 'Setup (site data)', VENUE_JSON = 'Format (site data)';
 const MEM_ALIAS = { 'Handicap override': 'Hdcp' };
 const MEM_ORDER = ['Member #', 'First name', 'Nickname', 'Last name', 'Full name', 'Average', 'Hdcp', 'Bonus pins'];
 // Tabs with dates are kept oldest at the top, newest at the bottom (Greg, Nov 28). Sort keys per tab, in order.
+// What makes a row "the same row" for the Import page (Members: Member #, else Full name).
+const IMPORT_KEYS = { 'Members': ['Full name'], 'Schedule': ['Date'], 'Tournaments': ['Date'], 'Results': ['Date', 'Bowler'], 'Jackpot Winners': ['Date', 'Bowler', 'Jackpot'],
+  'BOTY': ['Season', 'Bowler'], 'Check-ins': ['Date', 'Squad', 'First name', 'Last name'], 'Scores': ['Date', 'Squad', 'Bowler'] };
 const DATE_SORT = { 'Tournaments': ['Date'], 'Schedule': ['Date'], 'Results': ['Date', 'Place'], 'Jackpot Winners': ['Date'], 'Check-ins': ['Date'], 'Scores': ['Date'],
   'Pots': ['Email sent'], 'Recaps': ['Tournament date'], 'BOTY': ['Season', 'Rank'] };
 
@@ -89,6 +92,34 @@ function doPost(e) {
 /* ---------- actions ---------- */
 
 const ACTIONS = {
+  // Staff Import page: rows from the old site's files. Rows already in the tab are skipped (mode 'skip')
+  // or have their non-blank cells filled in (mode 'update'). Formula cells are never written over.
+  importRows(b) {
+    const tab = String(b.tab || ''), keys = IMPORT_KEYS[tab];
+    if (!keys) throw new Error('Import can\'t write to ' + tab);
+    const norm = v => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const keyOf = o => tab === 'Members' ? [] .concat(String(o['Member #'] || '').trim() ? ['#' + String(o['Member #']).trim()] : [], o['Full name'] ? ['n:' + norm(o['Full name'])] : [])
+      : [keys.map(k => norm(o[k])).join('|')];
+    const rows = (b.rows || []).map(o => Object.fromEntries(Object.entries(o || {}).filter(([k, v]) => k && v !== '' && v != null)))
+      .filter(o => tab === 'Members' ? o['Full name'] : keys.every(k => String(o[k] == null ? '' : o[k]).trim()));
+    if (!rows.length) return { added: 0, updated: 0, skipped: 0 };
+    const s = sheet(tab), h = ensureCols(s, Object.keys(Object.assign({}, ...rows))), n = s.getLastRow() - 1, at = new Map();
+    const vals = n > 0 ? s.getRange(2, 1, n, h.length).getValues() : [], forms = n > 0 ? s.getRange(2, 1, n, h.length).getFormulas() : [];
+    vals.forEach((r, i) => { const o = {}; h.forEach((k, j) => o[k] = cellOut(r[j], k)); keyOf(o).forEach(k => { if (!at.has(k)) at.set(k, i); }); });
+    let updated = 0, skipped = 0; const add = [];
+    rows.forEach(o => {
+      const hit = keyOf(o).map(k => at.get(k)).find(i => i != null);
+      if (hit == null) { add.push(o); keyOf(o).forEach(k => at.set(k, -1)); return; }
+      if (hit < 0 || b.mode !== 'update') { skipped++; return; }
+      let ch = false;
+      Object.keys(o).forEach(k => { const c = h.indexOf(k); if (c < 0 || forms[hit][c]) return; const v = toRow([k], o)[0];
+        if (String(cellOut(vals[hit][c], k)) !== String(cellOut(v, k))) { s.getRange(hit + 2, c + 1).setValue(v); ch = true; } });
+      if (ch) updated++; else skipped++;
+    });
+    if (add.length) appendRows(tab, add);
+    if (tab === 'Members') sortMembers(s); else if (updated) sortTab(tab);
+    return { added: add.length, updated, skipped };
+  },
   // A bowler checks in from their phone (public). One row per bowler per squad; a repeat replaces the old row.
   checkin(b) {
     const r = b.row || {};
@@ -259,7 +290,7 @@ function fixDates() {
 // One-time tidy-ups. Each runs on its own, so one failing never stops the site from reading or saving.
 // They run once per FIX_VER, and only one request at a time: two requests tidying at once (no lock) is how the Members
 // tab lost its Average column on Nov 28 (both removed "the City column", so the second one removed Average).
-const FIX_VER = 'fix-2026-11-28e';
+const FIX_VER = 'fix-2026-11-28f';
 function runFixes() {
   let lock = null;
   try {
@@ -267,10 +298,17 @@ function runFixes() {
     lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) { lock = null; return; }
     if (P.getProperty('fixVer') === FIX_VER) return;
     let ok = true;
-    [fixMembers, fixMemberCols, fixCheckinCity, fixSchedule, fixSchedulePast, fixBoty, fixDates, fixSetupCols, fixSortAll].forEach(f => { try { f(); } catch (e) { ok = false; console.error(f.name + ': ' + e); } });
+    [fixMembers, fixMemberCols, fixCheckinCity, fixSchedule, fixSchedulePast, fixBoty, fixDates, fixSetupCols, fixHcpSettings, fixSortAll].forEach(f => { try { f(); } catch (e) { ok = false; console.error(f.name + ': ' + e); } });
     if (ok) P.setProperty('fixVer', FIX_VER); // a fix that failed gets another try on the next request
   } catch (e) { console.error('runFixes: ' + e); }
   finally { if (lock) try { lock.releaseLock(); } catch (_) {} }
+}
+// Handicap formula rows in Settings (Setup -> Tour): Rule 12 is 90% of (220 - average), lowest average 125.
+function fixHcpSettings() {
+  const ss = SpreadsheetApp.getActive(); let s = ss.getSheetByName('Settings');
+  if (!s) { s = ss.insertSheet('Settings'); s.getRange(1, 1, 1, 2).setValues([['Setting', 'Value']]); }
+  const have = readTabRaw(s).map(r => r['Setting']);
+  [['Handicap: base average', 220], ['Handicap: percent', 90], ['Handicap: lowest average', 125]].forEach(([k, v]) => { if (have.indexOf(k) < 0) appendRows('Settings', [{ 'Setting': k, 'Value': v }]); });
 }
 // One-time (Nov 28): the JSON copy columns go. Values only they held move to real columns first:
 // Tournaments: squads opened early, setup confirmed at, how to fill. Venues: how to fill.
