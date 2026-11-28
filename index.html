@@ -3966,9 +3966,7 @@ function wireCheckin() {
           <li><span class="dot">${r.paid ? "✓" : "1"}</span><span>${r.paid ? "Paid. Thanks!" : `Show this screen at the desk and pay your entry fee${pots ? ` plus $${pots} in side pots` : ""}${m.isNew ? " and the $25 membership. A director will confirm your average" : ""}. You can't bowl until you've paid.`}</span></li>
           <li><span class="dot">2</span><span>${r.lane ? `Head to lane ${r.lane}. If the desk moves you, your lane updates on this screen.` : "Your lane shows up here as soon as the desk marks you paid."}</span></li>
           <li><span class="dot">3</span><span>Bowl. A rover enters your scores after each game, so there's no card to carry.</span></li>
-        </ol>
-        <div class="ck-end"><button type="button" class="btn btn-ghost" id="ck-again">Check in another bowler</button></div>`;
-      $("#ck-again").addEventListener("click", () => go("find", { who: null, friendHit: null, repeat: null }));
+        </ol>`;
       return;
     }
     if (U.step === "new") {
