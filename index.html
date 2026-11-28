@@ -3612,7 +3612,7 @@ const CKCTL = {
       const now = CFG.status(c);
       say(act === "off" ? `Check-in is open for the ${nm(0)} squad.` : act === "open" ? `Check-in closed for the ${nm(sq)} squad.` + (now.state === "waiting" ? ` The ${nm(now.k)} squad opens on its own at ${now.at}.` : now.state === "open" ? ` The ${nm(now.k)} squad is open now.` : " That was the last squad.") : `Check-in is open for the ${nm(sq)} squad.`);
     });
-    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; CFG.put(e, c); route(); say("Check-in is off. Press Open check-in to start again with the first squad."); });
+    $("#ckc-stop").addEventListener("click", () => { if (!confirm("Turn off check-in for every squad? Bowlers will see a \"not open\" note.")) return; const c = CFG.get(e); c.open = false; c.closed = []; c.forced = []; if (!CK.list(e).length) { delete c.confirmedSig; delete c.confirmedAt; } CFG.put(e, c); route(); say(CK.list(e).length ? "Check-in is off. Press Open check-in to start again with the first squad." : "Check-in is off. Confirm the setup again before opening it."); });
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
 };
@@ -4031,7 +4031,7 @@ function wireDesk() {
     const when = ok && c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     box.className = "panel dk-setup " + (ok ? "green" : pr.length ? "red" : "");
     box.innerHTML = `<h3>${ok ? "✓ Setup confirmed" : pr.length ? "Setup not ready" : "Confirm the setup before opening check-in"} · ${esc(ven)} · ${esc(longDate(e.date))}</h3>
-      <dl><div><dt>Lanes</dt><dd>${c.first}–${c.last}, start lane ${c.dir === "down" ? c.last + " going down" : c.first + " going up"}</dd></div>
+      <dl><div><dt>Lanes</dt><dd>${c.first}–${c.last}, start lane ${c.dir === "down" ? c.last + " going down" : c.first + " going up"}${CFG.down(c).length ? `<br><span class="dk-warn">Out of service: ${esc(CFG.downText(c))}</span>` : ""}</dd></div>
       <div><dt>Bowlers per lane</dt><dd>${c.max}${c.overflow && c.overflowMax > c.max ? ` (${c.overflowMax} when full)` : ""}</dd></div>
       <div><dt>Squads</dt><dd>${sq.length ? sq.map(esc).join(", ") : "None"}</dd></div>
       <div><dt>Games</dt><dd>${c.games} bowled, ${c.count < c.games ? `best ${c.count} count` : "all count"}</dd></div>
@@ -4168,7 +4168,10 @@ function wireDesk() {
   $("#dk-demo").addEventListener("click", () => { if (CK.locked(e, CK.deskSq)) { msg(`The ${e.squads[CK.deskSq]} squad is closed. Reopen it to add sample bowlers.`); return; } const n = CK.addSamples(e, CK.deskSq); msg(`Added ${n} sample bowlers to the ${e.squads[CK.deskSq]} squad: some paid with lanes, some not paid, new members, friends, side pots. They're saved to the sheet marked Sample; Clear this squad's samples removes them again.`); draw(); });
   $("#dk-clear").addEventListener("click", () => { const sq = CK.deskSq, nm = e.squads[sq], n = CK.list(e).filter(r => r.sample && r.squad === sq).length;
     if (!n) { msg(`There are no sample check-ins in the ${nm} squad.`); return; } if (CK.locked(e, sq)) { msg(`The ${nm} squad is closed. Reopen it to clear its sample check-ins.`); return; }
-    if (!confirm(`Remove the ${n} sample check-ins from the ${nm} squad? Real check-ins and other squads stay.`)) return; CK.clearSamples(e, sq); msg(`Cleared ${n} sample check-ins from the ${nm} squad.`); draw(); });
+    if (!confirm(`Remove the ${n} sample check-ins from the ${nm} squad? Real check-ins and other squads stay.`)) return; CK.clearSamples(e, sq);
+    // Nothing left checked in for the day: start over, so the setup needs confirming again (Greg, Nov 28)
+    if (!CK.list(e).length) { const y = CFG.get(e); delete y.confirmedSig; delete y.confirmedAt; y.open = false; y.closed = []; y.forced = []; CK.deskSq = 0; CFG.put(e, y); route(); msg(`Cleared ${n} sample check-ins. Nobody is checked in now, so the setup needs confirming again before check-in opens.`); return; }
+    msg(`Cleared ${n} sample check-ins from the ${nm} squad.`); draw(); });
 
   draw();
   const onStore = ev => { if (!document.getElementById("dk-body")) return window.removeEventListener("storage", onStore); if (ev.key === CK.key(e)) draw(); };
