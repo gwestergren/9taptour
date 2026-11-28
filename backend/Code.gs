@@ -20,6 +20,8 @@ const PUBLIC_TABS = ['Tournaments', 'Results', 'Members', 'Jackpot Winners', 'Po
 const PRIVATE_COLS = ['Phone', 'Email'];           // never sent out by doGet
 // Old JSON copy columns (removed Nov 28: every value now has its own column, and the site rebuilds the setup from them).
 const SETUP_JSON = 'Setup (site data)', VENUE_JSON = 'Format (site data)';
+// Members tab column names (Greg, Nov 28): "Avg" and "Hdcp" (blank Hdcp = worked out from Avg). The site sends the old names.
+const MEM_ALIAS = { 'Average': 'Avg', 'Handicap override': 'Hdcp' };
 // Tabs with dates are kept oldest at the top, newest at the bottom (Greg, Nov 28). Sort keys per tab, in order.
 const DATE_SORT = { 'Tournaments': ['Date'], 'Schedule': ['Date'], 'Results': ['Date', 'Place'], 'Jackpot Winners': ['Date'], 'Check-ins': ['Date'], 'Scores': ['Date'],
   'Pots': ['Email sent'], 'Recaps': ['Tournament date'], 'BOTY': ['Season', 'Rank'] };
@@ -54,6 +56,7 @@ function doGet(e) {
       let rows = readTab(t);
       if (p.date && (t === 'Check-ins' || t === 'Scores' || t === 'Results')) rows = rows.filter(r => r['Date'] === p.date);
       if (p.since && (t === 'Tournaments' || t === 'Schedule')) rows = rows.filter(r => r['Date'] >= p.since);
+      if (t === 'Members') rows.forEach(r => Object.keys(MEM_ALIAS).forEach(k => { if (MEM_ALIAS[k] in r) r[k] = r[MEM_ALIAS[k]]; })); // the site still reads Average / Handicap override
       data[t] = rows;
     });
     return out({ ok: true, data });
@@ -149,6 +152,7 @@ const ACTIONS = {
   deleteMember(b) { const k = rawKey(b.name); if (k) deleteWhere('Members', r => rawKey(r['Full name']) === k); return {}; },
   saveMember(b) {
     const m = b.member || {};
+    Object.keys(MEM_ALIAS).forEach(k => { if (k in m) { m[MEM_ALIAS[k]] = m[k]; delete m[k]; } }); // the site's names -> the tab's (Avg, Hdcp)
     const full = m['Full name'] || [m['First name'], m['Last name']].filter(Boolean).join(' ');
     const rows = readTab('Members');
     const was = String(b.was || '').trim().toLowerCase(); // the row's name before a rename on the site
@@ -251,7 +255,21 @@ function fixDates() {
   P.setProperty('dateFmt1', '1');
 }
 // One-time tidy-ups. Each runs on its own, so one failing never stops the site from reading or saving.
-function runFixes() { [fixMembers, fixSchedule, fixSchedulePast, fixBoty, fixDates, fixSetupCols, fixSortAll].forEach(f => { try { f(); } catch (e) { console.error(f.name + ': ' + e); } }); }
+// They run once per FIX_VER, and only one request at a time: two requests tidying at once (no lock) is how the Members
+// tab lost its Average column on Nov 28 (both removed "the City column", so the second one removed Average).
+const FIX_VER = 'fix-2026-11-28c';
+function runFixes() {
+  let lock = null;
+  try {
+    const P = PropertiesService.getScriptProperties(); if (P.getProperty('fixVer') === FIX_VER) return;
+    lock = LockService.getScriptLock(); if (!lock.tryLock(15000)) { lock = null; return; }
+    if (P.getProperty('fixVer') === FIX_VER) return;
+    let ok = true;
+    [fixMembers, fixMemberCols, fixCheckinCity, fixSchedule, fixSchedulePast, fixBoty, fixDates, fixSetupCols, fixSortAll].forEach(f => { try { f(); } catch (e) { ok = false; console.error(f.name + ': ' + e); } });
+    if (ok) P.setProperty('fixVer', FIX_VER); // a fix that failed gets another try on the next request
+  } catch (e) { console.error('runFixes: ' + e); }
+  finally { if (lock) try { lock.releaseLock(); } catch (_) {} }
+}
 // One-time (Nov 28): the JSON copy columns go. Values only they held move to real columns first:
 // Tournaments: squads opened early, setup confirmed at, how to fill. Venues: how to fill.
 function fixSetupCols() {
@@ -267,6 +285,26 @@ function fixSetupCols() {
     s.deleteColumn(headers(s).indexOf(col) + 1);
   });
   P.setProperty('setupCols1', '1');
+}
+// One-time (Nov 28): Members gets an "Avg" column just left of the handicap column, which is renamed "Hdcp".
+// An "Average" column (added at the far right by an older save) moves into Avg.
+function fixMemberCols() {
+  const P = PropertiesService.getScriptProperties(); if (P.getProperty('memCols1')) return;
+  const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
+  let h = headers(s); const hi = h.indexOf('Handicap override') >= 0 ? h.indexOf('Handicap override') : h.indexOf('Hdcp');
+  if (hi >= 0) s.getRange(1, hi + 1).setValue('Hdcp');
+  if (h.indexOf('Avg') < 0) {
+    if (hi >= 0) { s.insertColumnBefore(hi + 1); s.getRange(1, hi + 1).setValue('Avg'); s.getRange(1, hi + 1).setFontWeight('bold'); }
+    else ensureCols(s, ['Avg', 'Hdcp']);
+  }
+  h = headers(s); const ai = h.indexOf('Average'), vi = h.indexOf('Avg'), n = s.getLastRow() - 1;
+  if (ai >= 0) { if (n > 0) { const a = s.getRange(2, ai + 1, n, 1).getValues(), v = s.getRange(2, vi + 1, n, 1).getValues(); s.getRange(2, vi + 1, n, 1).setValues(v.map((r, i) => [r[0] !== '' ? r[0] : a[i][0]])); } s.deleteColumn(ai + 1); }
+  P.setProperty('memCols1', '1');
+}
+// One-time (Nov 28): the Check-ins tab has no City column (the Tour doesn't keep a bowler's city).
+function fixCheckinCity() {
+  const s = SpreadsheetApp.getActive().getSheetByName('Check-ins'); if (!s || s.getLastColumn() < 1) return;
+  const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1);
 }
 // One-time (Nov 28): every dated tab is put oldest-first (some were newest at the top).
 function fixSortAll() {

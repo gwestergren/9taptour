@@ -1494,7 +1494,7 @@ const SHEET = {
   ready() { return SHEET.members().length >= 1; },
   yes: v => v ? "Yes" : "",
   sqTime(e, i) { const c = CFG.get(e); return CFG.normT((c.squads || [])[i] || (e.squads || [])[i] || ""); },
-  ckOut(r, e) { return { "Squad": r.squad + 1, "Squad time": e ? SHEET.sqTime(e, r.squad) : "", "Member #": r.member, "First name": r.first, "Last name": r.last, "City": r.city, "Average": r.avg || "", "Handicap": r.hcp == null ? "" : r.hcp,
+  ckOut(r, e) { return { "Squad": r.squad + 1, "Squad time": e ? SHEET.sqTime(e, r.squad) : "", "Member #": r.member, "First name": r.first, "Last name": r.last, "Average": r.avg || "", "Handicap": r.hcp == null ? "" : r.hcp,
     "Bonus pins": r.bonus || "", "New member": SHEET.yes(r.isNew), "Lane": r.lane || "", "9-Tap Jackpot": SHEET.yes(r.jackpot), "Progressive": r.prog || "", "Bowl with": r.friend || "",
     "Checked in by": r.via || "", "Paid": SHEET.yes(r.paid), "Sample": r.sample ? "Sample" : "", "Checked in at": r.at ? new Date(r.at).toISOString() : "" }; },
   ckIn(x) { return { member: String(x["Member #"]), first: x["First name"], last: x["Last name"], city: x.City, avg: +x.Average || 0, bonus: +x["Bonus pins"] || 0,
