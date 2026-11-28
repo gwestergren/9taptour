@@ -18,8 +18,11 @@
 
 const PUBLIC_TABS = ['Tournaments', 'Results', 'Members', 'Jackpot Winners', 'Pots', 'BOTY', 'Recaps', 'Venues', 'Check-ins', 'Scores', 'Settings', 'Schedule'];
 const PRIVATE_COLS = ['Phone', 'Email'];           // never sent out by doGet
-const SETUP_JSON = 'Setup (site data)';           // full Setup object, so the site gets back exactly what it saved
-const VENUE_JSON = 'Format (site data)';
+// Old JSON copy columns (removed Nov 28: every value now has its own column, and the site rebuilds the setup from them).
+const SETUP_JSON = 'Setup (site data)', VENUE_JSON = 'Format (site data)';
+// Tabs with dates are kept oldest at the top, newest at the bottom (Greg, Nov 28). Sort keys per tab, in order.
+const DATE_SORT = { 'Tournaments': ['Date'], 'Schedule': ['Date'], 'Results': ['Date', 'Place'], 'Jackpot Winners': ['Date'], 'Check-ins': ['Date'], 'Scores': ['Date'],
+  'Pots': ['Email sent'], 'Recaps': ['Tournament date'], 'BOTY': ['Season', 'Rank'] };
 
 /* ---------- one-time setup ---------- */
 
@@ -122,8 +125,8 @@ const ACTIONS = {
       'Max per lane when full': s.overflow ? s.overflowMax : '', 'Games bowled': s.games, 'Games that count': s.count,
       'Squad times': (s.squads || []).join(', '), 'Check-in opens (min before squad)': s.openMins,
       'Check-in open': s.open ? 'Yes' : '', 'Closed squads': (s.closed || []).map(i => i + 1).join(', '),
-      'Entry fee': s.fee == null ? '' : s.fee, 'Re-entry fee': s.fee2 == null ? '' : s.fee2, 'How to fill': s.fill === 'spread' ? 'One per lane, then wrap' : 'Fill each lane first', 'Setup saved at': new Date().toISOString(),
-      [SETUP_JSON]: JSON.stringify(s)
+      'Squads opened early': (s.forced || []).map(i => i + 1).join(', '), 'Setup confirmed at': b.confirmed ? (s.confirmedAt || new Date().toISOString()) : '',
+      'Entry fee': s.fee == null ? '' : s.fee, 'Re-entry fee': s.fee2 == null ? '' : s.fee2, 'How to fill': s.fill === 'spread' ? 'One per lane, then wrap' : 'Fill each lane first', 'Setup saved at': new Date().toISOString()
     });
     return {};
   },
@@ -135,7 +138,7 @@ const ACTIONS = {
         'Venue': v.name, 'City': v.city, 'Lanes (first)': f.first, 'Lanes (last)': f.last, 'Lane order': f.dir,
         'Bowlers per lane': f.max, 'Max per lane when full': f.overflow ? f.overflowMax : '', 'Games bowled': f.games,
         'Games that count': f.count, 'Usual squad times': (f.squads || []).join(', '), 'Check-in opens (min before squad)': f.openMins,
-        [VENUE_JSON]: JSON.stringify(f)
+        'How to fill': f.fill === 'spread' ? 'One per lane, then wrap' : 'Fill each lane first'
       });
     });
     if (b.removed) b.removed.forEach(n => deleteWhere('Venues', x => x['Venue'] === n));
@@ -248,7 +251,29 @@ function fixDates() {
   P.setProperty('dateFmt1', '1');
 }
 // One-time tidy-ups. Each runs on its own, so one failing never stops the site from reading or saving.
-function runFixes() { [fixMembers, fixSchedule, fixSchedulePast, fixBoty, fixDates].forEach(f => { try { f(); } catch (e) { console.error(f.name + ': ' + e); } }); }
+function runFixes() { [fixMembers, fixSchedule, fixSchedulePast, fixBoty, fixDates, fixSetupCols, fixSortAll].forEach(f => { try { f(); } catch (e) { console.error(f.name + ': ' + e); } }); }
+// One-time (Nov 28): the JSON copy columns go. Values only they held move to real columns first:
+// Tournaments: squads opened early, setup confirmed at, how to fill. Venues: how to fill.
+function fixSetupCols() {
+  const P = PropertiesService.getScriptProperties(); if (P.getProperty('setupCols1')) return;
+  const fill = f => f === 'spread' ? 'One per lane, then wrap' : 'Fill each lane first';
+  [['Tournaments', SETUP_JSON, 'Date'], ['Venues', VENUE_JSON, 'Venue']].forEach(([name, col, key]) => {
+    const s = SpreadsheetApp.getActive().getSheetByName(name); if (!s) return;
+    const ci = headers(s).indexOf(col); if (ci < 0) return;
+    readTabRaw(s).forEach(r => { let o = null; try { o = JSON.parse(r[col] || 'null'); } catch (_) {} if (!o || !r[key]) return;
+      const v = { 'How to fill': r['How to fill'] || fill(o.fill) };
+      if (name === 'Tournaments') Object.assign(v, { 'Squads opened early': (o.forced || []).map(i => i + 1).join(', '), 'Setup confirmed at': o.confirmedSig ? (o.confirmedAt || r['Setup saved at'] || new Date().toISOString()) : '' });
+      upsert(name, key, r[key], v); });
+    s.deleteColumn(headers(s).indexOf(col) + 1);
+  });
+  P.setProperty('setupCols1', '1');
+}
+// One-time (Nov 28): every dated tab is put oldest-first (some were newest at the top).
+function fixSortAll() {
+  const P = PropertiesService.getScriptProperties(); if (P.getProperty('sortOld1')) return;
+  Object.keys(DATE_SORT).forEach(sortTab);
+  P.setProperty('sortOld1', '1');
+}
 function fixSchedulePast() {
   const s = SpreadsheetApp.getActive().getSheetByName('Schedule'); if (!s) return;
   const have = readTab('Schedule'); if (have.some(r => String(r['Date']) < '2025-01-01')) return;
@@ -394,7 +419,6 @@ function readTab(name) {
   return vals.filter(r => r.some(v => v !== '' && v !== null)).map(r => {
     const o = {};
     h.forEach((k, i) => { if (k && PRIVATE_COLS.indexOf(k) < 0) o[k] = cellOut(r[i], k); });
-    ['Setup (site data)', 'Format (site data)'].forEach(k => { if (o[k]) try { o[k] = JSON.parse(o[k]); } catch (_) {} });
     return o;
   });
 }
@@ -417,7 +441,16 @@ function toRow(h, o, old) {
 function appendRows(name, objs) {
   if (!objs.length) return;
   const s = sheet(name), h = ensureCols(s, Object.keys(Object.assign({}, ...objs)));
-  s.getRange(s.getLastRow() + 1, 1, objs.length, h.length).setValues(objs.map(o => toRow(h, o)));
+  const at = s.getLastRow() + 1;
+  s.getRange(at, 1, objs.length, h.length).setValues(objs.map(o => toRow(h, o)));
+  // New rows go at the bottom; sort only when one is older than the row above it (a past or in-between date).
+  const k = (DATE_SORT[name] || [])[0], c = h.indexOf(k);
+  if (c >= 0 && at > 2) { const prev = cellOut(s.getRange(at - 1, c + 1).getValues()[0][0], k); if (objs.some(o => String(o[k] || '') < String(prev || ''))) sortTab(name); }
+}
+function sortTab(name) {
+  const s = SpreadsheetApp.getActive().getSheetByName(name); if (!s || !DATE_SORT[name]) return;
+  const h = headers(s), n = s.getLastRow() - 1, by = DATE_SORT[name].map(k => h.indexOf(k)).filter(i => i >= 0);
+  if (n > 1 && by.length) s.getRange(2, 1, n, h.length).sort(by.map(i => ({ column: i + 1, ascending: true })));
 }
 // Rows whose formulas must survive (Members, Venues) are only ever updated column by column, never rewritten whole.
 function upsert(name, keyCol, keyVal, obj) {

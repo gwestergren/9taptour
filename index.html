@@ -1394,12 +1394,28 @@ const SHEET = {
     const P = (data.Pots || []).map((r, i) => [r, i]).filter(([r]) => SHEET.iso(r["Email sent"]) && +r["9-Tap Jackpot"] >= 100) // a jackpot under $100 is a typo (it never resets that low), so skip that row.sort((a, b) => SHEET.iso(b[0]["Email sent"]).localeCompare(SHEET.iso(a[0]["Email sent"])) || b[1] - a[1]).map(([r]) => r);
     if (P.length) { const p = P[0], rec = Math.max(0, ...P.map(r => +r["9-Tap Jackpot"] || 0));
       SHEET.set("9tap-pots", { savedOn: SHEET.iso(p["Email sent"]), jackpot: +p["9-Tap Jackpot"] || 0, progressive: +p["Progressive Pot"] || 0, jackpotRecord: rec }); }
-    const V = (data.Venues || []).filter(r => r["Format (site data)"] && typeof r["Format (site data)"] === "object");
-    if (V.length && !SHEET.get(SHEET.QUEUE, []).some(x => x.action === "saveVenues")) { const old = SHEET.get("9tap-venues", []); SHEET.set("9tap-venues", V.map((r, i) => ({ id: (old.find(o => o.name === r.Venue) || {}).id || "s" + i, name: r.Venue, city: r.City || "", fmt: r["Format (site data)"] }))); }
+    // Setup and venue formats are rebuilt from the sheet's own columns (no JSON copy since Nov 28).
+    const num = x => x === "" || x == null || isNaN(+x) ? undefined : +x, list = x => String(x == null ? "" : x).split(",").map(t => t.trim()).filter(Boolean);
+    const fmtOf = (r, first, last) => { const f = {}, put = (k, v) => { if (v !== undefined && v !== "") f[k] = v; }, full = num(r["Max per lane when full"]);
+      put("first", num(r[first])); put("last", num(r[last])); put("dir", r["Lane order"] === "down" ? "down" : r["Lane order"] ? "up" : undefined); put("max", num(r["Bowlers per lane"]));
+      if (r["How to fill"]) f.fill = /one per lane/i.test(r["How to fill"]) ? "spread" : "lane";
+      if (f.max !== undefined) { f.overflow = full !== undefined; f.overflowMax = full !== undefined ? full : f.max; }
+      return f; };
+    const V = (data.Venues || []).filter(r => r.Venue && (r["Lanes (first)"] !== "" && r["Lanes (first)"] != null || (r["Format (site data)"] && typeof r["Format (site data)"] === "object")));
+    if (V.length && !SHEET.get(SHEET.QUEUE, []).some(x => x.action === "saveVenues")) { const old = SHEET.get("9tap-venues", []); SHEET.set("9tap-venues", V.map((r, i) => ({ id: (old.find(o => o.name === r.Venue) || {}).id || "s" + i, name: r.Venue, city: r.City || "", fmt: Object.assign({}, typeof r["Format (site data)"] === "object" ? r["Format (site data)"] : {}, fmtOf(r, "Lanes (first)", "Lanes (last)")) }))); }
     const waiting = SHEET.get(SHEET.QUEUE, []); // a save that hasn't reached the sheet yet wins over the sheet's older copy
     { const m = {}; (data.Settings || []).forEach(r => { if (r.Setting) m[r.Setting] = r.Value; }); const n = x => x === "" || x == null || !(+x >= 0) ? null : +x;
       if ("Entry fee (first squad)" in m && !waiting.some(x => x.action === "saveSettings")) SHEET.set("9tap-tour", { fee: n(m["Entry fee (first squad)"]), fee2: n(m["Re-entry fee (each extra squad)"]), openMins: +m["Check-in opens (min before squad)"] || 60 }); }
-    (data.Tournaments || []).forEach(r => { const s = r["Setup (site data)"], d = SHEET.iso(r.Date); if (s && typeof s === "object" && d && !waiting.some(x => x.action === "saveSetup" && x.date === d)) SHEET.set("9tap-setup:" + d, Object.assign({}, s, r.Center ? { venueName: r.Center } : {})); });
+    (data.Tournaments || []).forEach(r => { const d = SHEET.iso(r.Date), old = r["Setup (site data)"] && typeof r["Setup (site data)"] === "object" ? r["Setup (site data)"] : null;
+      if (!d || !(r["Setup saved at"] || old) || waiting.some(x => x.action === "saveSetup" && x.date === d)) return;
+      const s = Object.assign({}, old || {}, fmtOf(r, "First lane", "Last lane"), { saved: true }), k1 = x => list(x).map(n => +n - 1).filter(n => n >= 0);
+      [["games", "Games bowled"], ["count", "Games that count"], ["openMins", "Check-in opens (min before squad)"], ["fee", "Entry fee"], ["fee2", "Re-entry fee"]].forEach(([k, c]) => { if (num(r[c]) !== undefined) s[k] = num(r[c]); });
+      if (list(r["Squad times"]).length) s.squads = list(r["Squad times"]);
+      s.open = /^y/i.test(r["Check-in open"] || ""); s.closed = k1(r["Closed squads"]);
+      if ("Squads opened early" in r) s.forced = k1(r["Squads opened early"]);
+      if ("Setup confirmed at" in r) { if (r["Setup confirmed at"]) { s.confirmedSig = "sheet"; s.confirmedAt = r["Setup confirmed at"]; } else { delete s.confirmedSig; delete s.confirmedAt; } }
+      if (r.Center) s.venueName = r.Center; delete s.venue;
+      SHEET.set("9tap-setup:" + d, s); });
   },
   // Load the last good copy right away (before the page draws), then ask the sheet for a fresh one.
   boot() { const c = SHEET.get(SHEET.CACHE, null); if (c && c.data) { SHEET.apply(c.data, true); SHEET.at = c.at; } },
@@ -3103,14 +3119,16 @@ const CFG = {
     if (c.fee == null) o.push("Entry fee (first squad) is blank (Tour tab)");
     if (sq.length > 1 && c.fee2 == null) o.push("Re-entry fee (each extra squad) is blank (Tour tab)");
     return o; },
-  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {} const c = Object.assign(CFG.defaults(e), v || {}); if (!c.venue && !c.venueName) { const vn = VEN.byName(e.center); if (vn) c.venue = vn.id; }
+  get(e) { let v = null; try { v = JSON.parse(localStorage.getItem(CFG.key(e))); } catch (_) {}
+    if (v && v.confirmedSig === "sheet") { v.confirmedSig = CFG.sig(Object.assign(CFG.defaults(e), v)); try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} } // the sheet says "confirmed": it was confirmed with the values saved there
+    const c = Object.assign(CFG.defaults(e), v || {}); if (!c.venue && !c.venueName) { const vn = VEN.byName(e.center); if (vn) c.venue = vn.id; }
     // Upcoming and today's tournaments use the venue's lanes and the Tour settings as they are now. A past tournament keeps
     // the copy saved with it (its own Tournaments row), so changing a venue later never rewrites history.
     if (!(v && e.date < TODAY_ISO)) { const ven = (c.venueName && VEN.byName(c.venueName)) || (c.venue && VEN.find(c.venue)); if (ven) { c.venue = ven.id; c.venueName = ven.name; Object.assign(c, VEN.fmt(ven.fmt)); } // lanes come from the venue
       Object.assign(c, TOUR.get()); }
     c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
-  put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v }); },
+  put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v, confirmed: !!(v && v.confirmedSig) && v.confirmedSig === CFG.sig(v) }); },
   order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
   // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
