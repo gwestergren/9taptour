@@ -1336,6 +1336,8 @@ const DATA = {
     ["37T","John Hart",30,2,684,68],["37T","Aron Golden",18,0,684,68],["39","Marilyn Mateo",37,0,683,65]
   ],
   progressivePaid: { "Michael Miller": 1563, "Brian Lascala": 625, "Kris Koepke": 156, "Mary Bridgman": 156 },
+  // 2026 Bowler of the Year standings as of Aug 4, 2026 (the Tour's posted image; top 50, in its order).
+  boy2026: [["Yanis Green", 482],["Johnny Seng", 468],["Dale Roberts Jr", 456],["Samson Ibale", 437],["Andy Snow", 431],["Manuel Mason", 405],["Paul Kelly", 381],["Walt Dalrymple", 370],["Stephanie Lanouette", 369],["Alex Cady", 363],["Earl Kleist", 352],["Thang Duc Thai", 349],["Steven Nolan", 340],["Andrew Darr", 325],["James Black", 319],["Tina Tran", 304],["Bill Hunter", 302],["Keliikuewa Kalima-Marion", 301],["Jay Pannette", 295],["Derek Chan", 287],["Jeffrey Price", 287],["Joe Fincher Jr", 270],["Oscar Gestoso", 269],["Brett Harrison", 265],["Jeremy Lanouette", 254],["Red Mateo", 253],["Rolando Liscano", 232],["Robert Anderson", 232],["Kris Koepke", 232],["Skip Shear Jr", 231],["Collin Dionne", 230],["Jeremy Price", 228],["Rene Malicdan", 227],["Andrey Williams", 227],["Terry Farr", 224],["Marilyn Mateo", 222],["James Mitchell", 221],["L.C. Cofield", 216],["Leroy Cofield", 4],["Crisanta Williams", 217],["Tong Nguyen", 212],["Mark Clark", 210],["Young Pettengill", 205],["Thomas Donahue", 203],["Joel Brown", 200],["Ashley Kochel", 199],["Austin Forrest", 197],["Nicholas Pagdilao", 193],["Jon Schneider", 192],["Joshua Brown", 192]],
   boy: [
     ["Johnny Seng",633],["Charles Daughery Jr.",588],["Samson Ibale",517],["Paul Kelly",510],["Ruong Sa Tang",508],
     ["Jeffrey Price",470],["Earl Kleist",470],["Walt Dalrymple",451],["Thang Duc Thai",449],["Tong Nguyen",435],
@@ -2011,7 +2013,7 @@ const VIEWS = {
       <tr class="${rank <= 3 ? "top3" : ""}" data-name="${esc(n.toLowerCase())}"><td class="place">${rank}${boy.filter(b => b[1] === p).length > 1 ? "T" : ""}</td><td>${esc(n)}</td>
       <td class="bar-cell"><div class="bar"><i style="width:${(p / max * 100).toFixed(1)}%"></i></div></td><td class="r num">${p}</td></tr>`; }).join("");
     const intro = y === 2025 ? "These are the 2025 standings as of September 1, 2025, the most recent the Tour has posted."
-      : y === 2026 ? "The 2026 race is still going. Sample standings through the November 22 tournament."
+      : y === 2026 ? "These are the 2026 standings as of August 4, 2026 (top 50), the most recent the Tour has posted."
       : `Final ${y} standings after the Year End Championship. Sample data for this mockup.`;
     const won = y === 2026 || y === 2025 ? "Leader" : `${y} Bowler of the Year`;
     return `
@@ -2843,11 +2845,12 @@ const HIST = (() => {
     inMonth: (y, m) => list.filter(x => +x.date.slice(0, 4) === y && +x.date.slice(5, 7) - 1 === m).reverse()
   };
 })();
-/* Bowler of the Year by season: 2025 is the real table (as of Sep 1, 2025); other seasons are sample standings led by that year's sample winners. */
+/* Bowler of the Year by season: 2025 (as of Sep 1, 2025) and 2026 (as of Aug 4, 2026) are the real tables; other seasons are sample standings led by that year's sample winners. */
 const BOY = {
   cache: {},
   get(y) {
     if (y === 2025) return DATA.boy;
+    if (y === 2026) return DATA.boy2026;
     if (this.cache[y]) return this.cache[y];
     let seed = y * 7919;
     const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;

@@ -42,7 +42,7 @@ function newStaffKey() {
 
 function doGet(e) {
   try {
-    fixMembers(); fixSchedule();
+    fixMembers(); fixSchedule(); fixBoty();
     const p = (e && e.parameter) || {};
     if (p.ping) return out({ ok: true, now: new Date().toISOString() });
     const want = (p.tabs ? String(p.tabs).split(',') : PUBLIC_TABS).map(s => s.trim()).filter(t => PUBLIC_TABS.indexOf(t) >= 0);
@@ -62,7 +62,7 @@ function doGet(e) {
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
-    fixMembers(); fixSchedule();
+    fixMembers(); fixSchedule(); fixBoty();
     const body = JSON.parse(e.postData.contents || '{}');
     const act = body.action;
     if (act !== 'checkin' && !isStaff(body.key)) return out({ ok: false, error: 'Staff key needed' });
@@ -218,6 +218,13 @@ function fixSchedule() {
   sh.getRange(1, 1, 1, H.length).setValues([H]);
   const rows = readTab('Tournaments').filter(r => r['Date'] && String(r['Squad times'] || '').trim()).sort((a, b) => String(a['Date']).localeCompare(String(b['Date'])));
   if (rows.length) sh.getRange(2, 1, rows.length, H.length).setValues(rows.map(r => [r['Date'], r['Center'] || '', r['City'] || '', r['Squad times'], r['Event / note'] || '', r['Invite only'] || '']));
+}
+// One-time: the real 2026 BOTY standings (as of Aug 4, 2026, top 50 from the Tour's posted image) go on the BOTY tab.
+const BOTY_2026 = [["Yanis Green", 482], ["Johnny Seng", 468], ["Dale Roberts Jr", 456], ["Samson Ibale", 437], ["Andy Snow", 431], ["Manuel Mason", 405], ["Paul Kelly", 381], ["Walt Dalrymple", 370], ["Stephanie Lanouette", 369], ["Alex Cady", 363], ["Earl Kleist", 352], ["Thang Duc Thai", 349], ["Steven Nolan", 340], ["Andrew Darr", 325], ["James Black", 319], ["Tina Tran", 304], ["Bill Hunter", 302], ["Keliikuewa Kalima-Marion", 301], ["Jay Pannette", 295], ["Derek Chan", 287], ["Jeffrey Price", 287], ["Joe Fincher Jr", 270], ["Oscar Gestoso", 269], ["Brett Harrison", 265], ["Jeremy Lanouette", 254], ["Red Mateo", 253], ["Rolando Liscano", 232], ["Robert Anderson", 232], ["Kris Koepke", 232], ["Skip Shear Jr", 231], ["Collin Dionne", 230], ["Jeremy Price", 228], ["Rene Malicdan", 227], ["Andrey Williams", 227], ["Terry Farr", 224], ["Marilyn Mateo", 222], ["James Mitchell", 221], ["L.C. Cofield", 216], ["Leroy Cofield", 4], ["Crisanta Williams", 217], ["Tong Nguyen", 212], ["Mark Clark", 210], ["Young Pettengill", 205], ["Thomas Donahue", 203], ["Joel Brown", 200], ["Ashley Kochel", 199], ["Austin Forrest", 197], ["Nicholas Pagdilao", 193], ["Jon Schneider", 192], ["Joshua Brown", 192]];
+function fixBoty() {
+  const s = SpreadsheetApp.getActive().getSheetByName('BOTY'); if (!s) return;
+  if (readTab('BOTY').some(r => String(r['Season']) === '2026')) return;
+  appendRows('BOTY', BOTY_2026.map((x, i) => ({ 'Season': 2026, 'Rank': i + 1, 'Bowler': x[0], 'Points': x[1], 'As of': '2026-08-04', 'Source': 'Tour BOTY standings image (8/4/2026)' })));
 }
 function fixMembers() {
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
