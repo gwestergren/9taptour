@@ -1868,9 +1868,9 @@ const VIEWS = {
     const ctl = !staff ? "" : `
       <div class="panel lv-ctl">
         ${f ? `<div><h3>Final · posted to Results</h3><p class="meta">${esc(e.center)}, ${esc(fmt(e.date))} ${f.auto ? "finalized by itself at midnight" : "was finalized"}. Public Standings and the TV now point to <a class="link-more" href="#results/${f.id}">the results page</a>.</p></div>
-          <div class="lv-ctl-btns"><button type="button" class="btn btn-primary" id="lv-refin">Update results</button><button type="button" class="btn btn-ghost" id="lv-reopen">Reopen day</button></div>`
-        : `<div><h3>${FIN.isDay(e) ? "Finalize the day" : `Finalize ${esc(fmt(e.date))}`}</h3><p class="meta">When the last squad is done, finalize to post these standings as the ${esc(e.center)} results page. ${FIN.isDay(e) ? "If nobody does, it happens by itself at midnight." : "This tournament was not finalized on its day."}</p></div>
-          <div class="lv-ctl-btns"><button type="button" class="btn btn-primary" id="lv-fin">Finalize day</button></div>`}
+          <div class="lv-ctl-btns">${FIN.blocked(e) ? "" : `<button type="button" class="btn btn-primary" id="lv-refin">Update results</button>`}<button type="button" class="btn btn-ghost" id="lv-reopen">Reopen day</button></div>`
+        : `<div><h3>${FIN.isDay(e) ? "Finalize the day" : `Finalize ${esc(fmt(e.date))}`}</h3><p class="meta">When the last squad is done, finalize to post these standings as the ${esc(e.center)} results page. ${FIN.isDay(e) ? "If nobody does, it happens by itself at midnight." : e.date > TODAY_ISO ? "" : "This tournament was not finalized on its day."}</p></div>
+          ${FIN.blocked(e) ? `<p class="meta dk-warn">${esc(FIN.blocked(e))}</p>` : `<div class="lv-ctl-btns"><button type="button" class="btn btn-primary" id="lv-fin">Finalize day</button></div>`}`}
         ${FIN.isDay(e) ? "" : `<label class="lv-demo"><input type="checkbox" id="lv-demo"${FIN.demo() ? " checked" : ""}> Demo mode: show these standings as live on the public Standings page and the TV, even though there's no tournament today</label>`}
       </div>`;
     return `
@@ -3322,7 +3322,12 @@ const FIN = {
       bio: [`${f} finished on top of ${entries} entries with ${w.hd} (${w.scr} scratch plus ${w.hc} handicap and ${w.bo} bonus pins${cnt < ng ? `, best ${cnt} of ${ng} games` : ""}).`],
       rows: out, final: true, auto: !!auto, finalizedAt: new Date().toISOString() };
   },
-  finalize(e, auto) { const r = FIN.build(e, auto); if (!r) return null; const a = FIN.all(); a[e.date] = r; FIN.put(a); FIN.sync(); SHEET.finalize(e, r); return r; },
+  // Only real tournament days become Results: never a date still to come, never while sample bowlers are checked in.
+  blocked(e) { if (e.date > TODAY_ISO) return `${longDate(e.date)} hasn't happened yet, so it can't be posted to Results.`;
+    if (CK.list(e).some(x => x.sample)) return "Sample bowlers are checked in for this tournament. Sample scores never go to Results: clear the samples on the Desk first."; return ""; },
+  // Results this device made from demo data before Nov 28 (sample bowlers, or a future date) are removed once.
+  clean() { const a = FIN.all(); let ch = false; Object.keys(a).forEach(d => { if (!a[d].real || d > TODAY_ISO || CK.get(`9tap-checkins:${d}`, []).some(x => x.sample)) { delete a[d]; ch = true; } }); if (ch) FIN.put(a); },
+  finalize(e, auto) { if (FIN.blocked(e)) return null; const r = FIN.build(e, auto); if (!r) return null; r.real = true; const a = FIN.all(); a[e.date] = r; FIN.put(a); FIN.sync(); SHEET.finalize(e, r); return r; },
   reopen(e) { const a = FIN.all(); delete a[e.date]; FIN.put(a); FIN.sync(); SHEET.reopen(e); },
   // Keep HIST (Results year / month / tournament browser) in step with the finalized days on this device.
   sync() {
@@ -3589,7 +3594,7 @@ const CK = {
     CK.save(e, L); return mk.length;
   },
   // Removes one squad's sample check-ins (and their scores); other squads are left alone.
-  clearSamples(e, only) { CK.save(e, CK.list(e).filter(r => !(r.sample && r.squad === only)));
+  clearSamples(e, only) { CK.save(e, CK.list(e).filter(r => !(r.sample && r.squad === only))); FIN.clean(); FIN.sync();
     [only].forEach(sq => { const v = SC.load(e, sq), ids = Object.keys(v.scores || {}).filter(id => /^ck-S\d/.test(id)); if (ids.length) { ids.forEach(id => delete v.scores[id]); SC.save(e, sq, v); } }); CK.put(`9tap-mycheckin:${e.date}`, CK.mine(e).filter(k => !(/^S\d/.test(k) && k.split(":")[1] === String(only)))); },
   // Marked paid at the Desk: now they get a lane (with their friend if possible). Unpaid: lane goes back.
   payIn(e, l, r) { r.paid = true; if (!r.lane) { let f = CK.friendOf(l, r.squad, r.friend, r); if (!(f && f.paid && f.lane)) f = l.find(o => o !== r && o.squad === r.squad && o.paid && o.lane && CK.friendOf([r], r.squad, o.friend, o) === r) || null; r.lane = CK.pick(e, r.squad, l, r, f && f.paid && f.lane ? f : null); } return r.lane; },
@@ -4642,7 +4647,7 @@ $("#menu-btn").addEventListener("click", () => { const o = $("#nav").classList.t
 window.addEventListener("hashchange", route);
 // /staff is the protected entry point (see staticwebapp.config.json); show the app at the site root.
 if (/^\/staff\/?$/.test(location.pathname)) history.replaceState(null, "", "/" + (location.hash || "#desk"));
-FIN.auto(); FIN.sync();
+FIN.clean(); FIN.auto(); FIN.sync();
 STAFF.load().finally(route);
 // Fresh data from the Google Sheet: redraw public pages when it changed (staff pages keep what's being typed).
 SHEET.flush(); SHEET.refresh().then(changed => { SHEET.startDay(); POTS.load(); const v = (location.hash || "#home").slice(1).split("/")[0];
