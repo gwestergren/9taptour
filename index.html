@@ -844,6 +844,7 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-evbtns { display: flex; gap: 16px; flex-wrap: wrap; } .su-evbox { margin-top: 12px; } .su-evbox .meta { margin: 6px 0 0; }
 .su-confirm #su-sum { margin-bottom: 12px; color: var(--ink); }
 .su-tabs button { flex: 1 1 0; }
+.su-sacts { display: flex; flex-wrap: wrap; gap: 8px; } #su-vsel-f { margin-bottom: 12px; }
 .su-shead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; } .su-shead h3 { margin: 0; }
 .su-srow { display: grid; grid-template-columns: 150px 1fr auto; gap: 4px 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
 .su-srow b { display: block; } .su-srow .meta { margin: 0; font-size: .88rem; } .su-srow .su-sbtn { display: flex; gap: 14px; }
@@ -865,9 +866,6 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-vopt[aria-selected="true"], .su-vopt:hover { background: color-mix(in srgb, var(--maple) 30%, transparent); }
 .su-vopt.cur b::after { content: " ✓"; color: var(--good); }
 .su-vopt[data-id="__new"] b { color: var(--accent); }
-.su-vrow { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; margin-top: 4px; }
-.su-vrow .ck-back { padding: 8px 0; }
-.su-vrow .ck-back:disabled { opacity: .45; cursor: default; }
 .su-vnote { margin: 10px 0 0; font-size: .9rem; color: var(--muted); }
 .su-vnote b { color: var(--ink); }
 .su-vnote.dirty { color: var(--ink); }
@@ -1892,7 +1890,17 @@ const VIEWS = {
     <section class="wrap su-main">
       <div id="su-s" class="su-pane" ${tab === "s" ? "" : "hidden"}>
         <div class="su-intro su-wide"><h2>Schedule</h2><p class="meta">The Tour's tournament dates. They show on the public Schedule and in the Tournaments list. Past tournaments can't be changed here.</p></div>
-        <div class="panel su-card su-wide"><div class="su-shead"><h3>Upcoming tournaments</h3><button type="button" class="btn btn-primary" id="su-s-add">+ Add tournament</button></div><div id="su-s-list"></div></div>
+        <div class="panel su-card su-wide"><div class="su-shead"><h3>Upcoming tournaments</h3><div class="su-sacts"><button type="button" class="btn btn-primary" id="su-s-add">+ Add tournament</button><button type="button" class="btn btn-ghost" id="su-vadd">+ Add a new venue</button><button type="button" class="btn btn-ghost" id="su-vedit">Rename or remove a venue</button></div></div>
+          <div class="su-vbox" id="su-vbox" hidden>
+            <p class="sc-lbl" id="su-vbox-t">New venue</p>
+            <div class="field" id="su-vsel-f"><label for="su-vsel">Venue to change</label><select id="su-vsel"></select></div>
+            <div class="form-grid su-two">
+              <div class="field"><label for="su-vname">Venue name</label><input id="su-vname" placeholder="e.g. Kenmore Lanes"></div>
+              <div class="field"><label for="su-vcity">City</label><input id="su-vcity" placeholder="e.g. Kenmore"></div>
+            </div>
+            <div class="su-vbtns"><button type="button" class="btn btn-primary" id="su-vok">Save venue</button><button type="button" class="ck-back" id="su-vcancel">Cancel</button><button type="button" class="ck-back su-del" id="su-vdel" hidden>Remove venue</button></div>
+            <p class="su-vnote" id="su-vbox-n"></p>
+          </div><p class="su-vnote" id="su-vmsg"></p><div id="su-s-list"></div></div>
         <form class="panel su-card su-wide" id="su-s-form" novalidate hidden>
           <h3 id="su-s-title">Add tournament</h3>
           <div class="form-grid su-sgrid">
@@ -1905,7 +1913,6 @@ const VIEWS = {
           <p class="su-vnote" id="su-s-msg"></p>
           <div class="su-vbtns"><button type="submit" class="btn btn-primary" id="su-s-ok">Save tournament date</button><button type="button" class="ck-back" id="su-s-cancel">Cancel</button></div>
         </form>
-        <p class="meta su-wide">New venue? Add it on the Venues tab first.</p>
       </div>
       <form id="su-t" class="su-pane" novalidate ${tab === "t" ? "" : "hidden"}>
         <div class="panel su-card su-wide su-evcard">
@@ -1931,16 +1938,7 @@ const VIEWS = {
         <div class="su-intro su-wide"><h2>Venues</h2><p class="meta">Each bowling center's lanes and how check-in fills them. Every tournament at that venue uses these.</p></div>
         <div class="panel su-card su-wide"><h3>Venue</h3>${combo("su-v", "Type a bowling center name")}
           <p class="su-vnote" id="su-vnote"></p>
-          <div class="su-vrow" id="su-vrow"><button type="button" class="ck-back" id="su-vedit">Rename or remove</button><button type="button" class="ck-back" id="su-vadd">+ Add a new venue</button></div>
-          <div class="su-vbox" id="su-vbox" hidden>
-            <p class="sc-lbl" id="su-vbox-t">New venue</p>
-            <div class="form-grid su-two">
-              <div class="field"><label for="su-vname">Venue name</label><input id="su-vname" placeholder="e.g. Kenmore Lanes"></div>
-              <div class="field"><label for="su-vcity">City</label><input id="su-vcity" placeholder="e.g. Kenmore"></div>
-            </div>
-            <div class="su-vbtns"><button type="button" class="btn btn-primary" id="su-vok">Save venue</button><button type="button" class="ck-back" id="su-vcancel">Cancel</button><button type="button" class="ck-back su-del" id="su-vdel" hidden>Remove venue</button></div>
-            <p class="su-vnote" id="su-vbox-n"></p>
-          </div></div>
+</div>
         <div class="panel su-card"><h3>Lanes</h3>
           <div class="form-grid su-two">
             <div class="field"><label for="su-first">First lane</label><input id="su-first" type="number" inputmode="numeric" min="1" max="99"></div>
@@ -3660,7 +3658,7 @@ function wireSetup() {
     const d = $("#su-s-date").value, name = $("#su-s-ven").value, v = VEN.byName(name), sq = SSQ.now();
     if (!/^\d{4}-\d\d-\d\d$/.test(d)) { sMsg("Pick the date."); return; }
     if (d < TODAY_ISO) { sMsg("That date has passed. Past tournaments can't be added here."); return; }
-    if (!v) { sMsg("Pick the venue. New venue? Add it on the Venues tab first."); return; }
+    if (!v) { sMsg("Pick the venue. New venue? Press + Add a new venue at the top first."); return; }
     if (!sq.length || sq.some(t => CFG.parseT(t) == null)) { sMsg("Enter each squad time, like 11:00 AM."); return; }
     if (sq.map(CFG.parseT).some((t, i, a) => i && t <= a[i - 1])) { sMsg("Squad times should go from earliest to latest."); return; }
     if (d !== sWas && DATA.events.some(x => x.date === d)) { sMsg(`There's already a tournament on ${sFmt(d)}. Edit that one instead.`); return; }
@@ -3718,35 +3716,41 @@ function wireSetup() {
     $("#su-vsum").innerHTML = `<ul class="su-sumlist"><li><b>${n} lanes</b> (${F.first}–${F.last}) × ${F.max} = <b>${n * F.max} bowlers</b> per squad${F.overflow && F.overflowMax > F.max ? `, up to ${n * F.overflowMax} when every lane is full` : ""}.</li>
       <li>Check-in places ${F.fill === "spread" ? `one bowler on each lane (${o.slice(0, 3).join(", ")}…), then wraps around` : `${F.max} on lane ${o[0]}, then ${F.max} on lane ${o[1] || o[0]}, and so on`}.</li>
       ${v && v.id === (VEN.find(c.venue) || {}).id ? `<li>Used by the ${esc(longDate(e.date))} tournament.</li>` : ""}</ul>`; };
-  const vNote = () => { const v = VEN.find(vid), n = $("#su-vnote"); $("#su-vedit").hidden = !v;
-    n.innerHTML = v ? `Editing <b>${esc(v.name)}</b>. Changes apply to every tournament at this venue once you press Save venue.` : "Type the bowling center's name to edit it, or add it as a new venue."; };
+  const vNote = () => { const v = VEN.find(vid), n = $("#su-vnote");
+    n.innerHTML = v ? `Editing <b>${esc(v.name)}</b>. Changes apply to every tournament at this venue once you press Save venue.` : "Type the bowling center's name to edit its lanes. Add, rename or remove venues on the Schedule tab."; };
   const vRedraw = combo("su-v", () => vid, id => { if (dirty.v && !confirm("Drop your unsaved changes to this venue?")) return; vLoad(id); }, name => box("add", name));
   const vPick = (id, key) => $("#" + id).addEventListener("click", ev => { const b = ev.target.closest("[data-v]"); if (!b) return; F[key] = b.dataset.v; vSum(); touch("v"); });
   vPick("su-dir", "dir"); vPick("su-fill", "fill");
   $("#su-v").querySelector('[data-step="su-max"]').addEventListener("click", ev => { const b = ev.target.closest("[data-d]"); if (!b) return; F.max = Math.min(10, Math.max(1, F.max + +b.dataset.d)); if (+$("#su-overmax").value < F.max) $("#su-overmax").value = F.max; vSum(); touch("v"); });
   ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", () => { vSum(); touch("v"); }));
-  const box = (m, name = "") => { mode = m; const v = VEN.find(vid);
-    if (m && SU.tab !== "v") go("v");
-    $("#su-vbox").hidden = !m; $("#su-vrow").hidden = !!m; if (!m) return;
-    $("#su-vbox-t").textContent = m === "add" ? "New venue" : "Edit venue";
-    $("#su-vname").value = m === "edit" && v ? v.name : name; $("#su-vcity").value = m === "edit" && v ? v.city || "" : "";
-    $("#su-vdel").hidden = m !== "edit";
-    $("#su-vbox-n").textContent = m === "add" ? "It starts with the lanes and filling shown below. Change them, then press Save venue." : "";
-    (m === "add" && name ? $("#su-vcity") : $("#su-vname")).focus(); };
-  $("#su-vadd").addEventListener("click", () => box("add"));
-  $("#su-vedit").addEventListener("click", () => box("edit"));
+  // Add, rename or remove a venue: on the Schedule tab, next to + Add tournament (Greg, Nov 28). Lanes are set on the Venues tab.
+  let eid = ""; // the venue being renamed or removed
+  const eFill = () => { const v = VEN.find(eid); $("#su-vname").value = v ? v.name : ""; $("#su-vcity").value = v ? v.city || "" : ""; };
+  const box = (m, name = "") => { mode = m; $("#su-vmsg").innerHTML = "";
+    if (m && SU.tab !== "s") go("s");
+    $("#su-vbox").hidden = !m; ["su-vadd", "su-vedit"].forEach(id => $("#" + id).setAttribute("aria-pressed", String((id === "su-vadd" ? "add" : "edit") === m))); if (!m) return;
+    $("#su-vbox-t").textContent = m === "add" ? "New venue" : "Rename or remove a venue";
+    $("#su-vsel-f").hidden = m !== "edit"; $("#su-vdel").hidden = m !== "edit";
+    if (m === "edit") { const L = VEN.all(); if (!VEN.find(eid)) eid = (VEN.find(vid) || L[0] || {}).id || ""; $("#su-vsel").innerHTML = L.map(v => `<option value="${esc(v.id)}" ${v.id === eid ? "selected" : ""}>${esc(v.name)}${v.city ? " · " + esc(v.city) : ""}</option>`).join(""); eFill(); }
+    else { $("#su-vname").value = name; $("#su-vcity").value = ""; }
+    $("#su-vbox-n").textContent = m === "add" ? "Then set its lanes on the Venues tab." : "";
+    $("#su-vbox").scrollIntoView({ behavior: "smooth", block: "center" }); (m === "add" && name ? $("#su-vcity") : $("#su-vname")).focus(); };
+  $("#su-vsel").addEventListener("change", ev => { eid = ev.target.value; eFill(); });
+  $("#su-vadd").addEventListener("click", () => box(mode === "add" ? null : "add"));
+  $("#su-vedit").addEventListener("click", () => box(mode === "edit" ? null : "edit"));
   $("#su-vcancel").addEventListener("click", () => box(null));
   $("#su-vok").addEventListener("click", () => {
     const name = $("#su-vname").value.trim(), city = $("#su-vcity").value.trim(), list = VEN.all();
     if (!name) { $("#su-vbox-n").textContent = "Give the venue a name."; $("#su-vname").focus(); return; }
-    const dup = list.find(x => x.name.toLowerCase() === name.toLowerCase() && !(mode === "edit" && x.id === vid));
-    if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved. Type its name in the venue box instead.`; return; }
-    if (mode === "add") { vSum(); const id = "v" + Date.now().toString(36); list.push({ id, name, city, fmt: VEN.fmt(F) }); vid = id; say("v", `Added ${esc(name)}.`); }
-    else { const v = list.find(x => x.id === vid); if (v) { v.name = name; v.city = city; say("v", `Renamed to ${esc(name)}.`); } }
-    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); vRedraw(); vNote(); vSum(); tRedraw(); tNote(); });
+    const dup = list.find(x => x.name.toLowerCase() === name.toLowerCase() && !(mode === "edit" && x.id === eid));
+    if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved.`; return; }
+    let msg = "";
+    if (mode === "add") { const id = "v" + Date.now().toString(36); list.push({ id, name, city, fmt: VEN.fmt(Object.assign({}, DEF)) }); msg = `Added ${esc(name)}. Set its lanes on the Venues tab.`; }
+    else { const v = list.find(x => x.id === eid); if (v) { v.name = name; v.city = city; msg = `Saved ${esc(name)}.`; } }
+    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); if (VEN.find(vid)) vLoad(vid); else { vRedraw(); vNote(); } tRedraw(); tNote(); sList(); $("#su-vmsg").innerHTML = msg; });
   $("#su-vdel").addEventListener("click", () => {
-    const v = VEN.find(vid); if (!v || !confirm(`Remove ${v.name} from saved venues?`)) return;
-    VEN.put(VEN.all().filter(x => x.id !== v.id)); box(null); vLoad(""); say("v", `Removed ${esc(v.name)}.`); tRedraw(); tNote(); });
+    const v = VEN.find(eid); if (!v || !confirm(`Remove ${v.name} from saved venues?`)) return;
+    VEN.put(VEN.all().filter(x => x.id !== v.id)); box(null); if (vid === v.id) vLoad(""); tRedraw(); tNote(); sList(); $("#su-vmsg").innerHTML = `Removed ${esc(v.name)}.`; });
   $("#su-v").addEventListener("submit", ev => { ev.preventDefault(); vSum();
     const list = VEN.all(), v = list.find(x => x.id === vid);
     if (!v) { say("v", "Pick a venue first, or add a new one."); return; }
