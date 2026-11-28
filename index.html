@@ -3584,7 +3584,10 @@ const CKCTL = {
     draw(); clearInterval(CKCTL.t); CKCTL.t = setInterval(() => { if (!draw()) clearInterval(CKCTL.t); }, 30000);
   }
 };
-const SU = { tab: "t", date: null,
+// Setup remembers the last tab and tournament on this device, so a refresh stays put.
+const SU = { tab: (() => { try { const t = localStorage.getItem("9tap-setup-tab"); return ["s", "t", "v", "o"].includes(t) ? t : "t"; } catch (_) { return "t"; } })(),
+  date: (() => { try { return localStorage.getItem("9tap-setup-date"); } catch (_) { return null; } })(),
+  keep() { try { localStorage.setItem("9tap-setup-tab", SU.tab); SU.date ? localStorage.setItem("9tap-setup-date", SU.date) : localStorage.removeItem("9tap-setup-date"); } catch (_) {} },
   list() { return DATA.events.filter(x => eventStatus(x) !== "past"); },
   event() { return SU.list().find(x => x.date === SU.date) || nextEvent; } };
 let setup_tick = 0;
@@ -3602,8 +3605,8 @@ function wireSetup() {
   const clean = k => { dirty[k] = false; st(k); };
   const flash = k => { const b = $("#su-" + k + "-save"), t0 = b.textContent; b.textContent = "Saved ✓"; b.classList.add("ok"); setTimeout(() => { if (b.isConnected) { b.textContent = t0; b.classList.remove("ok"); } }, 2500); };
   const tabs = () => { document.querySelectorAll("#su-tabs [data-tab]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tab === SU.tab))); ["s", "t", "v", "o"].forEach(k => $("#su-" + k).hidden = SU.tab !== k); if (SU.tab === "s") sList(); $("#poster").hidden = SU.tab !== "o"; if (SU.tab === "t") tSum(); };
-  const go = k => { SU.tab = k; tabs(); scrollTo(0, 0); };
-  $("#su-ev").addEventListener("change", ev => { if (dirty.t && !confirm("Drop your unsaved changes to this tournament?")) { ev.target.value = e.date; return; } SU.date = ev.target.value; SU.tab = "t"; route(); });
+  const go = k => { SU.tab = k; SU.keep(); tabs(); scrollTo(0, 0); };
+  $("#su-ev").addEventListener("change", ev => { if (dirty.t && !confirm("Drop your unsaved changes to this tournament?")) { ev.target.value = e.date; return; } SU.date = ev.target.value; SU.tab = "t"; SU.keep(); route(); });
   /* ---------- Schedule tab ---------- */
   let sWas = null; // date being edited, or null when adding
   const sFmt = d => new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
