@@ -1916,7 +1916,7 @@ const VIEWS = {
       </div>
       <form id="su-t" class="su-pane" novalidate ${tab === "t" ? "" : "hidden"}>
         <div class="panel su-card su-wide su-evcard">
-          <div class="su-evtop"><label class="sc-lbl" for="su-ev">Tournament</label><select id="su-ev">${ups.map(x => `<option value="${x.date}" ${x.date === e.date ? "selected" : ""}>${esc(new Date(x.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${esc(CK.eventFor(x).center)}${x === nextEvent ? " (next)" : ""}</option>`).join("")}</select></div>
+          <div class="su-evtop"><label class="sc-lbl" for="su-ev">Tournament</label><select id="su-ev">${SU.opts(e.date)}</select></div>
           <div class="su-evven"><div class="su-evinfo"><b id="su-tv-name"></b><span id="su-tv-note"></span></div>
             <div class="su-evbtns"><button type="button" class="ck-back" id="su-tv-chg">Change venue</button><button type="button" class="ck-back" id="su-tv-edit">Lanes in Venues →</button></div></div>
           <div class="su-evbox" id="su-tv-box" hidden>${combo("su-tv", "Type a bowling center name")}<p class="meta">Picking a venue saves it for this tournament right away.</p></div>
@@ -3605,6 +3605,8 @@ const SU = { tab: (() => { try { const t = localStorage.getItem("9tap-setup-tab"
   date: (() => { try { return localStorage.getItem("9tap-setup-date"); } catch (_) { return null; } })(),
   keep() { try { localStorage.setItem("9tap-setup-tab", SU.tab); SU.date ? localStorage.setItem("9tap-setup-date", SU.date) : localStorage.removeItem("9tap-setup-date"); } catch (_) {} },
   list() { return DATA.events.filter(x => eventStatus(x) !== "past"); },
+  // The Tournaments dropdown. Redrawn when the Schedule tab adds, changes or removes a date.
+  opts(sel) { return SU.list().map(x => `<option value="${x.date}" ${x.date === sel ? "selected" : ""}>${esc(new Date(x.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }))} · ${esc(CK.eventFor(x).center)}${x.date === nextEvent.date ? " (next)" : ""}</option>`).join(""); },
   event() { return SU.list().find(x => x.date === SU.date) || nextEvent; } };
 let setup_tick = 0;
 // Setup has three tabs, each saved on its own (Greg, Nov 27): Tournament (venue, games, squads, jackpots, confirm),
@@ -3628,7 +3630,7 @@ function wireSetup() {
   const sFmt = d => new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   const sMsg = t => { $("#su-s-msg").innerHTML = t || ""; };
   function sList() { const L = SU.list();
-    $("#su-s-list").innerHTML = L.length ? L.map(x => { const w = CK.eventFor(x); return `<div class="su-srow"><b>${esc(sFmt(x.date))}</b><div><b>${esc(w.center)}${x.invite ? `<span class="tag">Invitation only</span>` : ""}</b><p class="meta">${esc(w.city || "")}${w.squads.length ? ` · ${w.squads.map(t => esc(CFG.normT(t))).join(", ")}` : ""}${x.tag ? ` · ${esc(x.tag)}` : ""}</p></div>
+    $("#su-s-list").innerHTML = L.length ? L.map(x => { const w = CK.eventFor(x); return `<div class="su-srow"><b>${esc(sFmt(x.date))}</b><div><b>${esc(w.center)}${x.invite ? `<span class="tag">Invitation only</span>` : ""}</b><p class="meta">${[esc(w.city || ""), w.squads.map(t => esc(CFG.normT(t))).join(", "), esc(x.tag || "")].filter(Boolean).join(" · ")}</p></div>
       <div class="su-sbtn"><button type="button" class="ck-back" data-sedit="${x.date}">Edit</button><button type="button" class="ck-back su-del" data-sdel="${x.date}">Remove</button></div></div>`; }).join("") : `<p class="meta">No upcoming tournaments. Press + Add tournament.</p>`; }
   const sOpen = x => { sWas = x ? x.date : null; const f = $("#su-s-form"); f.hidden = false; sMsg("");
     $("#su-s-title").textContent = x ? `Edit ${sFmt(x.date)}` : "Add tournament";
@@ -3652,7 +3654,9 @@ function wireSetup() {
       if (CK.list(x).length) { alert(`${sFmt(x.date)} already has check-ins, so it can't be removed.`); return; }
       if (!confirm(`Remove the ${sFmt(x.date)} tournament at ${CK.eventFor(x).center} from the schedule?`)) return;
       sPut(x.date, { del: true }); DATA.events = DATA.events.filter(y => y.date !== x.date); SHEET.send({ action: "removeEvent", date: x.date });
-      if (SU.date === x.date) SU.date = null; location.reload(); }
+      if (SU.date === x.date) SU.date = null;
+      if (x.date === e.date || x.date === nextEvent.date) { location.reload(); return; } // the open or next tournament went: redraw everything
+      sList(); $("#su-ev").innerHTML = SU.opts(e.date); $("#su-s-list").insertAdjacentHTML("afterbegin", `<p class="toast">Removed ${esc(sFmt(x.date))}.</p>`); }
   });
   $("#su-s-form").addEventListener("submit", ev => { ev.preventDefault();
     const d = $("#su-s-date").value, name = $("#su-s-ven").value, v = VEN.byName(name), sq = SSQ.now();
@@ -3672,7 +3676,7 @@ function wireSetup() {
     const y = CFG.get(nev); if (y.saved || y.squads.map(CFG.normT).join() !== nev.squads.join()) { y.venue = v.id; y.venueName = v.name; y.squads = nev.squads.slice(); y.saved = true; CFG.put(nev, y); }
     if (d === e.date) { c.squads = nev.squads.slice(); c.venue = v.id; c.venueName = v.name; c.saved = true; drawSquads(c.squads); tNote(); tSum(); } // same tournament on the Tournaments tab
     if (d <= nextEvent.date || sWas === nextEvent.date) { location.reload(); return; } // the next tournament changed
-    $("#su-s-form").hidden = true; sList(); const t = $("#su-s-list"); t.insertAdjacentHTML("afterbegin", `<p class="toast">Saved ${esc(sFmt(d))} · ${esc(v.name)}.</p>`);
+    $("#su-s-form").hidden = true; sList(); $("#su-ev").innerHTML = SU.opts(e.date); const t = $("#su-s-list"); t.insertAdjacentHTML("afterbegin", `<p class="toast">Saved ${esc(sFmt(d))} · ${esc(v.name)}.</p>`);
   });
   $("#su-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-tab]"); if (b) go(b.dataset.tab); });
 
@@ -3725,6 +3729,7 @@ function wireSetup() {
   ["su-first", "su-last", "su-over", "su-overmax"].forEach(id => $("#" + id).addEventListener("input", () => { vSum(); touch("v"); }));
   // Add, rename or remove a venue: on the Schedule tab, next to + Add tournament (Greg, Nov 28). Lanes are set on the Venues tab.
   let eid = ""; // the venue being renamed or removed
+  let pending = []; // tournaments whose setup is resent after a rename
   const eFill = () => { const v = VEN.find(eid); $("#su-vname").value = v ? v.name : ""; $("#su-vcity").value = v ? v.city || "" : ""; };
   const box = (m, name = "") => { mode = m; $("#su-vmsg").innerHTML = "";
     if (m && SU.tab !== "s") go("s");
@@ -3746,8 +3751,13 @@ function wireSetup() {
     if (dup) { $("#su-vbox-n").textContent = `${dup.name} is already saved.`; return; }
     let msg = "";
     if (mode === "add") { const id = "v" + Date.now().toString(36); list.push({ id, name, city, fmt: VEN.fmt(Object.assign({}, DEF)) }); msg = `Added ${esc(name)}. Set its lanes on the Venues tab.`; }
-    else { const v = list.find(x => x.id === eid); if (v) { v.name = name; v.city = city; msg = `Saved ${esc(name)}.`; } }
-    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); box(null); if (VEN.find(vid)) vLoad(vid); else { vRedraw(); vNote(); } tRedraw(); tNote(); sList(); $("#su-vmsg").innerHTML = msg; });
+    else { const v = list.find(x => x.id === eid); if (v) { const was = v.name, at = SU.list().filter(x => CK.eventFor(x).center === was);
+      v.name = name; v.city = city; msg = `Saved ${esc(name)}.`;
+      at.forEach(x => { const y = CFG.get(x); y.venueName = name; y.venue = v.id; try { localStorage.setItem(CFG.key(x), JSON.stringify(y)); } catch (_) {} // upcoming tournaments there follow the new name
+        const nev = Object.assign({}, x, { center: name, city: city || x.city }); sPut(x.date, { ev: nev });
+        SHEET.send({ action: "saveEvent", date: x.date, was: "", center: name, city: nev.city, squads: (x.squads || []).join(", "), note: x.tag || "", invite: !!x.invite }); });
+      if (at.length) { DATA.events = schedApply(DATA.events); pending = at; } if (at.some(x => x.date === e.date)) { c.venueName = name; c.venue = v.id; } } }
+    list.sort((a, b) => a.name.localeCompare(b.name)); VEN.put(list); pending.forEach(x => CFG.put(x, CFG.get(x))); pending = []; $("#su-ev").innerHTML = SU.opts(e.date); box(null); if (VEN.find(vid)) vLoad(vid); else { vRedraw(); vNote(); } tRedraw(); tNote(); sList(); $("#su-vmsg").innerHTML = msg; });
   $("#su-vdel").addEventListener("click", () => {
     const v = VEN.find(eid); if (!v || !confirm(`Remove ${v.name} from saved venues?`)) return;
     VEN.put(VEN.all().filter(x => x.id !== v.id)); box(null); if (vid === v.id) vLoad(""); tRedraw(); tNote(); sList(); $("#su-vmsg").innerHTML = `Removed ${esc(v.name)}.`; });
