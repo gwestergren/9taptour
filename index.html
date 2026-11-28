@@ -1882,7 +1882,7 @@ const VIEWS = {
           <div class="form-grid su-sgrid">
             <div class="field"><label for="su-s-date">Date</label><input id="su-s-date" type="date"></div>
             <div class="field"><label for="su-s-ven">Venue</label><select id="su-s-ven"></select></div>
-            <div class="field su-s-wide"><label for="su-s-sq">Squad times</label><input id="su-s-sq" placeholder="e.g. 11:00 AM, 1:00 PM, 3:00 PM" autocomplete="off"></div>
+            <div class="field su-s-wide"><span class="sc-lbl">Squad times</span><div class="su-sqlist" id="su-s-squads"></div><button type="button" class="ck-back" id="su-s-sqadd">+ Add a squad</button></div>
             <div class="field su-s-wide"><label for="su-s-note">Name or note (optional)</label><input id="su-s-note" placeholder="e.g. Year End Championship, Best 3 of 4" autocomplete="off"></div>
           </div>
           <label class="ck-tog"><input type="checkbox" id="su-s-inv"> <span>Invitation only</span></label>
@@ -3619,7 +3619,7 @@ function wireSetup() {
     const w = x ? CK.eventFor(x) : null, vs = VEN.all();
     $("#su-s-ven").innerHTML = `<option value="">Pick a venue</option>` + vs.map(v => `<option value="${esc(v.name)}" ${w && w.center === v.name ? "selected" : ""}>${esc(v.name)}${v.city ? " · " + esc(v.city) : ""}</option>`).join("");
     $("#su-s-date").value = x ? x.date : ""; $("#su-s-date").min = TODAY_ISO;
-    $("#su-s-sq").value = w ? w.squads.map(CFG.normT).join(", ") : ""; $("#su-s-note").value = x ? x.tag || "" : ""; $("#su-s-inv").checked = !!(x && x.invite);
+    SSQ.draw(w ? w.squads.map(CFG.normT) : []); $("#su-s-note").value = x ? x.tag || "" : ""; $("#su-s-inv").checked = !!(x && x.invite);
     f.scrollIntoView({ behavior: "smooth", block: "center" }); $("#su-s-date").focus(); };
   const sPut = (d, val) => { const E = schedEdits(); E[d] = val; try { localStorage.setItem("9tap-sched", JSON.stringify(E)); } catch (_) {} };
   // The Tournaments tab's venue and squad times are the schedule's too: keep the Schedule tab in step.
@@ -3639,11 +3639,12 @@ function wireSetup() {
       if (SU.date === x.date) SU.date = null; location.reload(); }
   });
   $("#su-s-form").addEventListener("submit", ev => { ev.preventDefault();
-    const d = $("#su-s-date").value, name = $("#su-s-ven").value, v = VEN.byName(name), sq = $("#su-s-sq").value.split(/[,;]+/).map(t => t.trim()).filter(Boolean);
+    const d = $("#su-s-date").value, name = $("#su-s-ven").value, v = VEN.byName(name), sq = SSQ.now();
     if (!/^\d{4}-\d\d-\d\d$/.test(d)) { sMsg("Pick the date."); return; }
     if (d < TODAY_ISO) { sMsg("That date has passed. Past tournaments can't be added here."); return; }
     if (!v) { sMsg("Pick the venue. New venue? Add it on the Venues tab first."); return; }
-    if (!sq.length || sq.some(t => CFG.parseT(t) == null)) { sMsg("Enter the squad times like 11:00 AM, 1:00 PM, 3:00 PM."); return; }
+    if (!sq.length || sq.some(t => CFG.parseT(t) == null)) { sMsg("Enter each squad time, like 11:00 AM."); return; }
+    if (sq.map(CFG.parseT).some((t, i, a) => i && t <= a[i - 1])) { sMsg("Squad times should go from earliest to latest."); return; }
     if (d !== sWas && DATA.events.some(x => x.date === d)) { sMsg(`There's already a tournament on ${sFmt(d)}. Edit that one instead.`); return; }
     const old = sWas && DATA.events.find(x => x.date === sWas), same = DATA.events.find(x => x.center === v.name && x.addr);
     const nev = { date: d, center: v.name, city: v.city || (same || {}).city || "", addr: (same || {}).addr || "", phone: (same || {}).phone || "", squads: sq.map(CFG.normT) };
@@ -3652,7 +3653,8 @@ function wireSetup() {
     sPut(d, { ev: nev }); DATA.events = schedApply(DATA.events.filter(x => x.date !== sWas && x.date !== d).concat(nev));
     SHEET.send({ action: "saveEvent", date: d, was: sWas && sWas !== d ? sWas : "", center: nev.center, city: nev.city, squads: nev.squads.join(", "), note: note, invite: !!nev.invite });
     // the tournament's own setup follows the schedule's venue and squads
-    const y = CFG.get(nev); if (y.saved) { y.venue = v.id; y.venueName = v.name; y.squads = nev.squads.slice(); CFG.put(nev, y); }
+    const y = CFG.get(nev); if (y.saved || y.squads.map(CFG.normT).join() !== nev.squads.join()) { y.venue = v.id; y.venueName = v.name; y.squads = nev.squads.slice(); y.saved = true; CFG.put(nev, y); }
+    if (d === e.date) { c.squads = nev.squads.slice(); c.venue = v.id; c.venueName = v.name; c.saved = true; drawSquads(c.squads); tNote(); tSum(); } // same tournament on the Tournaments tab
     if (d <= nextEvent.date || sWas === nextEvent.date) { location.reload(); return; } // the next tournament changed
     $("#su-s-form").hidden = true; sList(); const t = $("#su-s-list"); t.insertAdjacentHTML("afterbegin", `<p class="toast">Saved ${esc(sFmt(d))} · ${esc(v.name)}.</p>`);
   });
@@ -3743,13 +3745,46 @@ function wireSetup() {
     say("o", `Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Every tournament uses these.`); opens(); tSum(); });
 
   /* ---------- Tournament tab ---------- */
-  const squadsNow = () => [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
-  const drawSquads = list => {
-    $("#su-squads").innerHTML = (list.length ? list : [""]).map((s, i) => `<div class="su-sq"><span class="su-sqn">Squad ${i + 1}</span><span class="su-tw"><input class="su-time" value="${esc(CFG.normT(s))}" aria-label="Squad ${i + 1} time" placeholder="e.g. 5:00 PM" autocomplete="off" role="combobox" aria-expanded="false"><span class="su-vlist su-tlist" role="listbox" hidden></span></span><span class="su-sqo" data-o="${i}"></span>${i ? `<button type="button" class="su-x" data-x="${i}" aria-label="Remove squad ${i + 1}">×</button>` : ""}</div>`).join("");
-    opens(); };
-  const opens = () => { const om = TOUR.get().openMins; $("#su-squads").querySelectorAll(".su-sq").forEach((row, i) => {
-    const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, om);
-    row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30 PM"; }); };
+  // Squad time editor (Tournaments and Schedule tabs use the same one): one time box per squad, a list every 15 minutes.
+  const sqEd = (box, changed) => {
+    const now = () => [...box.querySelectorAll("input")].map(i => i.value.trim()).filter(Boolean);
+    const opens = () => { const om = TOUR.get().openMins; box.querySelectorAll(".su-sq").forEach((row, i) => {
+      const t = row.querySelector("input").value.trim(), o = CFG.opensAt(t, om);
+      row.querySelector(".su-sqo").textContent = i === 0 ? "Opens when you open check-in on the Desk" : o ? `Opens at ${o}` : "Enter a time like 1:30 PM"; }); };
+    const draw = list => {
+      box.innerHTML = (list.length ? list : [""]).map((s, i) => `<div class="su-sq"><span class="su-sqn">Squad ${i + 1}</span><span class="su-tw"><input class="su-time" value="${esc(CFG.normT(s))}" aria-label="Squad ${i + 1} time" placeholder="e.g. 5:00 PM" autocomplete="off" role="combobox" aria-expanded="false"><span class="su-vlist su-tlist" role="listbox" hidden></span></span><span class="su-sqo" data-o="${i}"></span>${i ? `<button type="button" class="su-x" data-x="${i}" aria-label="Remove squad ${i + 1}">×</button>` : ""}</div>`).join("");
+      opens(); };
+    let tHi = 0;
+    const tKey = x => x.toLowerCase().replace(/[\s:.]/g, "");
+    const tList = (inp, q) => {
+      const L = inp.parentNode.querySelector(".su-tlist"), k = tKey(q || ""), cur = CFG.parseT(inp.value);
+      let opts = CFG.TIMES.map(CFG.fmtT).filter(t => !k || tKey(t).startsWith(k) || tKey(t).startsWith("0" + k));
+      if (!opts.length && CFG.parseT(q) != null) opts = [CFG.normT(q)];
+      if (!k && cur != null) tHi = Math.max(0, CFG.TIMES.indexOf(cur));
+      tHi = Math.min(tHi, Math.max(0, opts.length - 1));
+      L.innerHTML = opts.map((t, i) => `<button type="button" role="option" class="su-vopt" data-t="${t}" aria-selected="${i === tHi}"><b>${t}</b></button>`).join("") || `<p class="su-tnone">No match. Try 1:30 PM</p>`;
+      L.hidden = false; inp.setAttribute("aria-expanded", "true");
+      const sel = L.querySelector('[aria-selected="true"]'); if (sel) L.scrollTop = sel.offsetTop - L.clientHeight / 2 + sel.offsetHeight / 2; };
+    const tClose = inp => { const L = inp.parentNode.querySelector(".su-tlist"); if (L) L.hidden = true; inp.setAttribute("aria-expanded", "false"); };
+    const tSet = (inp, t) => { inp.value = t; tClose(inp); opens(); changed(); };
+    box.addEventListener("focusin", ev => { const i = ev.target.closest(".su-time"); if (i) { i.select(); tHi = 0; tList(i, ""); } });
+    box.addEventListener("input", ev => { const i = ev.target.closest(".su-time"); if (i) { tHi = 0; tList(i, i.value); opens(); changed(); } });
+    box.addEventListener("keydown", ev => {
+      const i = ev.target.closest(".su-time"); if (!i) return; const L = i.parentNode.querySelector(".su-tlist"), o = [...L.querySelectorAll("[data-t]")];
+      if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); if (L.hidden) tList(i, ""); if (!o.length) return; tHi = (tHi + (ev.key === "ArrowDown" ? 1 : -1) + o.length) % o.length; o.forEach((b, n) => b.setAttribute("aria-selected", String(n === tHi))); o[tHi].scrollIntoView({ block: "nearest" }); }
+      else if (ev.key === "Enter") { ev.preventDefault(); if (!L.hidden && o[tHi]) tSet(i, o[tHi].dataset.t); }
+      else if (ev.key === "Escape") tClose(i);
+      else if (ev.key === "Tab" && !L.hidden && i.value.trim() && o[tHi] && CFG.parseT(i.value) == null) tSet(i, o[tHi].dataset.t); });
+    box.addEventListener("mousedown", ev => { if (ev.target.closest(".su-tlist")) ev.preventDefault(); });
+    box.addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (b) tSet(b.closest(".su-tw").querySelector("input"), b.dataset.t);
+      const x = ev.target.closest("[data-x]"); if (x) { const all = [...box.querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); draw(all); changed(); } });
+    box.addEventListener("focusout", ev => { const i = ev.target.closest(".su-time"); if (!i) return; setTimeout(() => { if (!i.isConnected) return; tClose(i); const v = i.value.trim(); if (v && CFG.parseT(v) != null && CFG.normT(v) !== v) { i.value = CFG.normT(v); changed(); } }, 150); });
+    const add = () => { draw(now().concat("")); const ins = box.querySelectorAll("input"); ins[ins.length - 1].focus(); changed(); };
+    return { now, draw, opens, add };
+  };
+  const TSQ = sqEd($("#su-squads"), () => touch("t")), SSQ = sqEd($("#su-s-squads"), () => {});
+  const squadsNow = TSQ.now, drawSquads = TSQ.draw, opens = () => { TSQ.opens(); SSQ.opens(); };
+  $("#su-s-sqadd").addEventListener("click", SSQ.add);
   // What check-in will use: this tab's venue, games and squads, with the venue's and the Tour's SAVED settings.
   const live = () => { const x = Object.assign({}, c, { squads: squadsNow().map(CFG.normT) }), v = VEN.find(c.venue); if (v) { Object.assign(x, VEN.fmt(v.fmt)); x.venueName = v.name; } else x.venueName = ""; return Object.assign(x, TOUR.get()); };
   const tNote = () => { const v = VEN.find(c.venue);
@@ -3794,37 +3829,8 @@ function wireSetup() {
     const y = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = y[k]); // check-in state belongs to the Desk
     c.saved = true; CFG.put(e, c); sSync(); clean("t"); tSum(); return true; };
   ["su-jp", "su-jprec", "su-prog"].forEach(id => $("#" + id).addEventListener("input", () => touch("t")));
-  $("#su-add").addEventListener("click", () => { const sq = squadsNow(); drawSquads(sq.concat("")); const ins = $("#su-squads").querySelectorAll("input"); ins[ins.length - 1].focus(); touch("t"); });
-  $("#su-squads").addEventListener("input", () => touch("t"));
+  $("#su-add").addEventListener("click", TSQ.add);
   $("#su-t").addEventListener("submit", ev => { ev.preventDefault(); if (store()) { flash("t"); say("t", `Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. New check-ins follow this setup.`); } });
-  /* squad time picker: list every 15 minutes from 7:00 AM, filtered as you type */
-  let tHi = 0;
-  const tKey = x => x.toLowerCase().replace(/[\s:.]/g, "");
-  const tList = (inp, q) => {
-    const L = inp.parentNode.querySelector(".su-tlist"), k = tKey(q || ""), cur = CFG.parseT(inp.value);
-    let opts = CFG.TIMES.map(CFG.fmtT).filter(t => !k || tKey(t).startsWith(k) || tKey(t).startsWith("0" + k));
-    if (!opts.length && CFG.parseT(q) != null) opts = [CFG.normT(q)];
-    if (!k && cur != null) tHi = Math.max(0, CFG.TIMES.indexOf(cur));
-    tHi = Math.min(tHi, Math.max(0, opts.length - 1));
-    L.innerHTML = opts.map((t, i) => `<button type="button" role="option" class="su-vopt" data-t="${t}" aria-selected="${i === tHi}"><b>${t}</b></button>`).join("") || `<p class="su-tnone">No match. Try 1:30 PM</p>`;
-    L.hidden = false; inp.setAttribute("aria-expanded", "true");
-    const sel = L.querySelector('[aria-selected="true"]'); if (sel) L.scrollTop = sel.offsetTop - L.clientHeight / 2 + sel.offsetHeight / 2;
-  };
-  const tClose = inp => { const L = inp.parentNode.querySelector(".su-tlist"); if (L) L.hidden = true; inp.setAttribute("aria-expanded", "false"); };
-  const tSet = (inp, t) => { inp.value = t; tClose(inp); touch("t"); };
-  $("#su-squads").addEventListener("focusin", ev => { const i = ev.target.closest(".su-time"); if (i) { i.select(); tHi = 0; tList(i, ""); } });
-  $("#su-squads").addEventListener("input", ev => { const i = ev.target.closest(".su-time"); if (i) { tHi = 0; tList(i, i.value); } });
-  $("#su-squads").addEventListener("keydown", ev => {
-    const i = ev.target.closest(".su-time"); if (!i) return; const L = i.parentNode.querySelector(".su-tlist"), o = [...L.querySelectorAll("[data-t]")];
-    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); if (L.hidden) tList(i, ""); if (!o.length) return; tHi = (tHi + (ev.key === "ArrowDown" ? 1 : -1) + o.length) % o.length; o.forEach((b, n) => b.setAttribute("aria-selected", String(n === tHi))); o[tHi].scrollIntoView({ block: "nearest" }); }
-    else if (ev.key === "Enter") { ev.preventDefault(); if (!L.hidden && o[tHi]) tSet(i, o[tHi].dataset.t); }
-    else if (ev.key === "Escape") tClose(i);
-    else if (ev.key === "Tab" && !L.hidden && i.value.trim() && o[tHi] && CFG.parseT(i.value) == null) tSet(i, o[tHi].dataset.t);
-  });
-  $("#su-squads").addEventListener("mousedown", ev => { if (ev.target.closest(".su-tlist")) ev.preventDefault(); });
-  $("#su-squads").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (b) tSet(b.closest(".su-tw").querySelector("input"), b.dataset.t); });
-  $("#su-squads").addEventListener("focusout", ev => { const i = ev.target.closest(".su-time"); if (!i) return; setTimeout(() => { if (!i.isConnected) return; tClose(i); const v = i.value.trim(); if (v && CFG.parseT(v) != null && CFG.normT(v) !== v) { i.value = CFG.normT(v); touch("t"); } }, 150); });
-  $("#su-squads").addEventListener("click", ev => { const x = ev.target.closest("[data-x]"); if (!x) return; const all = [...$("#su-squads").querySelectorAll("input")].map(i => i.value.trim()); all.splice(+x.dataset.x, 1); drawSquads(all); touch("t"); });
   setup_tick = setInterval(() => { if (!$("#su-t-state")) { clearInterval(setup_tick); return; } opens(); }, 30000);
   drawSquads(c.squads); vLoad(vid); tNote(); oSum(); ["t", "v", "o"].forEach(st); tabs(); SHEET.drawBox();
 }
