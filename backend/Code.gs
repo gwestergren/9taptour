@@ -125,7 +125,7 @@ const ACTIONS = {
       'Max per lane when full': s.overflow ? s.overflowMax : '', 'Games bowled': s.games, 'Games that count': s.count,
       'Squad times': (s.squads || []).join(', '), 'Check-in opens (min before squad)': s.openMins,
       'Check-in open': s.open ? 'Yes' : '', 'Closed squads': (s.closed || []).map(i => i + 1).join(', '),
-      'Squads opened early': (s.forced || []).map(i => i + 1).join(', '), 'Setup confirmed at': b.confirmed ? (s.confirmedAt || new Date().toISOString()) : '',
+      'Squads opened early': (s.forced || []).map(i => i + 1).join(', '), 'Lanes out of service': (s.down || []).join(', '), 'Setup confirmed at': b.confirmed ? (s.confirmedAt || new Date().toISOString()) : '',
       'Entry fee': s.fee == null ? '' : s.fee, 'Re-entry fee': s.fee2 == null ? '' : s.fee2, 'How to fill': s.fill === 'spread' ? 'One per lane, then wrap' : 'Fill each lane first', 'Setup saved at': new Date().toISOString()
     });
     return {};

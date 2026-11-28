@@ -844,6 +844,10 @@ input[type="radio"], input[type="checkbox"] { width: auto; padding: 0; accent-co
 .su-evbtns { display: flex; gap: 16px; flex-wrap: wrap; } .su-evbox { margin-top: 12px; } .su-evbox .meta { margin: 6px 0 0; }
 .su-confirm #su-sum { margin-bottom: 12px; color: var(--ink); }
 .su-tabs button { flex: 1 1 0; }
+.su-downs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.su-downs button { font: inherit; font-weight: 700; min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--card, #fff); color: inherit; cursor: pointer; }
+.su-downs button[aria-pressed="true"] { background: #c7362b; border-color: #c7362b; color: #fff; text-decoration: line-through; }
+.dk-downbox { margin: 12px 0; } .dk-downbox summary { cursor: pointer; min-height: 32px; }
 .su-sacts { display: flex; flex-wrap: wrap; gap: 8px; } #su-vsel-f { margin-bottom: 12px; }
 .su-shead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; } .su-shead h3 { margin: 0; }
 .su-srow { display: grid; grid-template-columns: 150px 1fr auto; gap: 4px 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
@@ -1411,6 +1415,7 @@ const SHEET = {
       if (list(r["Squad times"]).length) s.squads = list(r["Squad times"]);
       s.open = /^y/i.test(r["Check-in open"] || ""); s.closed = k1(r["Closed squads"]);
       if ("Squads opened early" in r) s.forced = k1(r["Squads opened early"]);
+      if ("Lanes out of service" in r) s.down = list(r["Lanes out of service"]).map(Number).filter(n => n > 0);
       if ("Setup confirmed at" in r) { if (r["Setup confirmed at"]) { s.confirmedSig = "sheet"; s.confirmedAt = r["Setup confirmed at"]; } else { delete s.confirmedSig; delete s.confirmedAt; } }
       if (r.Center) s.venueName = r.Center; delete s.venue;
       SHEET.set("9tap-setup:" + d, s); });
@@ -1925,6 +1930,7 @@ const VIEWS = {
           <div class="su-q"><span class="sc-lbl">Games bowled</span>${seg("su-games", [[3, "3 games"], [4, "4 games"]], c.games)}</div>
           <div class="su-q"><span class="sc-lbl">Games that count</span>${seg("su-count", [[3, "Best 3"], [4, "All 4"]], c.count)}</div></div>
         <div class="panel su-card"><h3>Squad times</h3><div class="su-sqlist" id="su-squads"></div><button type="button" class="ck-back" id="su-add">+ Add a squad</button></div>
+        <div class="panel su-card su-wide"><h3>Lanes out of service</h3><p class="meta">Lanes down for maintenance at this tournament. Tap a lane to take it out; check-in won't put anyone on it. Saves right away. The Desk can change this on the day too.</p><div class="su-downs" id="su-downs"></div><p class="su-vnote" id="su-downs-n"></p></div>
         <div class="panel su-card su-wide"><h3>Jackpots</h3><p class="meta">These show on the home page and the printable schedule.</p>
           <div class="form-grid su-pots">
             <div class="field"><label for="su-jp">9-Tap Jackpot ($)</label><input id="su-jp" type="number" inputmode="numeric" min="0" step="1" value="${DATA.jackpot}"></div>
@@ -3110,6 +3116,7 @@ const CFG = {
     if (!c.venueName && !(c.venue && VEN.find(c.venue))) o.push("Pick the venue (Tournaments tab)");
     if (!(c.first >= 1) || !(c.last > c.first)) o.push("Lane range doesn't look right (Venues tab)");
     if (!(c.max >= 1)) o.push("Set bowlers per lane (Venues tab)");
+    if (c.last >= c.first && !CFG.order(c).length) o.push("Every lane is out of service (Tournaments tab)");
     if (!sq.length) o.push("Add at least one squad time");
     else if (t.some(x => x == null)) o.push("Fix the squad times (like 11:00 AM)");
     else if (t.some((x, i) => i && x <= t[i - 1])) o.push("Squad times should go from earliest to latest");
@@ -3127,7 +3134,10 @@ const CFG = {
     c.count = Math.min(Math.max(3, c.count), c.games); return c; },
   fix(f) { if (f && ((f.max === 6 && f.overflowMax === 8) || (f.max === 5 && f.overflowMax === 6))) { f.max = 3; f.overflowMax = 4; } return f; }, // old defaults: 6 (8 when full), old HiJoy sample 5 (6)
   put(e, v) { const ven = v && v.venue && VEN.find(v.venue); if (ven) v.venueName = ven.name; try { localStorage.setItem(CFG.key(e), JSON.stringify(v)); } catch (_) {} SHEET.send({ action: "saveSetup", id: e.date, date: e.date, center: ven ? ven.name : e.center, city: ven ? ven.city || e.city : e.city, setup: v, confirmed: !!(v && v.confirmedSig) && v.confirmedSig === CFG.sig(v) }); },
-  order(c) { const out = []; for (let n = c.first; n <= c.last; n++) out.push(n); return c.dir === "down" ? out.reverse() : out; },
+  order(c) { const out = [], dn = CFG.down(c); for (let n = c.first; n <= c.last; n++) if (!dn.includes(n)) out.push(n); return c.dir === "down" ? out.reverse() : out; },
+  // Lanes out of service for this tournament (maintenance; Greg, Nov 28). Check-in never puts anyone on them.
+  down(c) { return (c.down || []).map(Number).filter(n => n >= c.first && n <= c.last).sort((a, b) => a - b); },
+  downChips(c) { const dn = CFG.down(c), b = []; for (let n = c.first; n <= c.last; n++) b.push(`<button type="button" data-down="${n}" aria-pressed="${dn.includes(n)}" title="Lane ${n}${dn.includes(n) ? " is out of service" : ""}">${n}</button>`); return b.join(""); },
   cap(c) { return c.overflow ? Math.max(c.max, c.overflowMax) : c.max; },
   // Squad times have no am/pm: 9:00-12:59 is morning/noon, 1:00-8:59 is afternoon/evening.
   // Squad times: "10:00 AM". Older data has no AM/PM: 7:00-11:59 is morning, 12:00-6:59 is afternoon/evening.
@@ -3393,11 +3403,11 @@ const CK = {
   overLanes(e, l, sq) { const cf = CFG.get(e), n = {}; l.filter(r => r.squad === sq && r.paid && r.lane).forEach(r => n[r.lane] = (n[r.lane] || 0) + 1);
     const lanes = CFG.order(cf), allFull = lanes.every(x => (n[x] || 0) >= cf.max), lim = allFull ? CFG.cap(cf) : cf.max;
     return { lim, lanes: Object.keys(n).map(Number).filter(x => n[x] > lim).sort((a, b) => a - b), n }; },
-  rowIssues(e, l, r) { const o = []; if (r.paid && r.lane && CK.overLanes(e, l, r.squad).lanes.includes(r.lane)) o.push("over"); if (!r.paid) o.push("unpaid"); else if (!r.lane) o.push("nolane"); if (!r.avg) o.push("avg"); if (r.paid && r.lane && CK.repeatOf(e, l, r, r.lane)) o.push("repeat"); return o; },
+  rowIssues(e, l, r) { const o = []; if (r.paid && r.lane && CFG.down(CFG.get(e)).includes(r.lane)) o.push("down"); if (r.paid && r.lane && CK.overLanes(e, l, r.squad).lanes.includes(r.lane)) o.push("over"); if (!r.paid) o.push("unpaid"); else if (!r.lane) o.push("nolane"); if (!r.avg) o.push("avg"); if (r.paid && r.lane && CK.repeatOf(e, l, r, r.lane)) o.push("repeat"); return o; },
   issues(e, sq) {
     const l = CK.list(e), rs = l.filter(r => r.squad === sq), n = k => rs.filter(r => CK.rowIssues(e, l, r).includes(k)).length, out = [], pl = (x, a, b) => `${x} ${x === 1 ? a : b}`;
     if (rs.length && CFG.get(e).fee == null) out.push({ k: "fee", text: "Entry fee not set in Setup" });
-    [["unpaid", x => `${pl(x, "bowler", "bowlers")} not paid (take payment or remove them)`], ["nolane", x => `${pl(x, "paid bowler has", "paid bowlers have")} no lane`],
+    [["unpaid", x => `${pl(x, "bowler", "bowlers")} not paid (take payment or remove them)`], ["nolane", x => `${pl(x, "paid bowler has", "paid bowlers have")} no lane`], ["down", x => `${pl(x, "bowler is", "bowlers are")} on a lane that's out of service: move them to another lane`],
      ["over", x => { const ov = CK.overLanes(e, l, sq); return `${ov.lanes.length === 1 ? `Lane ${ov.lanes[0]} has` : `Lanes ${ov.lanes.join(", ")} have`} more than ${ov.lim} bowlers (Setup limit): move ${x === 1 ? "the bowler" : "bowlers"} to another lane`; }],
      ["avg", x => `${pl(x, "bowler has", "bowlers have")} no Tour average`], ["repeat", x => `${pl(x, "bowler is", "bowlers are")} on a pair they already bowled today`]]
       .forEach(([k, f]) => { const x = n(k); if (x) out.push({ k, text: f(x) }); });
@@ -3470,7 +3480,7 @@ const CK = {
   // Re-entry: a bowler in more than one squad that day is never placed on a lane pair they already bowled on.
   pick(e, sq, l, r, friend) {
     const cf = CFG.get(e), c = CK.counts(e, sq, l, r), used = CK.usedPairs(l, r), order = CFG.order(cf).filter(n => !used.has(CK.pair(n)));
-    if (friend && friend.lane && !used.has(CK.pair(friend.lane))) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => x >= cf.first && x <= cf.last && c[x] < cf.max); if (t.length) return t[0]; } // friend's own lane first, never past the per-lane limit
+    if (friend && friend.lane && !used.has(CK.pair(friend.lane))) { const a = friend.lane, b = a % 2 ? a + 1 : a - 1; const t = [a, b].filter(x => x >= cf.first && x <= cf.last && c[x] < cf.max && !CFG.down(cf).includes(x)); if (t.length) return t[0]; } // friend's own lane first, never past the per-lane limit
     const at = cap => { const ok = order.filter(n => c[n] < cap); if (!ok.length) return null; return cf.fill === "spread" ? ok.reduce((b, n) => c[n] < c[b] ? n : b) : ok[0]; };
     return at(cf.max) ?? (cf.overflow ? at(cf.overflowMax) : null);
   },
@@ -3834,11 +3844,14 @@ function wireSetup() {
     [["su-games", c.games], ["su-count", c.count]].forEach(([id, v]) => $("#" + id).querySelectorAll("[data-v]").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.v === String(v))); if (id === "su-count") b.disabled = +b.dataset.v > c.games; }));
     const x = live(), n = x.last - x.first + 1, sq = x.squads, om = x.openMins, later = sq.slice(1).map(t => CFG.opensAt(t, om) ? `${esc(t)} squad at ${CFG.opensAt(t, om)}` : null).filter(Boolean), fee = v => v == null ? "not set" : money(v);
     $("#su-sum").innerHTML = `<ul class="su-sumlist">
-      <li>${x.venueName ? `<b>${n} lanes</b> × ${x.max} = <b>${n * x.max} bowlers</b> per squad${x.overflow && x.overflowMax > x.max ? ` (up to ${n * x.overflowMax} when every lane is full)` : ""}.` : "<b>No venue picked yet.</b>"}</li>
+      <li>${x.venueName ? (m => `<b>${m} lanes</b>${m < n ? ` (${n - m} out of service)` : ""} × ${x.max} = <b>${m * x.max} bowlers</b> per squad${x.overflow && x.overflowMax > x.max ? ` (up to ${m * x.overflowMax} when every lane is full)` : ""}.`)(CFG.order(x).length) : "<b>No venue picked yet.</b>"}</li>
       <li>${x.count < x.games ? `Bowl ${x.games} games, the best ${x.count} count (low game dropped).` : `Bowl ${x.games} games, all count.`}</li>
       <li>${sq.length} squad${sq.length === 1 ? "" : "s"}${sq.length ? ` (${sq.map(esc).join(", ")})` : ""}.${later.length ? ` Check-in opens for the ${later.join(", the ")}.` : ""}</li>
       <li>Entry fee ${fee(x.fee)}${sq.length > 1 ? `, re-entry ${fee(x.fee2)}` : ""} (Tour settings).</li></ul>`;
+    { const dn = CFG.down(x); $("#su-downs").innerHTML = x.venueName ? CFG.downChips(x) : ""; $("#su-downs-n").textContent = !x.venueName ? "Pick the venue first." : dn.length ? `Out of service: lane${dn.length > 1 ? "s" : ""} ${dn.join(", ")}.` : "All lanes in service."; }
     opens(); confirmBox(); }
+  $("#su-downs").addEventListener("click", ev => { const b = ev.target.closest("[data-down]"); if (!b) return; const n = +b.dataset.down, y = CFG.get(e), on = CFG.down(y).includes(n);
+    y.down = on ? CFG.down(y).filter(z => z !== n) : CFG.down(y).concat(n); CFG.put(e, y); c.down = y.down; tSum(); });
   function confirmBox() { const box = $("#su-confirm"), card = $("#su-confirm-card"), x = live(), pr = CFG.problems(x), ok = !dirty.t && !!c.confirmedSig && c.confirmedSig === CFG.sig(x);
     const when = c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     const other = ["v", "o"].filter(k => dirty[k]).map(k => NAMES[k]);
@@ -3858,7 +3871,7 @@ function wireSetup() {
     const pv = { jackpot: Math.max(0, Math.round(+$("#su-jp").value || 0)), jackpotRecord: Math.max(0, Math.round(+$("#su-jprec").value || 0)), progressive: Math.max(0, Math.round(+$("#su-prog").value || 0)) };
     if (pv.jackpot !== DATA.jackpot && (pv.jackpot < 100 || (DATA.jackpot && pv.jackpot < DATA.jackpot / 2)) && !confirm(`Set the 9-Tap Jackpot to ${money(pv.jackpot)}? It's ${money(DATA.jackpot)} now. Only do this after the jackpot was won.`)) { $("#su-jp").value = DATA.jackpot; $("#su-jp").focus(); return false; }
     if (pv.jackpot !== DATA.jackpot || pv.jackpotRecord !== DATA.jackpotRecord || pv.progressive !== DATA.progressive) { POTS.save(pv); setTimeout(SHEET.drawBox, 1500); }
-    const y = CFG.get(e); ["open", "closed", "forced"].forEach(k => c[k] = y[k]); // check-in state belongs to the Desk
+    const y = CFG.get(e); ["open", "closed", "forced", "down"].forEach(k => c[k] = y[k]); // check-in state (and lanes out of service, saved as they're tapped) belongs to the Desk
     c.saved = true; CFG.put(e, c); sSync(); clean("t"); tSum(); return true; };
   ["su-jp", "su-jprec", "su-prog"].forEach(id => $("#" + id).addEventListener("input", () => touch("t")));
   $("#su-add").addEventListener("click", TSQ.add);
@@ -4046,7 +4059,7 @@ function wireDesk() {
       return r => { const g = m.get(r); if (!g || g.size < 2) return ""; const lanes = [...new Set([...g].filter(x => x.lane).map(x => x.lane))].sort((a, b) => a - b), waiting = [...g].filter(x => !x.lane).length;
         return `Group of ${g.size}${lanes.length ? ` · lane${lanes.length > 1 ? "s" : ""} ${lanes.join(" & ")}` : ""}${waiting ? ` · ${waiting} waiting to pay` : ""}`; }; })();
     const owe = r => { const o = CK.owes(e, r, l); return o.known ? money(o.total) : `entry fee${o.extra ? " + " + money(o.extra) : ""}`; };
-    const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n}${c[n] >= CFG.cap(cf) && r.lane !== n ? " (full)" : ""}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
+    const cf = CFG.get(e), laneOpts = r => { const used = CK.usedPairs(l, r); return (r.lane && CFG.down(cf).includes(r.lane) ? `<option value="${r.lane}" selected disabled>Lane ${r.lane} (out of service)</option>` : "") + CFG.order(cf).map(n => `<option value="${n}" ${r.lane === n ? "selected" : ""} ${c[n] >= CFG.cap(cf) && r.lane !== n ? "disabled" : ""}>Lane ${n}${c[n] >= CFG.cap(cf) && r.lane !== n ? " (full)" : ""}${used.has(CK.pair(n)) ? " · repeat pair" : ""}</option>`).join(""); };
     const unpaid = rs.filter(r => !r.paid), paid = rs.filter(r => r.paid), feeSet = CFG.get(e).fee != null;
     const cash = paid.reduce((t, r) => t + CK.owes(e, r, l).total, 0), due = unpaid.reduce((t, r) => t + CK.owes(e, r, l).total, 0);
     const payBar = rs.length ? `<div class="dk-paybar${unpaid.length ? " warn" : ""}"><span><b>${unpaid.length ? `${unpaid.length} not paid` : "Everyone has paid"}</b>${unpaid.length ? ` · no lane and no scores until they pay${feeSet ? ` · ${money(due)} still due` : ""}` : ""}</span><span><b>${paid.length} paid</b>${feeSet ? ` · ${money(cash)} collected this squad` : ` · <a class="link-more" href="#setup">set the entry fee</a> to see totals`}</span></div>` : "";
@@ -4055,13 +4068,14 @@ function wireDesk() {
     const onLanes = pairs.reduce((t, g) => t + g.lanes.reduce((a, n) => a + c[n], 0), 0), used = pairs.filter(g => g.lanes.some(n => c[n])).length, cap = CFG.cap(cf);
     const laneRep = rs.length || sample ? `<div class="panel dk-lanes"><div class="dk-lanes-head"><b>Lane pairs</b><span>${onLanes} bowler${onLanes === 1 ? "" : "s"} on ${used} of ${pairs.length} pairs${unpaid.length ? ` · ${unpaid.length} waiting to pay (no lane yet)` : ""}</span></div>
       <div class="dk-lanes-grid" style="--cols:${(() => { const rows = Math.ceil(pairs.length / 10); return Math.ceil(pairs.length / rows); })()};--mcols:${pairs.length % 4 === 0 || pairs.length > 8 ? 4 : Math.min(pairs.length, 4)}">${pairs.map(g => { const t = g.lanes.reduce((a, n) => a + c[n], 0), full = g.lanes.every(n => c[n] >= cf.max), ov = CK.overLanes(e, l, sq), over = g.lanes.some(n => ov.lanes.includes(n));
-        return `<button type="button" class="dk-pair${t ? "" : " empty"}${over ? " over" : full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small>${over ? `<small class="dk-over">over limit</small>` : ""}</button>`; }).join("")}</div>
+        return `<button type="button" class="dk-pair${t ? "" : " empty"}${over ? " over" : full ? " full" : ""}${F.pair === g.p ? " sel" : ""}" data-pair="${g.p}" ${t ? "" : "disabled"} aria-pressed="${F.pair === g.p}" title="${t ? `Show the bowlers on lanes ${g.lanes.join(" and ")}` : "No bowlers on this pair"}"><span class="dk-pair-l">${g.lanes.join("–")}</span><b>${t}</b><small>${t ? g.lanes.map(n => c[n]).join(" + ") : "empty"}</small>${g.lanes.some(n => CFG.down(cf).includes(n)) ? `<small class="dk-over">${g.lanes.every(n => CFG.down(cf).includes(n)) ? "out of service" : "lane " + g.lanes.filter(n => CFG.down(cf).includes(n)).join(" & ") + " down"}</small>` : ""}${over ? `<small class="dk-over">over limit</small>` : ""}</button>`; }).join("")}</div>
       <p class="meta">Up to ${cf.max} per lane (${cf.max * 2} per pair)${cf.overflow && cap > cf.max ? `, ${cap} per lane when every lane is full` : ""}. Lanes ${cf.first}–${cf.last}.</p></div>` : "";
     const iss = CK.issues(e, sq), sqn = esc(CFG.normT(e.squads[sq])), shut = CK.locked(e, sq);
     if (F.iss && !iss.some(x => x.k === F.iss)) F.iss = null;
     const ready = !rs.length ? "" : iss.length ? `<div class="dk-ready red" id="dk-ready"><b><span class="su-dot"></span>${shut ? `${sqn} squad was closed with things missing` : `Not ready to close the ${sqn} squad`}</b><ul>${iss.map(x => `<li>${x.k === "fee" ? `<a class="link-more" href="#setup">${esc(x.text)}</a>` : `<button type="button" data-iss="${x.k}" aria-pressed="${F.iss === x.k}">${esc(x.text)}</button>`}</li>`).join("")}</ul>${F.iss ? `<button type="button" class="dk-fpair" data-iss="">Show everyone ✕</button>` : ""}</div>`
       : shut ? "" : `<div class="dk-ready green" id="dk-ready"><b><span class="su-dot on"></span>${sqn} squad is ready to close</b><span>All ${rs.length} bowler${rs.length === 1 ? " has" : "s have"} paid, ${rs.length === 1 ? "has a lane and an average" : "have lanes and averages"}.</span></div>`;
-    $("#dk-body").innerHTML = ready + payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
+    const dn = CFG.down(cf), downBox = `<details class="panel dk-downbox" id="dk-down" ${F.downOpen ? "open" : ""}><summary><span><b>Lanes out of service:</b> ${dn.length ? dn.join(", ") : "none"}</span></summary><p class="meta">Tap a lane that's down for maintenance. Check-in won't put anyone on it, for every squad today. Tap it again when it's fixed.</p><div class="su-downs">${CFG.downChips(cf)}</div></details>`;
+    $("#dk-body").innerHTML = ready + payBar + `<p class="sc-checkin"><span>Lanes ${cf.first}–${cf.last}, starting at lane ${cf.dir === "down" ? cf.last : cf.first}, up to ${cf.max} per lane${cf.overflow ? ` (${cf.overflowMax} when full)` : ""} · <a class="link-more" href="#setup">Change setup</a></span><span><b>${rs.length} check-in${rs.length === 1 ? "" : "s"}</b> for the ${esc(e.squads[sq])} squad.</span></p>` + laneRep + downBox + (rs.length ? `<div class="dk-filter"><input id="dk-find" type="search" placeholder="Find a bowler in this squad" autocomplete="off" value="${esc(F.q)}"><div class="dk-fside"><div class="dk-fbtns"><label class="dk-box"><input type="checkbox" id="dk-fp" ${F.paid ? "checked" : ""}>Paid</label><label class="dk-box"><input type="checkbox" id="dk-fu" ${F.unpaid ? "checked" : ""}>Not paid</label>${F.pair ? `<button type="button" class="dk-fpair" id="dk-fpair">Lanes ${CK.pairName(F.pair)} <span aria-hidden="true">✕</span><span class="sr-only">Show all lanes</span></button>` : ""}</div><span class="meta" id="dk-fcount"></span></div></div>` : "") + (rs.length ? rs.map(r => `
       <div class="dk-row${r.paid ? "" : " unpaid"}" data-iss="${CK.rowIssues(e, l, r).join(" ")}" data-k="${esc(r.member)}" data-find="${esc((r.first + " " + r.last + " " + r.member + " " + (r.lane || "")).toLowerCase())}" data-pair="${r.lane ? CK.pair(r.lane) : ""}">
         <button type="button" class="dk-del" data-del aria-label="Remove ${esc(r.first)} ${esc(r.last)} from this squad" title="Remove from this squad"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
         <span class="sc-lane dk-lane">${r.lane ? r.lane + r.pos : "–"}</span>
@@ -4069,6 +4083,7 @@ function wireDesk() {
           <small>#${esc(r.member)}${r.avg ? ` · Avg ${r.avg} · Hdcp ${CK.rh(r)}${r.hcp != null && r.hcp !== "" ? " (set by hand)" : ""} · Bonus pins ${r.bonus || 0}` : ` · <b class="dk-need">Average not set yet</b>`}</small>
           <small>${r.via === "desk" ? "Checked in at the desk · " : "Self check-in · "}${r.friend ? `Wants to bowl with ${esc(CK.friends(r.friend).join(" and "))}` : "No friend request"}</small>${grp(r) ? `<small class="dk-grpline">${esc(grp(r))}</small>` : ""}
           ${r.paid && r.lane && CK.overLanes(e, l, sq).lanes.includes(r.lane) ? `<small class="dk-warn">Lane ${r.lane} is over the Setup limit of ${CK.overLanes(e, l, sq).lim} per lane. Move someone to another lane.</small>` : ""}
+          ${r.paid && r.lane && CFG.down(cf).includes(r.lane) ? `<small class="dk-warn">Lane ${r.lane} is out of service. Move to another lane.</small>` : ""}
           ${CK.repeatOf(e, l, r, r.lane) ? `<small class="dk-warn">Repeat pair: already bowled lanes ${CK.pairName(CK.pair(r.lane))} in the ${esc(CK.repeatOf(e, l, r, r.lane))} squad. Move to another pair.</small>` : ""}</div>
           ${r.avg ? "" : `<div class="dk-set" title="Needs setting before this bowler can bowl">
             <label class="field"><span>Tour avg</span><input data-act="avg" type="number" inputmode="numeric" min="50" max="300" placeholder="Set"></label>
@@ -4084,6 +4099,11 @@ function wireDesk() {
         </div>
       </div>`).join("") : `<div class="panel"><h3>No self check-ins yet for this squad</h3><p class="meta">Scan the check-in poster (printed from Setup) with a phone, or open <a class="link-more" href="#checkin">Bowler check-in</a>. You can also add 20 sample check-ins to try the desk.</p></div>`);
     // Lane pair tiles: tap one to list just the bowlers on those two lanes (tap again, or the ✕ chip, to show everyone)
+    { const d = $("#dk-down"); d.addEventListener("toggle", () => { F.downOpen = d.open; });
+      d.querySelectorAll("[data-down]").forEach(b => b.addEventListener("click", () => { const n = +b.dataset.down, y = CFG.get(e), on = CFG.down(y).includes(n);
+        const who = CK.list(e).filter(r => r.paid && r.lane === n && !CK.locked(e, r.squad)).length;
+        if (!on && who && !confirm(`${who} bowler${who === 1 ? " is" : "s are"} on lane ${n}. Take it out of service anyway? You'll need to move them to another lane.`)) return;
+        y.down = on ? CFG.down(y).filter(x => x !== n) : CFG.down(y).concat(n); CFG.put(e, y); F.downOpen = true; draw(); })); }
     $("#dk-body").querySelectorAll(".dk-pair[data-pair]").forEach(t => t.addEventListener("click", () => { const p = +t.dataset.pair; F.pair = F.pair === p ? null : p; draw(); const rep = $(".dk-lanes"); if (rep) rep.scrollIntoView({ behavior: "smooth", block: "start" }); }));
     if ($("#dk-fpair")) $("#dk-fpair").addEventListener("click", () => { F.pair = null; draw(); });
     if ($("#dk-ready")) $("#dk-ready").addEventListener("click", ev => { const b = ev.target.closest("button[data-iss]"); if (!b) return; F.iss = b.dataset.iss && F.iss !== b.dataset.iss ? b.dataset.iss : null; draw(); if (F.iss) { const c = $(".dk-row:not([hidden])"); if (c) c.scrollIntoView({ behavior: "smooth", block: "center" }); } });
@@ -4250,7 +4270,7 @@ function wireData(mode) {
           <td><b>${v(r.first)} ${v(r.last)}</b>${r.isNew ? "<small>New member</small>" : ""}${r.sample ? "<small>Sample</small>" : ""}</td>
           <td><input data-f="avg" type="number" inputmode="numeric" value="${r.avg || ""}" class="dt-n"></td>
           <td><input data-f="paid" type="checkbox" ${r.paid ? "checked" : ""}></td>
-          <td>${r.paid ? `<select data-f="lane">${CFG.order(cf).map(n => `<option value="${n}" ${n === r.lane ? "selected" : ""}>${n}</option>`).join("")}</select>` : `<span class="dt-wait">After paid</span>`}</td>
+          <td>${r.paid ? `<select data-f="lane">${r.lane && CFG.down(cf).includes(r.lane) ? `<option value="${r.lane}" selected>${r.lane} (down)</option>` : ""}${CFG.order(cf).map(n => `<option value="${n}" ${n === r.lane ? "selected" : ""}>${n}</option>`).join("")}</select>` : `<span class="dt-wait">After paid</span>`}</td>
           <td><input data-f="jackpot" type="checkbox" ${r.jackpot ? "checked" : ""}></td>
           <td class="dt-prog">${[10, 20].map(p => `<label><input data-f="prog" data-v="${p}" type="checkbox" ${r.prog === p ? "checked" : ""} ${(r.isNew ? 10 : 20) !== p ? "disabled" : ""}> $${p}</label>`).join("")}</td>
           <td class="dt-with">${Array.from({ length: Math.max(CK.withMax(e), CK.friends(r.friend).length) }, (_, k) => `<input data-f="friend" data-i="${k}" list="dt-names" value="${v(CK.friends(r.friend)[k] || "")}" placeholder="${k ? "Another (optional)" : "Anyone"}">`).join("")}</td>
