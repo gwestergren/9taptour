@@ -257,7 +257,7 @@ function fixDates() {
 // One-time tidy-ups. Each runs on its own, so one failing never stops the site from reading or saving.
 // They run once per FIX_VER, and only one request at a time: two requests tidying at once (no lock) is how the Members
 // tab lost its Average column on Nov 28 (both removed "the City column", so the second one removed Average).
-const FIX_VER = 'fix-2026-11-28c';
+const FIX_VER = 'fix-2026-11-28d';
 function runFixes() {
   let lock = null;
   try {
@@ -289,17 +289,18 @@ function fixSetupCols() {
 // One-time (Nov 28): Members gets an "Avg" column just left of the handicap column, which is renamed "Hdcp".
 // An "Average" column (added at the far right by an older save) moves into Avg.
 function fixMemberCols() {
-  const P = PropertiesService.getScriptProperties(); if (P.getProperty('memCols1')) return;
+  const P = PropertiesService.getScriptProperties(); if (P.getProperty('memCols2')) return;
   const s = SpreadsheetApp.getActive().getSheetByName('Members'); if (!s) return;
   let h = headers(s); const hi = h.indexOf('Handicap override') >= 0 ? h.indexOf('Handicap override') : h.indexOf('Hdcp');
   if (hi >= 0) s.getRange(1, hi + 1).setValue('Hdcp');
+  { const ni = h.indexOf('Nicknames'); if (ni >= 0) s.getRange(1, ni + 1).setValue('Nickname'); } // Greg: "Nickname", one word
   if (h.indexOf('Avg') < 0) {
     if (hi >= 0) { s.insertColumnBefore(hi + 1); s.getRange(1, hi + 1).setValue('Avg'); s.getRange(1, hi + 1).setFontWeight('bold'); }
     else ensureCols(s, ['Avg', 'Hdcp']);
   }
   h = headers(s); const ai = h.indexOf('Average'), vi = h.indexOf('Avg'), n = s.getLastRow() - 1;
   if (ai >= 0) { if (n > 0) { const a = s.getRange(2, ai + 1, n, 1).getValues(), v = s.getRange(2, vi + 1, n, 1).getValues(); s.getRange(2, vi + 1, n, 1).setValues(v.map((r, i) => [r[0] !== '' ? r[0] : a[i][0]])); } s.deleteColumn(ai + 1); }
-  P.setProperty('memCols1', '1');
+  P.setProperty('memCols2', '1');
 }
 // One-time (Nov 28): the Check-ins tab has no City column (the Tour doesn't keep a bowler's city).
 function fixCheckinCity() {
@@ -333,7 +334,7 @@ function fixMembers() {
   if (c >= 0) {
     const n = s.getLastRow() - 1, fi = h.indexOf('First name'), li = h.indexOf('Last name');
     if (n > 0) { const v = s.getRange(2, 1, n, h.length).getValues(); s.getRange(2, c + 1, n, 1).setValues(v.map(r => [nickClean(r[fi], r[li], r[c])])); }
-    s.getRange(1, c + 1).setValue('Nicknames');
+    s.getRange(1, c + 1).setValue('Nickname');
   }
   const ci = headers(s).indexOf('City'); if (ci >= 0) s.deleteColumn(ci + 1); // the Tour doesn't keep a member's city
   dedupeMembers(s);
@@ -410,10 +411,10 @@ function dedupeMembers(s) {
     g.slice(1).forEach(i => h.forEach((col, c) => {
       if (forms[keep][c] || forms[i][c] || blank(vals[i][c])) return;
       if (blank(row[c])) row[c] = vals[i][c];
-      else if (/^(Nicknames|Nickname \/ other names|Found in|Notes)$/.test(col)) row[c] = [...new Set(String(row[c]).split(/\s*,\s*/).concat(String(vals[i][c]).split(/\s*,\s*/)).filter(Boolean))].join(', ');
+      else if (/^(Nickname|Nicknames|Nickname \/ other names|Found in|Notes)$/.test(col)) row[c] = [...new Set(String(row[c]).split(/\s*,\s*/).concat(String(vals[i][c]).split(/\s*,\s*/)).filter(Boolean))].join(', ');
     }));
     ['First name', 'Last name', 'Full name'].forEach(col => { const c = h.indexOf(col); if (c >= 0) row[c] = vals[best][c]; });
-    const nc = h.indexOf('Nicknames') >= 0 ? h.indexOf('Nicknames') : h.indexOf('Nickname / other names'), other = names.filter(x => rawKey(x) !== rawKey(vals[best][fu])); // a different spelling stays findable
+    const nc = ['Nickname', 'Nicknames', 'Nickname / other names'].map(k => h.indexOf(k)).find(i => i >= 0) ?? -1, other = names.filter(x => rawKey(x) !== rawKey(vals[best][fu])); // a different spelling stays findable
     if (nc >= 0 && other.length && !forms[keep][nc]) row[nc] = nickClean(row[h.indexOf('First name')], row[h.indexOf('Last name')], [row[nc]].concat(other).filter(Boolean).join(', '));
     h.forEach((col, c) => { if (!forms[keep][c] && row[c] !== vals[keep][c]) s.getRange(keep + 2, c + 1).setValue(row[c]); });
     names.forEach(x => { if (x !== String(vals[best][fu]).trim()) ren[x] = String(vals[best][fu]).trim(); });

@@ -1465,8 +1465,8 @@ const SHEET = {
     Object.assign(row, patch); row["Full name"] = [row["First name"], row["Last name"]].map(x => String(x || "").trim()).filter(Boolean).join(" ");
     SHEET.set(SHEET.CACHE, c);
     const ed = CK.get("9tap-member-edits", {}); if (row["Member #"] && ed[row["Member #"]]) { delete ed[row["Member #"]]; CK.put("9tap-member-edits", ed); } // the sheet row is the truth now
-    if (SHEET.NICK in patch && SHEET.nkKey() !== SHEET.NICK) { row[SHEET.OLDNICK] = patch[SHEET.NICK]; delete row[SHEET.NICK]; } // old header until the script renames it
-    const out = {}; ["Member #", "First name", "Last name", "Full name", SHEET.NICK, SHEET.OLDNICK, "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
+    if (SHEET.NICK in patch && SHEET.nkKey() !== SHEET.NICK) { row[SHEET.nkKey()] = patch[SHEET.NICK]; delete row[SHEET.NICK]; } // old header until the script renames it
+    const out = {}; ["Member #", "First name", "Last name", "Full name", SHEET.NICK, ...SHEET.OLDNICKS, "Average", "Handicap override", "Bonus pins"].forEach(k => { if (k in row) out[k] = row[k] == null ? "" : row[k]; });
     SHEET.send({ action: "saveMember", id: "mem:" + (was || row["Full name"]).toLowerCase(), was: was || "", member: out });
     const num = String(row["Member #"] || "").trim(), ho = row["Handicap override"];
     if (num) [CK.event(), SC.event()].forEach(ev => { const L = CK.list(ev); let hit = false;
@@ -1475,9 +1475,9 @@ const SHEET = {
     return row["Full name"];
   },
   // The Members column for alternate names: "Nicknames" (older sheets: "Nickname / other names").
-  NICK: "Nicknames", OLDNICK: "Nickname / other names",
-  nk(r) { return r[SHEET.NICK] != null ? r[SHEET.NICK] : r[SHEET.OLDNICK] || ""; },
-  nkKey() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || []; return M.some(r => SHEET.OLDNICK in r) ? SHEET.OLDNICK : SHEET.NICK; },
+  NICK: "Nickname", OLDNICKS: ["Nicknames", "Nickname / other names"], // the Members tab's header (Greg, Nov 28: "Nickname"); older sheets have the others
+  nk(r) { const k = [SHEET.NICK, ...SHEET.OLDNICKS].find(k => r[k] != null); return k ? r[k] || "" : ""; },
+  nkKey() { const M = (SHEET.get(SHEET.CACHE, {}).data || {}).Members || []; return [SHEET.NICK, ...SHEET.OLDNICKS].find(k => M.some(r => k in r)) || SHEET.NICK; },
   // Only names that aren't already the bowler's first or last name: "Steve Nolan" for Steven Nolan -> "Steve".
   nickClean(first, last, str) { const k = w => w.toLowerCase().replace(/[^a-z0-9']/g, ""), own = new Set((first + " " + last).split(/\s+/).map(k).filter(Boolean).concat(["jr", "sr", "ii", "iii"])), seen = new Set();
     return String(str || "").split(/[,;()\/]+/).map(p => p.split(/\s+/).filter(w => k(w) && !own.has(k(w))).join(" ").trim()).filter(p => p && !seen.has(p.toLowerCase()) && seen.add(p.toLowerCase())).join(", "); },
@@ -3442,7 +3442,9 @@ const CK = {
       CK._m = out;
     }
     const ed = CK.get("9tap-member-edits", {});
-    if (SHEET.ready()) return SHEET.members().concat(CK.newMembers().filter(n => !SHEET.members().some(m => m.member === n.member))).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
+    // Linked to the sheet's Members tab: the sheet wins. A local edit only counts while its save is still on the way to the sheet.
+    if (SHEET.ready()) { const q = new Set(SHEET.get(SHEET.QUEUE, []).filter(x => x.action === "saveMember").map(x => x.id));
+      return SHEET.members().concat(CK.newMembers().filter(n => !SHEET.members().some(m => m.member === n.member))).map(m => ed[m.member] && q.has("m" + m.member) ? Object.assign({}, m, ed[m.member]) : m); }
     return CK._m.concat(CK.newMembers()).map(m => ed[m.member] ? Object.assign({}, m, ed[m.member]) : m);
   },
   // Handicap: a staff-set handicap wins; otherwise 90% of (220 - average). Bonus pins are added on top.
@@ -3869,12 +3871,13 @@ function wireSetup() {
     const when = c.confirmedAt ? new Date(c.confirmedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
     const other = ["v", "o"].filter(k => dirty[k]).map(k => NAMES[k]);
     card.className = "panel su-card su-wide su-confirm " + (ok ? "green" : pr.length ? "red" : "amber");
-    box.innerHTML = `${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing the tournament, its venue's lanes or the Tour settings means confirming again.</p>`
+    box.innerHTML = `${ok ? `<p><b>✓ Setup confirmed</b>${when ? ` (${esc(when)})` : ""}. The Desk can open check-in. Changing the tournament, its venue's lanes or the Tour settings means confirming again.</p><button type="button" class="ck-back" id="su-unok">Reset confirmation</button>`
       : pr.length ? `<p><b>Not ready.</b> Fix these, then confirm. The Desk can't open check-in until you do.</p><ul>${pr.map(t => { const m = /\((Tour|Venues|Tournaments) tab\)$/.exec(t); return `<li>${esc(t.replace(/ \(\w+ tab\)$/, ""))}${m ? ` · <button type="button" class="ck-back" data-go="${{ Tour: "o", Venues: "v", Tournaments: "t" }[m[1]]}">${m[1]} tab →</button>` : ""}</li>`; }).join("")}</ul>`
       : `<p>When this is right, confirm it. The Desk can't open check-in until you do.</p>`}
       ${other.length ? `<p class="meta">Unsaved changes on the ${other.join(" and ")} tab${other.length > 1 ? "s" : ""} don't count until you save them.</p>` : ""}
       ${ok ? "" : `<button type="button" class="btn btn-primary" id="su-ok" ${pr.length ? "disabled" : ""}>Confirm setup${dirty.t ? " (saves the tournament)" : ""}</button>`}`;
     box.querySelectorAll("[data-go]").forEach(g => g.addEventListener("click", () => go(g.dataset.go)));
+    const u = $("#su-unok"); if (u) u.addEventListener("click", () => { const y = CFG.get(e); delete y.confirmedSig; delete y.confirmedAt; CFG.put(e, y); delete c.confirmedSig; delete c.confirmedAt; confirmBox(); say("t", "Confirmation reset. Confirm the setup again before the Desk opens check-in."); });
     const b = $("#su-ok"); if (b) b.addEventListener("click", () => { if (!store()) return; const y = CFG.get(e); y.confirmedSig = CFG.sig(y); y.confirmedAt = new Date().toISOString(); CFG.put(e, y); c.confirmedSig = y.confirmedSig; c.confirmedAt = y.confirmedAt; flash("t"); confirmBox(); say("t", "Setup confirmed. The Desk can open check-in now."); }); }
   const store = () => {
     c.squads = squadsNow();
@@ -4043,7 +4046,8 @@ function wireDesk() {
       <div><dt>Games</dt><dd>${c.games} bowled, ${c.count < c.games ? `best ${c.count} count` : "all count"}</dd></div>
       <div><dt>Entry fee</dt><dd>${fee(c.fee)}</dd></div>${sq.length > 1 ? `<div><dt>Re-entry fee</dt><dd>${fee(c.fee2)}</dd></div>` : ""}</dl>
       ${pr.length ? `<p><b>Fix these on Setup first:</b></p><ul>${pr.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-      <div class="dk-set-act">${ok ? `<span>Confirmed${when ? ` ${esc(when)}` : ""}. Changing the setup means confirming again.</span>` : pr.length ? "" : `<button type="button" class="btn btn-primary" id="dk-set-ok">Setup is correct · Confirm</button>`}<a class="link-more" href="#setup">Change setup →</a></div>`;
+      <div class="dk-set-act">${ok ? `<span>Confirmed${when ? ` ${esc(when)}` : ""}. Changing the setup means confirming again.</span><button type="button" class="ck-back" id="dk-set-un">Reset confirmation</button>` : pr.length ? "" : `<button type="button" class="btn btn-primary" id="dk-set-ok">Setup is correct · Confirm</button>`}<a class="link-more" href="#setup">Change setup →</a></div>`;
+    const u = $("#dk-set-un"); if (u) u.addEventListener("click", () => { const c2 = CFG.get(e); delete c2.confirmedSig; delete c2.confirmedAt; CFG.put(e, c2); route(); });
     const b = $("#dk-set-ok"); if (b) b.addEventListener("click", () => { const c2 = CFG.get(e); c2.confirmedSig = CFG.sig(c2); c2.confirmedAt = new Date().toISOString(); c2.saved = true; CFG.put(e, c2); route(); }); };
   setupBox();
   // Bowler list filter (search + paid / not paid). Only hides bowler cards; the lane report always counts everyone.
@@ -4297,9 +4301,9 @@ function wireData(mode) {
     const all = memRows().map((r, i) => ({ r, i })).filter(({ r }) => r._new || hit(`${r["Full name"]} ${SHEET.nk(r)} ${r["Member #"] || ""}`))
       .sort((a, b) => (b.r._new ? 1 : 0) - (a.r._new ? 1 : 0) || String(a.r["Last name"] || "").localeCompare(String(b.r["Last name"] || "")) || String(a.r["First name"] || "").localeCompare(String(b.r["First name"] || "")));
     $("#dt-info").textContent = `${memRows().length} members · ${memRows().filter(r => String(r["Member #"] || "").trim()).length} with a member #`;
-    const F = [["Member #", "num"], ["First name"], ["Last name"], [SHEET.NICK], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]], cell = (r, k) => k === SHEET.NICK ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k];
-    const ed = r => r._new || editK === String(r["Full name"] || ""), cols = F.slice(0, 3).concat([["_act"]], F.slice(3));
-    $("#dt-grid").innerHTML = `<thead><tr>${cols.map(([k]) => `<th>${k === "_act" ? "" : k === "Handicap override" ? "Hdcp (by hand)" : k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
+    const F = [["Member #", "num"], ["First name"], [SHEET.NICK], ["Last name"], ["Average", "num"], ["Handicap override", "num"], ["Bonus pins", "num"]], cell = (r, k) => k === SHEET.NICK ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k];
+    const ed = r => r._new || editK === String(r["Full name"] || ""), cols = F.slice(0, 4).concat([["_act"]], F.slice(4));
+    $("#dt-grid").innerHTML = `<thead><tr>${cols.map(([k]) => `<th>${k === "_act" ? "" : ({ "Handicap override": "Hdcp", "Average": "Avg" })[k] || k}</th>`).join("")}</tr></thead><tbody>${all.map(({ r }) => `
       <tr data-k="${v(r["Full name"] || "")}" class="${r._new ? "new " : ""}${ed(r) ? "editing" : ""}">${cols.map(([k, t]) => k === "_act"
         ? `<td class="dt-act">${ed(r) ? `<button type="button" class="btn btn-primary dt-btn" data-save>Save</button><button type="button" class="ck-back" data-cancel>Cancel</button>` : `<button type="button" class="ck-back" data-edit>Edit</button><button type="button" class="ck-back dt-delbtn" data-delm>Delete</button>`}</td>`
         : ed(r) ? `<td><input data-f="${v(k)}" value="${v(cell(r, k))}" ${t ? 'inputmode="numeric" class="dt-n"' : ""}${k === "Handicap override" && +r.Average ? ` placeholder="${CK.hcp(+r.Average)}" title="Empty = ${CK.hcp(+r.Average)} from the average"` : ""}></td>`
@@ -4353,7 +4357,7 @@ function wireData(mode) {
   if ($("#dt-tabs")) $("#dt-tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t; $("#dt-tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); $("#dt-q").value = ""; draw(); });
   $("#dt-q").addEventListener("input", draw);
   if ($("#dt-csv")) $("#dt-csv").addEventListener("click", () => {
-    const K = ["Member #", "First name", "Last name", "Nicknames", "Average", "Handicap override", "Bonus pins"], rows = [K.concat("Handicap used")].concat(memRows().filter(r => !r._new).map(r => K.map(k => k === "Nicknames" ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k] == null ? "" : r[k]).concat(r["Handicap override"] !== "" && r["Handicap override"] != null ? r["Handicap override"] : r.Average ? CK.hcp(+r.Average) : "")));
+    const K = ["Member #", "First name", "Nickname", "Last name", "Average", "Handicap override", "Bonus pins"], rows = [K.concat("Handicap used")].concat(memRows().filter(r => !r._new).map(r => K.map(k => k === "Nickname" ? SHEET.nickClean(r["First name"] || "", r["Last name"] || "", SHEET.nk(r)) : r[k] == null ? "" : r[k]).concat(r["Handicap override"] !== "" && r["Handicap override"] != null ? r["Handicap override"] : r.Average ? CK.hcp(+r.Average) : "")));
     const csv = rows.map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : x).join(",")).join("\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "9-tap-members.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
